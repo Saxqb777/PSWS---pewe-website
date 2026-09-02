@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PEWE SOCIAL WELFARE SOCIETY — Heritage / Archival
+   Palette drawn from the Society seal (green, seal-red) and the
+   masjid itself (cream render, ochre/brass trim, laterite).
+   Rules: no gradients on text, no glows, no blobs, no drop
+   shadows, no pill-rounded everything. Hard edges. Thin rules.
+   ============================================================ */
+
+@theme {
+  --color-paper:        #F4EFE6;
+  --color-paper-2:      #EDE6D9;
+  --color-paper-3:      #E2D8C6;
+  --color-rule:         #D6C9B2;
+  --color-rule-strong:  #B9A88C;
+
+  --color-ink:          #1C1815;
+  --color-ink-2:        #4A4239;
+  --color-ink-3:        #786C5D;
+
+  --color-maroon:       #7A2E2E;
+  --color-maroon-dark:  #5A1F1F;
+  --color-maroon-tint:  #EFE0DC;
+
+  --color-brass:        #A67C3D;
+  --color-brass-light:  #C9A063;
+  --color-brass-tint:   #F0E5D0;
+
+  --color-pine:         #1F5B3A;
+  --color-pine-tint:    #DEE9E0;
+
+  --color-rust:         #A34528;
+  --color-rust-tint:    #F3E2D9;
+
+  /* Chart marks only — never UI chrome. Brighter than the brand tones
+     because the muted heritage palette fails the CVD/chroma checks when
+     used as data colours. Validated (light surface): lightness band PASS,
+     chroma floor PASS, CVD separation ΔE 12.7 PASS, normal-vision ΔE 21.4
+     PASS. Brass warns on contrast, so every value carries a visible
+     label and a table sits beside every chart. */
+  --color-mark-1:       #A03B33;
+  --color-mark-2:       #C4901F;
+  --color-mark-3:       #2E7D4F;
+
+  --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans:    var(--font-plex-sans), system-ui, -apple-system, sans-serif;
+  --font-mono:    var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+  --font-marathi: var(--font-tiro-marathi), var(--font-plex-sans), serif;
+
+  --radius-none: 0px;
+}
+
+:root { color-scheme: light; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- Typography primitives ---------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.label-brass { color: var(--color-brass); }
+.label-maroon { color: var(--color-maroon); }
+
+/* Ledger numerals — tabular, right-alignable, never wobbles */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+.marathi { font-family: var(--font-marathi); }
+
+/* ---------- The jali lattice ----------
+   Traced from the pierced concrete screen on the masjid's
+   corner pillar. Used as section rules and watermarks. */
+
+.jali-band {
+  height: 14px;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'>\
+<g fill='none' stroke='%23A67C3D' stroke-width='1.5'>\
+<rect x='2.5' y='2.5' width='23' height='23'/>\
+<rect x='8' y='8' width='12' height='12'/>\
+<path d='M14 2.5 L14 8 M14 20 L14 25.5 M2.5 14 L8 14 M20 14 L25.5 14'/>\
+</g></svg>");
+  background-size: auto 28px;
+  background-repeat: repeat-x;
+  background-position: center;
+  opacity: 0.55;
+}
+
+.jali-column {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'>\
+<g fill='none' stroke='%23A67C3D' stroke-width='1.5'>\
+<rect x='2.5' y='2.5' width='23' height='23'/>\
+<rect x='8' y='8' width='12' height='12'/>\
+<path d='M14 2.5 L14 8 M14 20 L14 25.5 M2.5 14 L8 14 M20 14 L25.5 14'/>\
+</g></svg>");
+  background-size: 28px 28px;
+  background-repeat: repeat;
+}
+
+/* ---------- The arcade ----------
+   The row of small arches under the masjid's roofline. */
+
+.arcade-band {
+  height: 13px;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='22' height='13' viewBox='0 0 22 13'>\
+<path d='M0 13 L0 7 Q0 0 5.5 0 Q11 0 11 7 L11 13 M11 13 L11 7 Q11 0 16.5 0 Q22 0 22 7 L22 13' \
+fill='none' stroke='%23A67C3D' stroke-width='1.2'/>\
+</svg>");
+  background-repeat: repeat-x;
+  background-position: bottom;
+  opacity: 0.6;
+}
+
+/* ---------- Rules ---------- */
+
+.rule-hair   { border-top: 1px solid var(--color-rule); }
+.rule-strong { border-top: 2px solid var(--color-ink); }
+.rule-brass  { border-top: 1px solid var(--color-brass); }
+
+/* ---------- Focus: visible, square, brand-coloured ---------- */
+
+*:focus-visible {
+  outline: 2px solid var(--color-maroon);
+  outline-offset: 2px;
+}
+
+/* ---------- Selection ---------- */
+
+::selection {
+  background: var(--color-brass-light);
+  color: var(--color-ink);
+}
+
+/* ---------- Scrollbars in ERP tables ---------- */
+
+.scroll-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+.scroll-thin::-webkit-scrollbar-track { background: var(--color-paper-2); }
+.scroll-thin::-webkit-scrollbar-thumb { background: var(--color-rule-strong); }
+
+/* ---------- Hero: slow drift + parallax layers ---------- */
+
+@keyframes slow-zoom {
+  from { transform: scale(1) translateZ(0); }
+  to   { transform: scale(1.08) translateZ(0); }
+}
+
+.hero-drift { animation: slow-zoom 26s ease-in-out infinite alternate; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rise { animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-drift, .rise { animation: none !important; }
+  html { scroll-behavior: auto; }
+  .parallax { transform: none !important; }
+}
+
+/* ---------- Print (committee members will print the ledgers) ---------- */
+
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .no-print { display: none !important; }
+  .jali-band, .arcade-band { opacity: 1; }
+}
