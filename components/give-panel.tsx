@@ -54,7 +54,7 @@ const METHODS = [
  * made to lose their place first.
  */
 export function GiveButton({
-  label = "Chanda dijiye · Give",
+  label = "Sadaqah dijiye · Give",
   variant = "primary",
   size = "md",
   fullWidth = false,
@@ -118,7 +118,7 @@ export function GiveButton({
 
             <div className="flex items-start justify-between gap-4 border-b border-rule px-6 py-5">
               <div>
-                <div className="label label-brass">Chanda dijiye</div>
+                <div className="label label-brass">Sadaqah dijiye</div>
                 <h2 className="display mt-1 text-[24px] leading-tight">Five ways to give</h2>
                 {purpose && (
                   <p className="mt-2 text-[14px] leading-snug text-ink-2">

@@ -151,7 +151,7 @@ export default function HomePage() {
           <SectionHead
             overline="Open now"
             title="What we are raising for."
-            hinglish="Abhi kis cheez ke liye chanda"
+            hinglish="Abhi kis cheez ke liye sadaqah"
             lede="Each campaign has a target, a published purpose, and a running total anyone may check at any time."
           />
 
@@ -173,7 +173,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-6 border-t border-rule pt-5">
-                  <GiveButton size="sm" fullWidth purpose={c.title} label="Chanda dijiye" />
+                  <GiveButton size="sm" fullWidth purpose={c.title} label="Sadaqah dijiye" />
                 </div>
               </article>
             ))}
@@ -375,7 +375,7 @@ export default function HomePage() {
           <div className="grid gap-12 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
             <div>
               <div className="label" style={{ color: "var(--color-brass-light)" }}>
-                Chanda aur sampark
+                Sadaqah aur sampark
               </div>
               <h2 className="display mt-3 text-[32px] leading-[1.1] text-paper sm:text-[40px]">
                 Five ways to give, one receipt book.
@@ -391,7 +391,7 @@ export default function HomePage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <GiveButton size="lg" variant="onDark" label="Chanda dijiye · Give" />
+                <GiveButton size="lg" variant="onDark" label="Sadaqah dijiye · Give" />
                 <Onward href="/about" label="About the Society" tone="onDark" />
               </div>
             </div>

@@ -149,7 +149,7 @@ export function Hero() {
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <GiveButton size="lg" label="Chanda dijiye · Give" />
+                <GiveButton size="lg" label="Sadaqah dijiye · Give" />
                 <Link
                   href="/accounts"
                   className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"

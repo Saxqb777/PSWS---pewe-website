@@ -39,7 +39,7 @@ Sponsors, Reports & audit.
 
 ## Language
 
-English throughout, written the way Pewe actually talks — *chanda*, *masjid*,
+English throughout, written the way Pewe actually talks — *sadaqah*, *masjid*,
 *kabrastan*, *gram panchayat*, *taluka* kept as they are. Every major heading
 carries a Hinglish line under it (*Paisa kahan gaya*, *Zakat aur madad*,
 *Gaon ke kaam*). One version, no toggle.

@@ -72,7 +72,7 @@ export function SiteHeader() {
 
           <div className="ml-auto flex items-center gap-3 lg:ml-4">
             <span className="hidden sm:block">
-              <GiveButton size="md" label="Chanda dijiye" />
+              <GiveButton size="md" label="Sadaqah dijiye" />
             </span>
             <Link
               href="/login"
@@ -118,7 +118,7 @@ export function SiteHeader() {
               </Link>
             </li>
             <li className="py-4">
-              <GiveButton size="lg" fullWidth label="Chanda dijiye · Give" />
+              <GiveButton size="lg" fullWidth label="Sadaqah dijiye · Give" />
             </li>
           </ul>
         </nav>
