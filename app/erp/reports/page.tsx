@@ -76,7 +76,7 @@ export default function ErpReportsPage() {
           <div className="mt-5 flex h-48 items-end gap-2 border-b-2 border-ink">
             {MONTHLY_RECEIPTS.map((m) => (
               <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                <span className="num text-[10px] text-ink-2">{rupeesShort(m.amount)}</span>
+                <span className="num text-[11px] text-ink-2">{rupeesShort(m.amount)}</span>
                 <div
                   className="w-full"
                   style={{ height: `${(m.amount / maxMonth) * 86}%`, backgroundColor: "var(--color-mark-1)" }}
@@ -87,7 +87,7 @@ export default function ErpReportsPage() {
           </div>
           <div className="flex gap-2">
             {MONTHLY_RECEIPTS.map((m) => (
-              <div key={m.month} className="num flex-1 pt-2 text-center text-[11px] text-ink-3">{m.month}</div>
+              <div key={m.month} className="num flex-1 pt-2 text-center text-[12px] text-ink-3">{m.month}</div>
             ))}
           </div>
         </figure>
@@ -100,8 +100,8 @@ export default function ErpReportsPage() {
             {RECEIPTS_BY_METHOD.map((r) => (
               <div key={r.method}>
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-[13px] text-ink">{PAYMENT_LABEL[r.method]}</span>
-                  <span className="num text-[12.5px] text-ink-2">
+                  <span className="text-[14.5px] text-ink">{PAYMENT_LABEL[r.method]}</span>
+                  <span className="num text-[13.5px] text-ink-2">
                     {rupees(r.amount)} <span className="text-ink-3">({r.count})</span>
                   </span>
                 </div>
@@ -137,8 +137,8 @@ export default function ErpReportsPage() {
             {HEADS.map((h) => (
               <li key={h.key} className="flex items-center gap-2.5">
                 <span aria-hidden className="block h-3 w-3 shrink-0" style={{ backgroundColor: h.token }} />
-                <span className="flex-1 text-[13px] text-ink">{h.key}</span>
-                <span className="num text-[12.5px] text-ink-2">{rupees(h.amount)}</span>
+                <span className="flex-1 text-[14.5px] text-ink">{h.key}</span>
+                <span className="num text-[13.5px] text-ink-2">{rupees(h.amount)}</span>
               </li>
             ))}
           </ul>
@@ -152,7 +152,7 @@ export default function ErpReportsPage() {
           <Badge tone="pending">{DONATION_ROLL.backdatedPending} awaiting the auditor</Badge>
         </div>
 
-        <p className="mt-4 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+        <p className="mt-4 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
           An entry is flagged when the value date precedes the entry date — a wire
           sent on the 29th that clears on the 2nd, or cash handed over on a Friday
           and entered on Sunday. The flag is raised by the system and can only be
@@ -213,7 +213,7 @@ export default function ErpReportsPage() {
         <h2 className="display border-b-2 border-ink pb-2 text-[19px] leading-tight">
           Audit trail
         </h2>
-        <p className="mt-4 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+        <p className="mt-4 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
           Every act that moves money, decides an application or changes what the
           public sees. Append-only — no row here can be edited or removed by
           anybody, including Admin.
@@ -246,7 +246,7 @@ export default function ErpReportsPage() {
       <Panel tone="sunk" className="mt-12">
         <div className="p-5">
           <div className="label label-brass">Filed with</div>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+          <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
             Office of the Charity Commissioner, Ratnagiri, under registration{" "}
             <span className="num">{SOCIETY.registrationNo}</span>. Audited by
             S. K. Joshi &amp; Associates, Chiplun. The statement for 2025–26 was

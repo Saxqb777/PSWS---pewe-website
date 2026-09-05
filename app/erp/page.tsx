@@ -69,7 +69,7 @@ export default function ErpDashboard() {
           <div className="bg-paper p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="label label-maroon">Welfare applications pending</h3>
-              <Link href="/erp/zakat" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
+              <Link href="/erp/zakat" className="text-[12px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
                 Open queue
               </Link>
             </div>
@@ -79,19 +79,19 @@ export default function ErpDashboard() {
                 <li key={r.id} className="bg-paper py-3">
                   <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
                     <div className="min-w-0">
-                      <div className="text-[14px] font-semibold text-ink">{r.applicantName}</div>
-                      <div className="num text-[11.5px] text-ink-3">
+                      <div className="text-[15.5px] font-semibold text-ink">{r.applicantName}</div>
+                      <div className="num text-[12.5px] text-ink-3">
                         {r.reference} · {r.mohalla} · applied {shortDate(r.submittedOn)}
                       </div>
                     </div>
-                    <div className="num shrink-0 text-[14px] text-ink">{rupees(r.amount)}</div>
+                    <div className="num shrink-0 text-[15.5px] text-ink">{rupees(r.amount)}</div>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Badge tone="pending">
                       {ZAKAT_CATEGORIES.find((c) => c.key === r.category)?.label}
                     </Badge>
                     {r.isRecurring && <Badge tone="neutral">Standing renewal</Badge>}
-                    <span className="num text-[11px] text-ink-3">
+                    <span className="num text-[12px] text-ink-3">
                       {daysUntil(r.submittedOn, "2026-09-02") * -1} days waiting
                     </span>
                   </div>
@@ -104,15 +104,15 @@ export default function ErpDashboard() {
           <div className="bg-paper p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="label label-maroon">Quotations to be opened</h3>
-              <Link href="/erp/projects" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
+              <Link href="/erp/projects" className="text-[12px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
                 Open works
               </Link>
             </div>
 
             {tendering.map((p) => (
               <div key={p.id} className="mt-4">
-                <div className="text-[14.5px] font-semibold text-ink">{p.title}</div>
-                <div className="num mt-0.5 text-[11.5px] text-ink-3">
+                <div className="text-[16px] font-semibold text-ink">{p.title}</div>
+                <div className="num mt-0.5 text-[12.5px] text-ink-3">
                   Budget {rupees(p.budget)} · {p.quotations.length} quotations in hand
                 </div>
 
@@ -130,7 +130,7 @@ export default function ErpDashboard() {
                         <tr key={q.id}>
                           <Td>
                             {q.vendorName}
-                            <span className="block text-[11px] text-ink-3">{q.vendorPlace}</span>
+                            <span className="block text-[12px] text-ink-3">{q.vendorPlace}</span>
                           </Td>
                           <Td align="right" mono>{rupees(q.amount)}</Td>
                           <Td align="right" mono className={i === 0 ? "text-pine" : "text-ink-3"}>
@@ -178,7 +178,7 @@ export default function ErpDashboard() {
           <div className="mt-5 flex h-48 items-end gap-2 border-b-2 border-ink">
             {MONTHLY_RECEIPTS.map((m) => (
               <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                <span className="num text-[10px] text-ink-2">{rupeesShort(m.amount)}</span>
+                <span className="num text-[11px] text-ink-2">{rupeesShort(m.amount)}</span>
                 <div
                   className="w-full"
                   style={{ height: `${(m.amount / maxMonth) * 86}%`, backgroundColor: "var(--color-mark-1)" }}
@@ -189,7 +189,7 @@ export default function ErpDashboard() {
           </div>
           <div className="flex gap-2">
             {MONTHLY_RECEIPTS.map((m) => (
-              <div key={m.month} className="num flex-1 pt-2 text-center text-[11px] text-ink-3">
+              <div key={m.month} className="num flex-1 pt-2 text-center text-[12px] text-ink-3">
                 {m.month}
               </div>
             ))}
@@ -204,8 +204,8 @@ export default function ErpDashboard() {
             {RECEIPTS_BY_METHOD.map((r) => (
               <div key={r.method}>
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-[13px] text-ink">{PAYMENT_LABEL[r.method]}</span>
-                  <span className="num text-[12.5px] text-ink-2">
+                  <span className="text-[14.5px] text-ink">{PAYMENT_LABEL[r.method]}</span>
+                  <span className="num text-[13.5px] text-ink-2">
                     {rupees(r.amount)} <span className="text-ink-3">({r.count})</span>
                   </span>
                 </div>
@@ -232,7 +232,7 @@ export default function ErpDashboard() {
             <Panel key={c.id} className="mt-4">
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="display text-[16px] leading-tight">{c.title}</h3>
+                  <h3 className="display text-[17px] leading-tight">{c.title}</h3>
                   <Badge tone="flash">
                     {c.deadline && daysUntil(c.deadline) > 0 ? `${daysUntil(c.deadline)}d` : "today"}
                   </Badge>
@@ -240,11 +240,11 @@ export default function ErpDashboard() {
                 <div className="num mt-3 text-[20px] leading-none text-maroon">
                   {rupees(c.raisedAmount)}
                 </div>
-                <div className="num mt-1 text-[11.5px] text-ink-3">of {rupees(c.targetAmount)}</div>
+                <div className="num mt-1 text-[12.5px] text-ink-3">of {rupees(c.targetAmount)}</div>
                 <div className="mt-3">
                   <Progress value={pct(c.raisedAmount, c.targetAmount)} tone="maroon" />
                 </div>
-                <div className="num mt-2 text-[11.5px] text-ink-3">
+                <div className="num mt-2 text-[12.5px] text-ink-3">
                   {c.donorCount} contributors · short by {rupees(c.targetAmount - c.raisedAmount)}
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function ErpDashboard() {
           <Panel tone="sunk" className="mt-5">
             <div className="p-5">
               <div className="label label-maroon">Auditor's attention</div>
-              <p className="mt-2 text-[13px] leading-[1.6] text-ink-2">
+              <p className="mt-2 text-[14.5px] leading-[1.6] text-ink-2">
                 {DONATION_ROLL.backdatedPending} backdated entries are awaiting
                 review. Both are wires whose value date preceded the entry date.
               </p>
@@ -275,7 +275,7 @@ export default function ErpDashboard() {
         <div>
           <div className="flex items-end justify-between gap-4 border-b border-rule pb-2">
             <h2 className="display text-[18px] leading-tight">Latest entries</h2>
-            <Link href="/erp/donations" className="text-[11px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
+            <Link href="/erp/donations" className="text-[12px] font-semibold uppercase tracking-[0.1em] text-maroon hover:underline">
               Full ledger
             </Link>
           </div>
@@ -297,14 +297,14 @@ export default function ErpDashboard() {
                     <Td mono className="font-semibold">{d.receiptNo}</Td>
                     <Td>
                       {d.donorName}
-                      <span className="num block text-[11px] text-ink-3">{d.donorMemberId}</span>
+                      <span className="num block text-[12px] text-ink-3">{d.donorMemberId}</span>
                     </Td>
                     <Td>{PAYMENT_LABEL[d.paymentMethod]}</Td>
                     <Td align="right" mono>{rupees(d.amount)}</Td>
                     <Td mono>
                       {shortDate(d.transactionDate)}
                       {d.isBackdated && (
-                        <span className="ml-1.5 text-[10px] font-semibold text-rust">BD</span>
+                        <span className="ml-1.5 text-[11px] font-semibold text-rust">BD</span>
                       )}
                     </Td>
                   </tr>

@@ -32,6 +32,7 @@ export default function ReportsPage() {
       <PageHead
         overline={`Accounts ${FISCAL_YEAR}`}
         title="Where the money went."
+        hinglish="Paisa kahan gaya — poora hisaab"
         lede="Published as it stands today, not once a year. The audited statement for the closed year is filed with the Charity Commissioner at Ratnagiri and may be inspected by any member on request."
       />
 
@@ -64,10 +65,10 @@ export default function ReportsPage() {
                 {RECEIPTS_BY_METHOD.map((r) => (
                   <div key={r.method}>
                     <div className="flex items-baseline justify-between gap-4">
-                      <span className="text-[13.5px] font-medium text-ink">
+                      <span className="text-[15px] font-medium text-ink">
                         {PAYMENT_LABEL[r.method]}
                       </span>
-                      <span className="num text-[13px] text-ink-2">
+                      <span className="num text-[14.5px] text-ink-2">
                         {rupees(r.amount)}
                         <span className="ml-2 text-ink-3">({r.count})</span>
                       </span>
@@ -94,7 +95,7 @@ export default function ReportsPage() {
               <div className="mt-5 flex h-56 items-end gap-2 border-b-2 border-ink">
                 {MONTHLY_RECEIPTS.map((m) => (
                   <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                    <span className="num text-[10.5px] text-ink-2">{rupeesShort(m.amount)}</span>
+                    <span className="num text-[11.5px] text-ink-2">{rupeesShort(m.amount)}</span>
                     <div
                       className="w-full"
                       style={{
@@ -108,12 +109,12 @@ export default function ReportsPage() {
               </div>
               <div className="flex gap-2">
                 {MONTHLY_RECEIPTS.map((m) => (
-                  <div key={m.month} className="num flex-1 pt-2 text-center text-[11px] text-ink-3">
+                  <div key={m.month} className="num flex-1 pt-2 text-center text-[12px] text-ink-3">
                     {m.month}
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-[12.5px] leading-relaxed text-ink-3">
+              <p className="mt-4 text-[13.5px] leading-relaxed text-ink-3">
                 August is high because two flash funds ran at once. September
                 covers two days only.
               </p>
@@ -152,9 +153,9 @@ export default function ReportsPage() {
               {HEADS.map((h) => (
                 <li key={h.key} className="flex items-center gap-3">
                   <span aria-hidden className="block h-3 w-3 shrink-0" style={{ backgroundColor: h.token }} />
-                  <span className="flex-1 text-[13.5px] text-ink">{h.key}</span>
-                  <span className="num text-[13px] text-ink-2">{rupees(h.amount)}</span>
-                  <span className="num w-12 text-right text-[12px] text-ink-3">
+                  <span className="flex-1 text-[15px] text-ink">{h.key}</span>
+                  <span className="num text-[14.5px] text-ink-2">{rupees(h.amount)}</span>
+                  <span className="num w-12 text-right text-[13px] text-ink-3">
                     {pct(h.amount, headTotal)}%
                   </span>
                 </li>

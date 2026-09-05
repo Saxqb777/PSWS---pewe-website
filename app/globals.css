@@ -58,12 +58,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Anchored sections stop below the sticky section nav, not under it. */
+[id] { scroll-margin-top: 76px; }
+
 body {
   background-color: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 17px;
+  line-height: 1.68;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -80,7 +83,7 @@ body {
 
 .label {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;

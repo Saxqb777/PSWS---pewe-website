@@ -97,7 +97,7 @@ export default function DonationsPage() {
                 <Td mono className="whitespace-nowrap font-semibold">{d.receiptNo}</Td>
                 <Td className="whitespace-nowrap">
                   {d.donorName}
-                  <span className="num block text-[11px] text-ink-3">{d.donorMemberId}</span>
+                  <span className="num block text-[12px] text-ink-3">{d.donorMemberId}</span>
                 </Td>
                 <Td className="whitespace-nowrap">{PAYMENT_LABEL[d.paymentMethod]}</Td>
                 <Td mono className="text-ink-2">{d.transactionRef ?? <span className="text-ink-3">counterfoil</span>}</Td>
@@ -130,7 +130,7 @@ export default function DonationsPage() {
         </Ledger>
       </div>
 
-      <p className="mt-4 text-[12.5px] text-ink-3">
+      <p className="mt-4 text-[13.5px] text-ink-3">
         Showing {DONATION_ROLL.shownInPrototype} of {DONATION_ROLL.entriesThisYear} entries for {FISCAL_YEAR}.
       </p>
     </>

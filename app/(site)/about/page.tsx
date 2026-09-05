@@ -22,12 +22,13 @@ export default function AboutPage() {
       <PageHead
         overline="The Society"
         title="A village society, run like an office."
+        hinglish="Society ke baare mein"
         lede="Pewe Social Welfare Society was registered in 2015 by twenty-two households who had been collecting for funerals, illnesses and roof repairs for years without a book to show for it."
       />
 
       <Section>
         <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr] lg:gap-16">
-          <div className="max-w-2xl space-y-5 text-[16px] leading-[1.78] text-ink-2">
+          <div className="max-w-2xl space-y-5 text-[17px] leading-[1.78] text-ink-2">
             <p>
               Pewe sits inland of Guhagar, where the paddy runs up to the foot of
               the Sahyadri and the road out to the taluka town takes the better
@@ -67,8 +68,8 @@ export default function AboutPage() {
                   <Seal size={64} />
                   <div>
                     <div className="display text-[18px] leading-tight">{SOCIETY.name}</div>
-                    <div className="marathi mt-1 text-[13px] text-ink-2">{SOCIETY.nameMarathi}</div>
-                    <div dir="rtl" lang="ur" className="mt-1 text-[14px] text-ink-2">{SOCIETY.nameUrdu}</div>
+                    <div className="marathi mt-1 text-[14.5px] text-ink-2">{SOCIETY.nameMarathi}</div>
+                    <div dir="rtl" lang="ur" className="mt-1 text-[15.5px] text-ink-2">{SOCIETY.nameUrdu}</div>
                   </div>
                 </div>
 
@@ -113,7 +114,7 @@ export default function AboutPage() {
           <h2 className="display mt-3 text-[28px] leading-tight sm:text-[34px]">
             Who carries which responsibility.
           </h2>
-          <p className="mt-4 max-w-2xl text-[15.5px] leading-[1.72] text-ink-2">
+          <p className="mt-4 max-w-2xl text-[17px] leading-[1.72] text-ink-2">
             Elected by the General Body. Two posts come up for election at the
             meeting on 27 September 2026.
           </p>
@@ -122,9 +123,9 @@ export default function AboutPage() {
             {OFFICE_BEARERS.map((o) => (
               <div key={o.memberId} className="bg-paper p-6">
                 <div className="label label-maroon">{o.post}</div>
-                <div className="marathi mt-1 text-[13px] text-ink-3">{o.postMarathi}</div>
+                <div className="marathi mt-1 text-[14.5px] text-ink-3">{o.postMarathi}</div>
                 <div className="display mt-3 text-[18px] leading-tight">{o.name}</div>
-                <div className="num mt-2 text-[12px] text-ink-3">
+                <div className="num mt-2 text-[13px] text-ink-3">
                   {o.memberId} · in post since {o.since}
                 </div>
               </div>
@@ -144,7 +145,7 @@ export default function AboutPage() {
           {MILESTONES.map((m) => (
             <li key={m.year} className="grid grid-cols-[auto_1fr] gap-6 border-t border-rule py-5 sm:gap-10">
               <div className="num text-[20px] leading-none text-maroon">{m.year}</div>
-              <p className="text-[15px] leading-[1.7] text-ink-2">{m.text}</p>
+              <p className="text-[16.5px] leading-[1.7] text-ink-2">{m.text}</p>
             </li>
           ))}
         </ol>

@@ -88,10 +88,10 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
               <Seal size={30} />
             </span>
             <span className="min-w-0">
-              <span className="display block text-[15px] leading-tight text-paper">
+              <span className="display block text-[16.5px] leading-tight text-paper">
                 {SOCIETY.shortName} Office
               </span>
-              <span className="num block text-[10.5px] text-paper/55">
+              <span className="num block text-[11.5px] text-paper/55">
                 {FISCAL_YEAR}
               </span>
             </span>
@@ -114,7 +114,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`flex items-center justify-between gap-2 px-2 py-2 text-[13px] transition-colors ${
+                        className={`flex items-center justify-between gap-2 px-2 py-2 text-[14.5px] transition-colors ${
                           active
                             ? "bg-paper text-ink font-semibold"
                             : "text-paper/75 hover:bg-paper/10 hover:text-paper"
@@ -123,7 +123,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
                         <span>{item.label}</span>
                         {item.note && (
                           <span
-                            className={`num border px-1.5 text-[10px] leading-tight ${
+                            className={`num border px-1.5 text-[11px] leading-tight ${
                               active ? "border-maroon text-maroon" : "border-brass-light text-brass-light"
                             }`}
                           >
@@ -143,13 +143,13 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
           <div className="label" style={{ color: "var(--color-brass-light)" }}>
             Signed in as
           </div>
-          <div className="mt-1.5 text-[13.5px] font-semibold text-paper">{WHO[role]}</div>
-          <div className="num text-[11px] text-paper/55">
+          <div className="mt-1.5 text-[15px] font-semibold text-paper">{WHO[role]}</div>
+          <div className="num text-[12px] text-paper/55">
             {WHO_ID[role]} · {ROLE_LABEL[role]}
           </div>
           <Link
             href="/login"
-            className="mt-3 inline-block border border-paper/35 px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-paper/85 transition-colors hover:bg-paper hover:text-ink"
+            className="mt-3 inline-block border border-paper/35 px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-paper/85 transition-colors hover:bg-paper hover:text-ink"
           >
             Switch role
           </Link>
@@ -170,7 +170,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
             <span className="block h-[1.5px] w-4 bg-ink" />
           </button>
 
-          <p className="flex-1 text-[11.5px] leading-tight text-ink-2">
+          <p className="flex-1 text-[12.5px] leading-tight text-ink-2">
             <span className="font-semibold uppercase tracking-[0.12em] text-maroon">
               Prototype
             </span>
@@ -183,7 +183,7 @@ export function ErpShell({ children }: { children: React.ReactNode }) {
 
           <Link
             href="/"
-            className="shrink-0 border border-ink px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
+            className="shrink-0 border border-ink px-3 py-1.5 text-[11.5px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             Public site
           </Link>

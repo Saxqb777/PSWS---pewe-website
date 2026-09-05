@@ -73,7 +73,7 @@ export default function ErpCampaignsPage() {
                 <tr key={c.id}>
                   <Td className="max-w-[18rem]">
                     <span className="font-semibold">{c.title}</span>
-                    <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-3">{c.summary}</span>
+                    <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-3">{c.summary}</span>
                   </Td>
                   <Td align="center">
                     {c.isFlashFund ? <Badge tone="flash">Flash</Badge> : <Badge tone="neutral">Standing</Badge>}
@@ -82,7 +82,7 @@ export default function ErpCampaignsPage() {
                   <Td align="right" mono className="font-semibold">{rupees(c.raisedAmount)}</Td>
                   <Td className="min-w-[9rem]">
                     <Progress value={p} tone={c.isFlashFund ? "maroon" : "brass"} showLabel={false} />
-                    <span className="num mt-1 block text-[11px] text-ink-3">{p}%</span>
+                    <span className="num mt-1 block text-[12px] text-ink-3">{p}%</span>
                   </Td>
                   <Td align="right" mono>{c.donorCount}</Td>
                   <Td mono className="whitespace-nowrap">{longDate(c.openedOn)}</Td>
@@ -91,7 +91,7 @@ export default function ErpCampaignsPage() {
                       <>
                         {longDate(c.deadline)}
                         {c.status === "ACTIVE" && left !== null && (
-                          <span className={`block text-[11px] ${left <= 7 ? "text-maroon" : "text-ink-3"}`}>
+                          <span className={`block text-[12px] ${left <= 7 ? "text-maroon" : "text-ink-3"}`}>
                             {left > 0 ? `${left} days left` : "closing today"}
                           </span>
                         )}

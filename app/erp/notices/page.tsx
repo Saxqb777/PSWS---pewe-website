@@ -51,9 +51,9 @@ export default function ErpNoticesPage() {
                 <Td className="max-w-[32rem]">
                   <span className="font-semibold">{a.title}</span>
                   {a.titleMarathi && (
-                    <span className="marathi mt-0.5 block text-[12px] text-ink-3">{a.titleMarathi}</span>
+                    <span className="marathi mt-0.5 block text-[13px] text-ink-3">{a.titleMarathi}</span>
                   )}
-                  <span className="mt-1 block line-clamp-2 text-[12px] leading-snug text-ink-2">{a.body}</span>
+                  <span className="mt-1 block line-clamp-2 text-[13px] leading-snug text-ink-2">{a.body}</span>
                 </Td>
                 <Td align="center">
                   {a.isNotice ? <Badge tone="approved">Notice</Badge> : <Badge tone="neutral">Report</Badge>}

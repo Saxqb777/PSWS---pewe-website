@@ -59,7 +59,7 @@ export default function MembersPage() {
             .map(([place, n]) => (
               <span key={place} className="flex items-center gap-2">
                 <Badge tone={BASED_TONE[place] ?? "neutral"}>{place}</Badge>
-                <span className="num text-[12.5px] text-ink-2">{n}</span>
+                <span className="num text-[13.5px] text-ink-2">{n}</span>
               </span>
             ))}
         </div>
@@ -116,7 +116,7 @@ export default function MembersPage() {
         </Ledger>
       </div>
 
-      <p className="mt-4 text-[12.5px] text-ink-3">
+      <p className="mt-4 text-[13.5px] text-ink-3">
         Showing {MEMBER_ROLL.shownInPrototype} of {MEMBER_ROLL.total}. The finished
         table pages, sorts on any column, and filters by mohalla, role, dues status
         and where the member is based.

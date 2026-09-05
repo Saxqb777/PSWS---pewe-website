@@ -21,7 +21,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <p className="mt-6 text-[14px] leading-[1.7] text-ink-2">
+              <p className="mt-6 text-[15.5px] leading-[1.7] text-ink-2">
                 The office side of the Society — the roll, the ledger, the
                 welfare queue, the quotation comparisons and the scorecards.
               </p>
@@ -31,7 +31,7 @@ export default function LoginPage() {
             <div className="arcade-band" />
           </div>
 
-          <p className="mx-auto mt-6 max-w-md border border-rule-strong bg-paper px-4 py-3 text-[12.5px] leading-relaxed text-ink-2">
+          <p className="mx-auto mt-6 max-w-md border border-rule-strong bg-paper px-4 py-3 text-[13.5px] leading-relaxed text-ink-2">
             <strong className="font-semibold">Prototype.</strong> There is no
             real authentication here. Pick a role and press the button — the
             password field is ignored. In the finished system this is a phone

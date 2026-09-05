@@ -16,9 +16,9 @@ const VARIANTS: Record<ProtoVariant, string> = {
 };
 
 const SIZES = {
-  sm: "px-3 py-1.5 text-[11px] tracking-[0.08em]",
-  md: "px-5 py-2.5 text-[12px] tracking-[0.1em]",
-  lg: "px-7 py-3.5 text-[13px] tracking-[0.1em]",
+  sm: "px-3 py-1.5 text-[12px] tracking-[0.08em]",
+  md: "px-5 py-2.5 text-[13px] tracking-[0.1em]",
+  lg: "px-7 py-3.5 text-[14.5px] tracking-[0.1em]",
 };
 
 /**
@@ -96,14 +96,14 @@ export function ProtoAction({
                 {title ?? label}
               </h3>
 
-              <p className="mt-4 border-l-2 border-brass pl-4 text-[15px] leading-[1.65] text-ink">
+              <p className="mt-4 border-l-2 border-brass pl-4 text-[16.5px] leading-[1.65] text-ink">
                 {does}
               </p>
 
               {detail && detail.length > 0 && (
                 <div className="mt-5 space-y-3 border-t border-rule pt-4">
                   {detail.map((d, i) => (
-                    <p key={i} className="text-[13.5px] leading-[1.6] text-ink-2">
+                    <p key={i} className="text-[15px] leading-[1.6] text-ink-2">
                       {d}
                     </p>
                   ))}
@@ -111,13 +111,13 @@ export function ProtoAction({
               )}
 
               <div className="mt-6 flex items-center justify-between gap-4 border-t border-rule pt-4">
-                <p className="text-[11.5px] leading-snug text-ink-3">
+                <p className="text-[12.5px] leading-snug text-ink-3">
                   Nothing was saved. This screen reads from sample data.
                 </p>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="shrink-0 border border-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink hover:bg-ink hover:text-paper transition-colors cursor-pointer"
+                  className="shrink-0 border border-ink px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-ink hover:bg-ink hover:text-paper transition-colors cursor-pointer"
                 >
                   Close
                 </button>

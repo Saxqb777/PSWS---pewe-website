@@ -90,7 +90,7 @@ export default function ErpSponsorsPage() {
       <Panel tone="sunk" className="mt-8">
         <div className="p-5">
           <div className="label label-brass">Sponsorship is a receipt like any other</div>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+          <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
             A sponsorship is entered in the donations ledger against its own head
             and appears in the audited statement. Nothing about a banner on the
             website exempts it from the book.

@@ -17,17 +17,32 @@ npm install
 npm run dev      # http://localhost:3000
 ```
 
-## What's in it — 21 screens
+## What's in it
 
-**Public site** — Home, The Society, Campaigns (incl. flash funds), Projects,
-Zakat & Welfare, Notices, Sponsors, Accounts, Donate, Contact, Members' Portal login.
+**Public site — one home page and three others.** The home page carries
+everything and leads to the rest; a sticky section bar follows you down it so
+you always know where you are.
+
+| | |
+|---|---|
+| `/` | Hero · Urgent · Our work · Campaigns · Figures · Projects · Zakat · Notices · Sponsors · Contact |
+| `/about` | The Society, committee, how it grew |
+| `/projects` | Every work, with its full quotation comparison |
+| `/accounts` | Ledger, charts, audit filings |
+| `/login` | Members' portal (fake — pick a role, any password) |
+
+Giving is a panel that slides in from anywhere, not a page you navigate away to.
 
 **Office (ERP)** at `/erp` — Dashboard, Donations ledger, Campaigns,
 Zakat requests, Projects & quotations, Members, Scorecards, Notices,
 Sponsors, Reports & audit.
 
-The login at `/login` is fake: pick a role, press the button, any password works.
-The role is kept in `localStorage` and only changes the name shown in the sidebar.
+## Language
+
+English throughout, written the way Pewe actually talks — *chanda*, *masjid*,
+*kabrastan*, *gram panchayat*, *taluka* kept as they are. Every major heading
+carries a Hinglish line under it (*Paisa kahan gaya*, *Zakat aur madad*,
+*Gaon ke kaam*). One version, no toggle.
 
 ---
 
@@ -89,6 +104,8 @@ its own preview URL.
 | `components/konkan-engraving.tsx` | The drawn hero plate, in named layers |
 | `components/hero.tsx` | The depth/parallax rig — drives engraving or photographs |
 | `components/proto-action.tsx` | The "not connected yet" button and panel |
+| `components/section-nav.tsx` | The sticky "where am I" bar on the home page |
+| `components/give-panel.tsx` | The slide-in giving panel |
 | `app/(site)/` | Public pages |
 | `app/erp/` | Office pages |
 
@@ -103,6 +120,10 @@ section rules throughout.
 
 Deliberately absent: gradient text, glowing blobs, glassmorphism, drop shadows,
 rounded-pill buttons.
+
+On a phone the hero picture gets its own band at the top with nothing covering
+it, and the text sits on paper underneath — text never floats on the picture.
+Heights use `dvh`, so the hero does not jump when the browser bar hides.
 
 ## Real vs invented
 

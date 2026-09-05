@@ -4,14 +4,18 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SOCIETY } from "@/lib/site";
 import { Seal } from "@/components/seal";
+import { GiveButton } from "@/components/give-panel";
 import {
   LayerSky, LayerRidge, LayerHill, LayerPalms, LayerMasjid, LayerField,
 } from "@/components/konkan-engraving";
 
 /**
- * Depth rig. Each layer moves at its own rate as the page scrolls, so
- * the view reads as a place you are looking across rather than a flat
- * picture. The same rig drives photographs — see SOCIETY.heroMode.
+ * Depth rig. Each layer moves at its own rate as the page scrolls, so the
+ * view reads as a place you are looking across rather than a flat picture.
+ *
+ * Parallax runs on wide screens only. On a phone the plate sits in the
+ * document flow as its own band, and translating the layers there would
+ * just tear gaps at the edges.
  */
 const LAYERS = [
   { key: "sky",    rate: 0.04, node: <LayerSky />,    shift: 0 },
@@ -27,15 +31,13 @@ function useParallax() {
   const frame = useRef(0);
 
   useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!wide.matches || still.matches) return;
 
     const onScroll = () => {
       cancelAnimationFrame(frame.current);
-      frame.current = requestAnimationFrame(() => {
-        // Only the first screenful matters; past that the hero is gone.
-        setY(Math.min(window.scrollY, 900));
-      });
+      frame.current = requestAnimationFrame(() => setY(Math.min(window.scrollY, 900)));
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -54,8 +56,7 @@ function Plate() {
     return (
       <div className="absolute inset-0 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/hero/hero.jpg" alt=""
-          className="hero-drift h-full w-full object-cover" />
+        <img src="/images/hero/hero.jpg" alt="" className="hero-drift h-full w-full object-cover" />
       </div>
     );
   }
@@ -68,15 +69,13 @@ function Plate() {
           <div key={l.key} className="parallax absolute inset-0"
             style={{ transform: `translate3d(0, ${y * l.rate}px, 0)`, willChange: "transform" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/images/hero/${files[i]}.png`} alt=""
-              className="h-full w-full object-cover" />
+            <img src={`/images/hero/${files[i]}.png`} alt="" className="h-full w-full object-cover" />
           </div>
         ))}
       </div>
     );
   }
 
-  // Default: the engraved plate.
   return (
     <div className="absolute inset-0 overflow-hidden bg-paper-2">
       {LAYERS.map((l) => (
@@ -97,22 +96,33 @@ function Plate() {
 
 export function Hero() {
   return (
-    <section className="relative isolate min-h-[80vh] sm:min-h-[84vh] flex items-end overflow-hidden border-b-2 border-ink">
-      <Plate />
+    <section
+      id="top"
+      className="relative isolate flex flex-col border-b-2 border-ink lg:block lg:min-h-[84dvh]"
+    >
+      {/* ------------------------------------------------------------------
+          The plate.
+          Phone  — its own band at the top, nothing covering it.
+          Desktop — full bleed behind the bookplate.
+         ------------------------------------------------------------------ */}
+      <div className="relative h-[42dvh] min-h-[270px] w-full lg:absolute lg:inset-0 lg:h-auto lg:min-h-0">
+        <Plate />
+        {/* Desktop only: lift the plate back so the bookplate reads first */}
+        <div aria-hidden className="absolute inset-0 hidden bg-paper/25 lg:block" />
+        <div aria-hidden
+          className="absolute inset-x-0 bottom-0 h-24 lg:h-40"
+          style={{ background: "linear-gradient(to top, var(--color-paper), transparent)" }} />
+      </div>
 
-      {/* Veil: lifts the plate back so the text plate reads first. */}
-      <div aria-hidden className="absolute inset-0 bg-paper/25" />
-      <div aria-hidden
-        className="absolute inset-x-0 bottom-0 h-40"
-        style={{ background: "linear-gradient(to top, var(--color-paper), transparent)" }} />
-
-      {/* The bookplate — text never floats on the picture, it sits on paper. */}
-      <div className="relative z-10 w-full px-5 sm:px-8 lg:px-12 pb-10 sm:pb-14">
-        <div className="mx-auto max-w-[1320px]">
+      {/* ------------------------------------------------------------------
+          The bookplate. Text always sits on paper — never on the picture.
+         ------------------------------------------------------------------ */}
+      <div className="relative z-10 w-full px-4 pb-10 sm:px-8 lg:flex lg:min-h-[84dvh] lg:items-end lg:px-12 lg:pb-14">
+        <div className="mx-auto w-full max-w-[1320px]">
           <div className="max-w-2xl border border-ink bg-paper">
             <div className="jali-band" />
 
-            <div className="px-6 py-7 sm:px-9 sm:py-9">
+            <div className="px-5 py-7 sm:px-9 sm:py-9">
               <div className="flex items-center gap-4">
                 <Seal size={54} />
                 <div className="min-w-0">
@@ -128,27 +138,21 @@ export function Hero() {
               <h1 className="display mt-6 text-[34px] leading-[1.05] sm:text-[46px]">
                 {SOCIETY.name}
               </h1>
-              <p className="marathi mt-2 text-[18px] text-ink-2 sm:text-[20px]">
+              <p className="marathi mt-2 text-[19px] text-ink-2 sm:text-[21px]">
                 {SOCIETY.nameMarathi}
               </p>
 
-              <p className="mt-5 max-w-xl text-[15.5px] leading-[1.72] text-ink-2">
-                A registered welfare society of the village of Pewe in Guhagar
-                taluka — running the water scheme, the school works and the
-                masjid repair, and standing behind any household in the village
-                that needs help in a hurry.
+              <p className="mt-5 max-w-xl text-[17px] leading-[1.72] text-ink-2">
+                Pewe gaon ki apni welfare society. We run the water scheme, the
+                school works and the masjid repair — and we stand behind any
+                household in the village that needs help in a hurry.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <GiveButton size="lg" label="Chanda dijiye · Give" />
                 <Link
-                  href="/campaigns"
-                  className="inline-flex items-center justify-center border border-maroon bg-maroon px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-paper transition-colors hover:bg-maroon-dark hover:border-maroon-dark"
-                >
-                  What we are raising for
-                </Link>
-                <Link
-                  href="/reports"
-                  className="inline-flex items-center justify-center border border-ink px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
+                  href="/accounts"
+                  className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
                 >
                   Where the money went
                 </Link>

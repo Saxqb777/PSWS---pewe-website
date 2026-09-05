@@ -15,7 +15,7 @@ export function ErpHead({
         <div className="min-w-0">
           <h1 className="display text-[27px] leading-tight sm:text-[31px]">{title}</h1>
           {lede && (
-            <p className="mt-2 max-w-3xl text-[14px] leading-[1.68] text-ink-2">{lede}</p>
+            <p className="mt-2 max-w-3xl text-[15.5px] leading-[1.68] text-ink-2">{lede}</p>
           )}
         </div>
         {actions && <div className="flex flex-wrap gap-2.5">{actions}</div>}

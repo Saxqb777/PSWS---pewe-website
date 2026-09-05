@@ -32,7 +32,7 @@ export function LoginForm() {
         id="phone"
         type="tel"
         defaultValue="+91 90280 33471"
-        className="num mt-2 w-full border border-rule-strong bg-paper-2 px-3 py-2.5 text-[14px] text-ink focus:border-ink"
+        className="num mt-2 w-full border border-rule-strong bg-paper-2 px-3 py-2.5 text-[15.5px] text-ink focus:border-ink"
       />
 
       <label className="label mt-5 block" htmlFor="pw">Password</label>
@@ -40,7 +40,7 @@ export function LoginForm() {
         id="pw"
         type="password"
         defaultValue="anything"
-        className="mt-2 w-full border border-rule-strong bg-paper-2 px-3 py-2.5 text-[14px] text-ink focus:border-ink"
+        className="mt-2 w-full border border-rule-strong bg-paper-2 px-3 py-2.5 text-[15.5px] text-ink focus:border-ink"
       />
 
       <fieldset className="mt-6">
@@ -62,11 +62,11 @@ export function LoginForm() {
                 className="mt-1 accent-[#7A2E2E]"
               />
               <span className="min-w-0">
-                <span className="block text-[13.5px] font-semibold text-ink">
+                <span className="block text-[15px] font-semibold text-ink">
                   {ROLE_LABEL[r.role]}
                 </span>
-                <span className="num block text-[11.5px] text-ink-3">{r.who}</span>
-                <span className="mt-1 block text-[12.5px] leading-snug text-ink-2">{r.sees}</span>
+                <span className="num block text-[12.5px] text-ink-3">{r.who}</span>
+                <span className="mt-1 block text-[13.5px] leading-snug text-ink-2">{r.sees}</span>
               </span>
             </label>
           ))}
@@ -75,7 +75,7 @@ export function LoginForm() {
 
       <button
         type="submit"
-        className="mt-7 w-full border border-maroon bg-maroon px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] text-paper transition-colors hover:bg-maroon-dark hover:border-maroon-dark cursor-pointer"
+        className="mt-7 w-full border border-maroon bg-maroon px-6 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-paper transition-colors hover:bg-maroon-dark hover:border-maroon-dark cursor-pointer"
       >
         Enter the office
       </button>

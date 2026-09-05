@@ -17,12 +17,15 @@ export function ArcadeRule({ className = "" }: { className?: string }) {
 export function SectionHead({
   overline,
   title,
+  hinglish,
   lede,
   align = "left",
   children,
 }: {
   overline?: string;
   title: string;
+  /** The line the village would actually say. Sits under the heading. */
+  hinglish?: string;
   lede?: string;
   align?: "left" | "center";
   children?: ReactNode;
@@ -30,15 +33,48 @@ export function SectionHead({
   const isCenter = align === "center";
   return (
     <div className={isCenter ? "text-center max-w-2xl mx-auto" : "max-w-2xl"}>
-      {overline && (
-        <div className={`label label-brass mb-3 ${isCenter ? "" : ""}`}>{overline}</div>
+      {overline && <div className="label label-brass mb-3">{overline}</div>}
+      <h2 className="display text-[30px] leading-[1.12] sm:text-[36px]">{title}</h2>
+      {hinglish && (
+        <p className="mt-2 text-[17px] italic leading-snug text-brass">{hinglish}</p>
       )}
-      <h2 className="display text-[28px] sm:text-[34px] leading-[1.12]">{title}</h2>
-      {lede && (
-        <p className="mt-4 text-[16px] leading-[1.7] text-ink-2">{lede}</p>
-      )}
+      {lede && <p className="mt-4 text-[17px] leading-[1.72] text-ink-2">{lede}</p>}
       {children}
     </div>
+  );
+}
+
+/**
+ * A way onward that cannot be missed. Deliberately not a small text link —
+ * the whole point is that nobody has to hunt for where to go next.
+ */
+export function Onward({
+  href,
+  label,
+  note,
+  tone = "ink",
+}: {
+  href: string;
+  label: string;
+  note?: string;
+  tone?: "ink" | "maroon" | "onDark";
+}) {
+  const tones = {
+    ink: "border-ink text-ink hover:bg-ink hover:text-paper",
+    maroon: "border-maroon bg-maroon text-paper hover:bg-maroon-dark hover:border-maroon-dark",
+    onDark: "border-paper/40 text-paper hover:bg-paper hover:text-ink",
+  };
+  return (
+    <a
+      href={href}
+      className={`group inline-flex items-baseline gap-3 border-2 px-6 py-4 transition-colors ${tones[tone]}`}
+    >
+      <span className="text-[14px] font-semibold uppercase tracking-[0.1em]">{label}</span>
+      {note && <span className="text-[13.5px] opacity-70">{note}</span>}
+      <span aria-hidden className="text-[17px] leading-none transition-transform group-hover:translate-x-1">
+        →
+      </span>
+    </a>
   );
 }
 
@@ -86,7 +122,7 @@ export function Stat({
       <div className={`num mt-2 text-[26px] leading-none font-medium ${tones[tone]}`}>
         {value}
       </div>
-      {sub && <div className="mt-2 text-[13px] text-ink-3 leading-snug">{sub}</div>}
+      {sub && <div className="mt-2 text-[14.5px] text-ink-3 leading-snug">{sub}</div>}
     </div>
   );
 }
@@ -118,7 +154,7 @@ export function Badge({
   const cls = BADGE_TONES[String(tone).toLowerCase()] ?? BADGE_TONES.neutral;
   return (
     <span
-      className={`inline-block border px-2 py-[3px] text-[10px] font-semibold uppercase tracking-[0.1em] leading-none whitespace-nowrap ${cls}`}
+      className={`inline-block border px-2 py-[3px] text-[11px] font-semibold uppercase tracking-[0.1em] leading-none whitespace-nowrap ${cls}`}
     >
       {children}
     </span>
@@ -146,7 +182,7 @@ export function Progress({
         />
       </div>
       {showLabel && (
-        <div className="num mt-1.5 text-[11px] text-ink-3">{value}% funded</div>
+        <div className="num mt-1.5 text-[12px] text-ink-3">{value}% funded</div>
       )}
     </div>
   );
@@ -157,7 +193,7 @@ export function Progress({
 export function Ledger({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div className={`scroll-thin overflow-x-auto border border-rule bg-paper ${className}`}>
-      <table className="w-full border-collapse text-[13px]">{children}</table>
+      <table className="w-full border-collapse text-[14.5px]">{children}</table>
     </div>
   );
 }
@@ -180,7 +216,7 @@ export function Th({
 }) {
   return (
     <th
-      className={`border-b-2 border-ink bg-paper-2 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-2 ${ALIGN[align]} whitespace-nowrap ${className}`}
+      className={`border-b-2 border-ink bg-paper-2 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-2 ${ALIGN[align]} whitespace-nowrap ${className}`}
     >
       {children}
     </th>
@@ -213,7 +249,7 @@ export function DefRow({ term, children }: { term: string; children: ReactNode }
   return (
     <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-rule py-2.5">
       <dt className="label w-44 shrink-0 pt-[3px]">{term}</dt>
-      <dd className="flex-1 min-w-[12rem] text-[14px] text-ink">{children}</dd>
+      <dd className="flex-1 min-w-[12rem] text-[15.5px] text-ink">{children}</dd>
     </div>
   );
 }
@@ -254,10 +290,12 @@ export function Section({
 export function PageHead({
   overline,
   title,
+  hinglish,
   lede,
 }: {
   overline: string;
   title: string;
+  hinglish?: string;
   lede?: string;
 }) {
   return (
@@ -265,8 +303,11 @@ export function PageHead({
       <Container className="py-12 sm:py-16">
         <div className="label label-brass">{overline}</div>
         <h1 className="display mt-3 text-[34px] leading-[1.06] sm:text-[46px]">{title}</h1>
+        {hinglish && (
+          <p className="mt-3 text-[19px] italic leading-snug text-brass">{hinglish}</p>
+        )}
         {lede && (
-          <p className="mt-5 max-w-2xl text-[16px] leading-[1.72] text-ink-2">{lede}</p>
+          <p className="mt-5 max-w-2xl text-[17px] leading-[1.72] text-ink-2">{lede}</p>
         )}
       </Container>
       <div className="arcade-band" />

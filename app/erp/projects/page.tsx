@@ -62,19 +62,19 @@ export default function ErpProjectsPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <Badge tone={p.status.toLowerCase()}>{p.status.replace("_", " ")}</Badge>
-                    <span className="num text-[11.5px] text-ink-3">
+                    <span className="num text-[12.5px] text-ink-3">
                       Lead {lead?.fullName ?? p.leadMemberId} · {p.leadMemberId}
                     </span>
                   </div>
                   <h2 className="display mt-2.5 text-[22px] leading-tight">{p.title}</h2>
-                  <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">{p.description}</p>
+                  <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">{p.description}</p>
                 </div>
 
                 <div className="w-full sm:w-64">
                   <div className="border-t-2 border-ink pt-3">
                     <div className="label">Spend against budget</div>
                     <div className="num mt-1.5 text-[19px] leading-none text-ink">
-                      {rupees(p.spent)} <span className="text-[13px] text-ink-3">/ {rupees(p.budget)}</span>
+                      {rupees(p.spent)} <span className="text-[14.5px] text-ink-3">/ {rupees(p.budget)}</span>
                     </div>
                     <div className="mt-2.5">
                       <Progress value={pct(p.spent, p.budget)} tone="pine" />
@@ -88,14 +88,14 @@ export default function ErpProjectsPage() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-2">
                     <h3 className="label label-brass">Quotation comparison</h3>
-                    <span className="num text-[11.5px] text-ink-3">
+                    <span className="num text-[12.5px] text-ink-3">
                       {p.quotations.length} received
                       {p.quotations.length < 3 && p.budget > 100000 && " · three required"}
                     </span>
                   </div>
 
                   {p.quotations.length === 0 ? (
-                    <p className="mt-4 text-[13.5px] text-ink-3">
+                    <p className="mt-4 text-[15px] text-ink-3">
                       Not yet gone out to quotation.
                     </p>
                   ) : (
@@ -116,9 +116,9 @@ export default function ErpProjectsPage() {
                             <tr key={q.id} className={q.isSelected ? "bg-pine-tint" : ""}>
                               <Td>
                                 <span className="font-semibold">{q.vendorName}</span>
-                                <span className="block text-[11px] text-ink-3">{q.vendorPlace}</span>
+                                <span className="block text-[12px] text-ink-3">{q.vendorPlace}</span>
                                 {q.note && (
-                                  <span className="mt-1 block max-w-xs text-[11.5px] italic text-ink-2">
+                                  <span className="mt-1 block max-w-xs text-[12.5px] italic text-ink-2">
                                     {q.note}
                                   </span>
                                 )}
@@ -162,7 +162,7 @@ export default function ErpProjectsPage() {
                 <div>
                   <div className="flex items-center justify-between gap-3 border-b border-rule pb-2">
                     <h3 className="label label-brass">Milestones</h3>
-                    <span className="num text-[11.5px] text-ink-3">
+                    <span className="num text-[12.5px] text-ink-3">
                       {p.milestones.filter((m) => m.done).length} of {p.milestones.length}
                     </span>
                   </div>
@@ -174,10 +174,10 @@ export default function ErpProjectsPage() {
                           aria-hidden
                           className={`mt-1 block h-3 w-3 shrink-0 border ${m.done ? "border-pine bg-pine" : "border-rule-strong bg-paper"}`}
                         />
-                        <span className={`flex-1 text-[13.5px] leading-snug ${m.done ? "text-ink" : "text-ink-3"}`}>
+                        <span className={`flex-1 text-[15px] leading-snug ${m.done ? "text-ink" : "text-ink-3"}`}>
                           {m.label}
                         </span>
-                        <span className="num shrink-0 text-[11.5px] text-ink-3">
+                        <span className="num shrink-0 text-[12.5px] text-ink-3">
                           {m.date ? longDate(m.date) : "—"}
                         </span>
                       </li>
@@ -210,7 +210,7 @@ export default function ErpProjectsPage() {
       <Panel tone="sunk" className="mt-12">
         <div className="p-5">
           <div className="label label-maroon">Why quotations stay sealed</div>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+          <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
             In a village of this size the committee, the vendors and the members
             all know each other. Sealing the amounts until a minuted opening is
             not distrust of the committee — it removes the possibility of the

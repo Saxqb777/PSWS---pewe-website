@@ -59,7 +59,7 @@ export default function ScorecardsPage() {
                 <tr key={r.memberId}>
                   <Td className="whitespace-nowrap">
                     <span className="font-semibold">{r.name}</span>
-                    <span className="num block text-[11px] text-ink-3">{r.memberId}</span>
+                    <span className="num block text-[12px] text-ink-3">{r.memberId}</span>
                   </Td>
                   <Td className="text-ink-2">{r.post ?? <span className="text-ink-3">—</span>}</Td>
                   <Td align="right" mono>{r.tasksAssigned}</Td>
@@ -70,7 +70,7 @@ export default function ScorecardsPage() {
                       tone={completion >= 85 ? "pine" : completion >= 70 ? "brass" : "maroon"}
                       showLabel={false}
                     />
-                    <span className="num mt-1 block text-[11px] text-ink-3">{completion}%</span>
+                    <span className="num mt-1 block text-[12px] text-ink-3">{completion}%</span>
                   </Td>
                   <Td align="right" mono className={r.avgExecutionDays > 7 ? "text-maroon" : "text-ink"}>
                     {r.avgExecutionDays.toFixed(1)}
@@ -78,7 +78,7 @@ export default function ScorecardsPage() {
                   <Td align="right" mono className="text-ink-2">
                     {r.meetingsAttended}/{r.meetingsHeld}
                   </Td>
-                  <Td align="right" mono className="text-[15px] font-semibold">
+                  <Td align="right" mono className="text-[16.5px] font-semibold">
                     {r.overallScore}
                   </Td>
                 </tr>
@@ -91,13 +91,13 @@ export default function ScorecardsPage() {
       <Panel tone="sunk" className="mt-8">
         <div className="p-5">
           <div className="label label-maroon">How the score is worked out</div>
-          <p className="mt-2 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+          <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
             Completion rate carries the most weight, then meeting attendance,
             then execution speed. Speed is weighted least on purpose: a member in
             Dubai answering on a Friday is not the same as one in the village
             answering on a Tuesday, and the score should not pretend otherwise.
           </p>
-          <p className="mt-3 max-w-3xl text-[13.5px] leading-[1.65] text-ink-2">
+          <p className="mt-3 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
             The scorecard is visible to the member it belongs to and to the
             committee. It is not published on the public site.
           </p>
