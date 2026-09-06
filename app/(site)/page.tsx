@@ -4,12 +4,12 @@ import { SectionNav, type NavSection } from "@/components/section-nav";
 import { GiveButton } from "@/components/give-panel";
 import { ProtoAction } from "@/components/proto-action";
 import {
-  Container, SectionHead, Onward, Panel, Stat, Badge, Progress, Provisional,
+  Container, SectionHead, Onward, Panel, Stat, Badge, Progress,
 } from "@/components/ui/primitives";
 import {
   activeCampaigns, flashFunds, PROJECTS, ANNOUNCEMENTS, SPONSORS,
   TREASURY, MEMBER_ROLL, ZAKAT_SUMMARY, ZAKAT_CATEGORIES,
-  YEARLY_COLLECTION, ELEVEN_YEARS, COMPLETED_WORKS,
+  YEARLY_COLLECTION, ELEVEN_YEARS,
 } from "@/lib/mock-data";
 import { rupees, rupeesShort, pct, longDate, daysUntil } from "@/lib/format";
 import { FISCAL_YEAR, SOCIETY } from "@/lib/site";
@@ -199,82 +199,16 @@ export default function HomePage() {
             <Stat label="Members on the roll" value={String(MEMBER_ROLL.total)} sub={`${MEMBER_ROLL.basedAbroad} of them working abroad`} tone="brass" />
           </div>
 
-          {/* ---- The eleven-year record ---- */}
-          <div className="mt-16 border-t-2 border-ink pt-10">
-            <div className="grid gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-14">
-              <figure>
-                <figcaption className="label label-brass">
-                  Collected each year since 2015 · rupees
-                </figcaption>
-                <div className="mt-6 flex h-56 items-end gap-1.5 border-b-2 border-ink">
-                  {YEARLY_COLLECTION.map((y) => (
-                    <div key={y.year} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                      <span className="num text-[11px] text-ink-2">{rupeesShort(y.amount)}</span>
-                      <div
-                        className="w-full"
-                        style={{
-                          height: `${(y.amount / Math.max(...YEARLY_COLLECTION.map((v) => v.amount))) * 86}%`,
-                          backgroundColor: "var(--color-mark-1)",
-                        }}
-                        title={`${y.year}: ${rupees(y.amount)}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-1.5">
-                  {YEARLY_COLLECTION.map((y) => (
-                    <div key={y.year} className="num flex-1 pt-2 text-center text-[10.5px] leading-tight text-ink-3">
-                      {y.year.slice(0, 4)}
-                    </div>
-                  ))}
-                </div>
-                <Provisional>
-                  Approximate, from the office · pending audit
-                </Provisional>
-              </figure>
+          <p className="mt-10 max-w-2xl text-[17px] leading-[1.72] text-ink-2">
+            Across eleven years the collection has roughly doubled — from about{" "}
+            {rupeesShort(YEARLY_COLLECTION[0].amount)} in the first year to{" "}
+            {rupeesShort(YEARLY_COLLECTION[YEARLY_COLLECTION.length - 1].amount)} in
+            the last completed one, and{" "}
+            <span className="text-ink">{rupeesShort(ELEVEN_YEARS.collected)}</span> in all.
+          </p>
 
-              <div>
-                <h3 className="display text-[24px] leading-tight">
-                  Eleven years of it.
-                </h3>
-                <p className="mt-2 text-[17px] italic text-brass">Gyarah saal ka kaam</p>
-                <p className="mt-4 text-[17px] leading-[1.72] text-ink-2">
-                  The collection has roughly doubled since the Society was
-                  registered — from about {rupeesShort(YEARLY_COLLECTION[0].amount)} in the
-                  first year to {rupeesShort(YEARLY_COLLECTION[YEARLY_COLLECTION.length - 1].amount)} in
-                  the last completed one. Every rupee of it was spent in the year
-                  it came in.
-                </p>
-
-                <div className="mt-7 grid gap-6 sm:grid-cols-2">
-                  <Stat
-                    label="Collected, eleven years"
-                    value={rupees(ELEVEN_YEARS.collected)}
-                    sub="Sum of the years shown"
-                    tone="maroon"
-                    provisional
-                  />
-                  <Stat
-                    label="Direct family support"
-                    value={rupees(ELEVEN_YEARS.familySupportTenYears)}
-                    sub="Over the past ten years"
-                    tone="brass"
-                    provisional
-                  />
-                </div>
-
-                <p className="mt-6 border-l-2 border-brass bg-paper-2 px-4 py-3 text-[14.5px] leading-[1.65] text-ink-2">
-                  The office has separately put the eleven-year total nearer
-                  ₹3 crore. That does not yet reconcile with the year-by-year
-                  figures above. Both are on record until the audited statements
-                  settle it — this page will never show a total it cannot source.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <Onward href="/accounts" label="Paisa kahan gaya — poora hisaab" note="Full ledger, charts and audit filings" tone="maroon" />
+          <div className="mt-8">
+            <Onward href="/accounts" label="Paisa kahan gaya — poora hisaab" note="Year by year, the full ledger and the audit filings" tone="maroon" />
           </div>
         </Container>
       </section>
@@ -317,47 +251,14 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* ---- What has already been built ---- */}
-          <div className="mt-16 border-t-2 border-ink pt-10">
-            <SectionHead
-              overline="Already done"
-              title="What eleven years has built."
-              hinglish="Ab tak kya bana"
-              lede="The record of works completed or running since 2015. Costs are the office's own approximations until the audited statements are in."
-            />
+          <p className="mt-10 max-w-2xl text-[17px] leading-[1.72] text-ink-2">
+            Behind these stand eleven years of finished work — the water supply and
+            its tanks at mountain level, the village roads, the street lights, the
+            boundary walls, and the wells brought back into use.
+          </p>
 
-            <div className="mt-10 grid gap-px bg-rule sm:grid-cols-2">
-              {COMPLETED_WORKS.map((w) => (
-                <article key={w.id} className="flex flex-col bg-paper p-6">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <h4 className="display text-[20px] leading-tight">{w.title}</h4>
-                    {w.ongoing && <Badge tone="in_progress">Ongoing</Badge>}
-                  </div>
-                  <p className="mt-1 text-[15px] italic text-brass">{w.hinglish}</p>
-                  <p className="mt-3 flex-1 text-[15px] leading-[1.68] text-ink-2">{w.detail}</p>
-
-                  <div className="mt-6 border-t border-rule pt-3">
-                    {w.approxCost ? (
-                      <>
-                        <div className="num text-[20px] leading-none text-maroon">
-                          {rupees(w.approxCost)}
-                        </div>
-                        <Provisional />
-                      </>
-                    ) : (
-                      <div className="text-[14.5px] text-ink-3">
-                        Cost carried across several years
-                      </div>
-                    )}
-                    <div className="label mt-2">{w.period}</div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <Onward href="/projects" label="Saare kaam dekhiye" note="Every project, with its quotation comparison" />
+          <div className="mt-8">
+            <Onward href="/projects" label="Saare kaam dekhiye" note="Everything built since 2015, with the quotation comparisons" />
           </div>
         </Container>
       </section>

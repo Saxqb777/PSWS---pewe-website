@@ -1,9 +1,9 @@
-import { PageHead, Container, Section, Panel, Stat, Ledger, Th, Td, SectionHead, DefRow } from "@/components/ui/primitives";
+import { PageHead, Container, Section, Panel, Stat, Ledger, Th, Td, SectionHead, DefRow, Provisional } from "@/components/ui/primitives";
 import { ProtoAction } from "@/components/proto-action";
 import { FISCAL_YEAR, SOCIETY } from "@/lib/site";
 import {
   TREASURY, RECEIPTS_BY_METHOD, MONTHLY_RECEIPTS, PAYMENT_LABEL,
-  ZAKAT_SUMMARY, PROJECTS, DONATION_ROLL,
+  ZAKAT_SUMMARY, PROJECTS, DONATION_ROLL, YEARLY_COLLECTION, ELEVEN_YEARS,
 } from "@/lib/mock-data";
 import { rupees, rupeesShort, pct } from "@/lib/format";
 
@@ -39,12 +39,81 @@ export default function ReportsPage() {
       {/* ---------------- HEADLINE ---------------- */}
       <Section>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Opening balance" value={rupees(TREASURY.openingBalance)} sub="Carried from 2025–26" />
-          <Stat label="Receipts" value={rupees(TREASURY.receiptsThisYear)} sub={`${DONATION_ROLL.entriesThisYear} entries since 1 April`} tone="pine" />
-          <Stat label="Disbursements" value={rupees(TREASURY.disbursementsThisYear)} sub="All three heads" tone="maroon" />
-          <Stat label="Balance in hand" value={rupees(TREASURY.balance)} sub="Bank and cash together" tone="brass" />
+          <Stat label="Opening balance" value={rupees(TREASURY.openingBalance)} sub="Nothing is carried forward" />
+          <Stat label="Collected this year" value={rupees(TREASURY.receiptsThisYear)} sub={`${DONATION_ROLL.entriesThisYear} entries since 1 April`} tone="pine" provisional />
+          <Stat label="Disbursed" value={rupees(TREASURY.disbursementsThisYear)} sub="Welfare, development and relief" tone="maroon" provisional />
+          <Stat label="Yet to go out" value={rupees(TREASURY.balance)} sub="Bank and cash together" tone="brass" />
         </div>
       </Section>
+
+      {/* ---------------- ELEVEN YEARS ---------------- */}
+      <section className="border-y-2 border-ink bg-paper-2">
+        <Container className="py-14 sm:py-16">
+          <SectionHead
+            overline="Since 2015"
+            title="Eleven years, year by year."
+            hinglish="Gyarah saal ka hisaab"
+            lede="What the village put in, each year, since the Society was registered. Everything collected in a year was spent inside that year."
+          />
+
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-14">
+            <figure>
+              <figcaption className="label label-brass">
+                Collected each year · rupees
+              </figcaption>
+              <div className="mt-6 flex h-64 items-end gap-1.5 border-b-2 border-ink">
+                {YEARLY_COLLECTION.map((y) => (
+                  <div key={y.year} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                    <span className="num text-[11px] text-ink-2">{rupeesShort(y.amount)}</span>
+                    <div
+                      className="w-full"
+                      style={{
+                        height: `${(y.amount / Math.max(...YEARLY_COLLECTION.map((v) => v.amount))) * 86}%`,
+                        backgroundColor: "var(--color-mark-1)",
+                      }}
+                      title={`${y.year}: ${rupees(y.amount)}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                {YEARLY_COLLECTION.map((y) => (
+                  <div key={y.year} className="num flex-1 pt-2 text-center text-[10.5px] leading-tight text-ink-3">
+                    {y.year.slice(0, 4)}
+                  </div>
+                ))}
+              </div>
+              <Provisional>Approximate, from the office · pending audit</Provisional>
+            </figure>
+
+            <div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-1">
+                <Stat
+                  label="Collected, eleven years"
+                  value={rupees(ELEVEN_YEARS.collected)}
+                  sub="Sum of the years shown"
+                  tone="maroon"
+                  provisional
+                />
+                <Stat
+                  label="Direct family support"
+                  value={rupees(ELEVEN_YEARS.familySupportTenYears)}
+                  sub="Housing, livelihood, medical and education over ten years"
+                  tone="brass"
+                  provisional
+                />
+              </div>
+
+              <p className="mt-7 border-l-2 border-brass bg-paper px-4 py-3.5 text-[14.5px] leading-[1.65] text-ink-2">
+                The office has separately put the eleven-year total nearer ₹3 crore.
+                That does not yet reconcile with the year-by-year figures shown here.
+                Both are on record until the audited statements settle it — this page
+                will never show a total it cannot source.
+              </p>
+            </div>
+          </div>
+        </Container>
+      </section>
 
       {/* ---------------- RECEIPTS BY METHOD ---------------- */}
       <section className="border-y-2 border-ink bg-paper-2">

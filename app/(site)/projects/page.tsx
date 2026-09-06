@@ -1,6 +1,6 @@
-import { PageHead, Container, Section, Panel, Badge, Progress, Ledger, Th, Td, SectionHead } from "@/components/ui/primitives";
+import { PageHead, Container, Section, Panel, Badge, Progress, Ledger, Th, Td, SectionHead, Provisional } from "@/components/ui/primitives";
 import { ProtoAction } from "@/components/proto-action";
-import { PROJECTS } from "@/lib/mock-data";
+import { PROJECTS, COMPLETED_WORKS } from "@/lib/mock-data";
 import { rupees, pct, longDate } from "@/lib/format";
 
 export const metadata = { title: "Projects" };
@@ -15,8 +15,57 @@ export default function ProjectsPage() {
         lede="No work above one lakh is awarded on fewer than three written quotations, opened before the committee. The comparison sheet is published here — including the quotations that lost, and why."
       />
 
+      {/* ---------------- ELEVEN YEARS OF FINISHED WORK ---------------- */}
+      <section className="border-b-2 border-ink bg-paper-2">
+        <Container className="py-14 sm:py-16">
+          <SectionHead
+            overline="Already built"
+            title="What eleven years has built."
+            hinglish="Ab tak kya bana"
+            lede="The record of works finished or still running since 2015. Costs are the office's own approximations until the audited statements are in."
+          />
+
+          <div className="mt-10 grid gap-px bg-rule sm:grid-cols-2 lg:grid-cols-3">
+            {COMPLETED_WORKS.map((w) => (
+              <article key={w.id} className="flex flex-col bg-paper p-6">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h3 className="display text-[20px] leading-tight">{w.title}</h3>
+                  {w.ongoing && <Badge tone="in_progress">Ongoing</Badge>}
+                </div>
+                <p className="mt-1 text-[15px] italic text-brass">{w.hinglish}</p>
+                <p className="mt-3 flex-1 text-[15px] leading-[1.68] text-ink-2">{w.detail}</p>
+
+                <div className="mt-6 border-t border-rule pt-3">
+                  {w.approxCost ? (
+                    <>
+                      <div className="num text-[20px] leading-none text-maroon">
+                        {rupees(w.approxCost)}
+                      </div>
+                      <Provisional />
+                    </>
+                  ) : (
+                    <div className="text-[14.5px] text-ink-3">
+                      Cost carried across several years
+                    </div>
+                  )}
+                  <div className="label mt-2">{w.period}</div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- CURRENT WORKS, WITH THEIR PAPERWORK ---------------- */}
       <Section>
-        <div className="space-y-16">
+        <SectionHead
+          overline="Running now"
+          title="Current works and their quotations."
+          hinglish="Abhi ke kaam"
+          lede="Each one with its budget, its milestones, and every quotation received — including the ones that lost."
+        />
+
+        <div className="mt-12 space-y-16">
           {PROJECTS.map((p) => (
             <article key={p.id} className="border-t-2 border-ink pt-8">
               <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:gap-12">
