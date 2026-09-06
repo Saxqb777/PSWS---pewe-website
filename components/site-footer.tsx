@@ -65,7 +65,7 @@ export function SiteFooter() {
             </address>
 
             <div className="mt-6">
-              <GiveButton size="md" label="Sadaqah dijiye · Give" />
+              <GiveButton size="md" label="Zakat & Donation" />
             </div>
 
             <dl className="mt-7 space-y-1.5 border-t border-rule pt-4">

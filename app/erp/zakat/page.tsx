@@ -199,7 +199,7 @@ export default function ErpZakatPage() {
             <div className="label label-maroon">Why the approver column matters</div>
             <p className="mt-2 max-w-3xl text-[15px] leading-[1.65] text-ink-2">
               A welfare decision in a village is never only administrative — the
-              person who took it will meet the applicant at the masjid on Friday.
+              person who took it will meet the applicant in the village that week.
               Recording the name is not surveillance of the committee; it is what
               lets a member say honestly that a decision was the committee's and
               not a favour or a slight.

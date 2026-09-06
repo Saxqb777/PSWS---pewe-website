@@ -37,7 +37,7 @@ export const SOCIETY = {
    * and change heroMode to "photo". Nothing else needs touching.
    *   sky.jpg      distant sky + cloud
    *   ridge.jpg    the Sahyadri hills behind          (transparent PNG better)
-   *   masjid.jpg   the masjid itself                  (transparent PNG better)
+   *   building.jpg the community building itself      (transparent PNG better)
    *   fore.jpg     palms + boundary wall in front     (transparent PNG better)
    *
    * A single un-layered photo also works — name it hero.jpg and set

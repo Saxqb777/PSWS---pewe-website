@@ -10,7 +10,7 @@ const METHODS = [
     key: "CASH" as const,
     head: "Cash",
     hinglish: "Nakad",
-    where: "At the office, or to the Treasurer after Jumu'ah",
+    where: "At the office, or to the Treasurer",
     detail:
       "A numbered receipt is written out on the spot from the counterfoil book, and the counterfoil is entered the same evening.",
   },
@@ -39,12 +39,12 @@ const METHODS = [
       "Account particulars are given on request to any member. Quote your member ID in the remitter's narration.",
   },
   {
-    key: "INTERNATIONAL_WIRE" as const,
-    head: "International Wire",
-    hinglish: "Bahar se — Gulf, etc.",
-    where: "From wherever you are working",
+    key: "CHEQUE" as const,
+    head: "Cheque",
+    hinglish: "Cheque se",
+    where: "Drawn in favour of the Society",
     detail:
-      "The Treasurer enters the wire against the bank advice, so the receipt number and the bank reference always match. Allow two to three working days.",
+      "Handed to the Treasurer or posted to the registered office. The receipt is raised on realisation, not on receipt of the instrument.",
   },
 ];
 
@@ -54,7 +54,7 @@ const METHODS = [
  * made to lose their place first.
  */
 export function GiveButton({
-  label = "Sadaqah dijiye · Give",
+  label = "Zakat & Donation",
   variant = "primary",
   size = "md",
   fullWidth = false,
@@ -118,7 +118,7 @@ export function GiveButton({
 
             <div className="flex items-start justify-between gap-4 border-b border-rule px-6 py-5">
               <div>
-                <div className="label label-brass">Sadaqah dijiye</div>
+                <div className="label label-brass">Zakat &amp; Donation</div>
                 <h2 className="display mt-1 text-[24px] leading-tight">Five ways to give</h2>
                 {purpose && (
                   <p className="mt-2 text-[14px] leading-snug text-ink-2">
@@ -191,6 +191,15 @@ export function GiveButton({
                   the same head, in the same statement filed with the Charity
                   Commissioner at Ratnagiri each July.
                 </p>
+
+                <div className="mt-5 border border-rule-strong bg-paper-2 px-4 py-3.5">
+                  <div className="label">Members working outside India</div>
+                  <p className="mt-1.5 text-[15px] leading-[1.65] text-ink-2">
+                    The Society accepts domestic contributions only. Please give
+                    through your own Indian bank account, or through family at
+                    home — the Society does not receive funds from abroad.
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -10,8 +10,8 @@ import { rupees, rupeesShort, pct } from "@/lib/format";
 export const metadata = { title: "Accounts" };
 
 const HEADS = [
-  { key: "Zakat & welfare", amount: TREASURY.zakatHead,   token: "var(--color-mark-1)" },
-  { key: "Village projects", amount: TREASURY.projectHead, token: "var(--color-mark-2)" },
+  { key: "Welfare", amount: TREASURY.welfareHead,   token: "var(--color-mark-1)" },
+  { key: "Development works", amount: TREASURY.developmentHead, token: "var(--color-mark-2)" },
   { key: "Relief & flash funds", amount: TREASURY.reliefHead, token: "var(--color-mark-3)" },
 ];
 

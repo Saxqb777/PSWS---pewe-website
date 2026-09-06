@@ -6,7 +6,7 @@ import { MEMBERS, MEMBER_ROLL, ROLE_LABEL } from "@/lib/mock-data";
 export const metadata = { title: "Members" };
 
 const BASED_TONE: Record<string, string> = {
-  Gulf: "flash", Mumbai: "neutral", Pune: "neutral",
+  Overseas: "flash", Mumbai: "neutral", Pune: "neutral",
   Pewe: "disbursed", Guhagar: "approved", Ratnagiri: "approved",
 };
 
@@ -47,7 +47,7 @@ export default function MembersPage() {
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="On the roll" value={String(MEMBER_ROLL.total)} sub={`${MEMBER_ROLL.registered} registered`} />
         <Stat label="Dues paid" value={String(MEMBER_ROLL.duesPaidThisYear)} sub={`${MEMBER_ROLL.total - MEMBER_ROLL.duesPaidThisYear} outstanding`} tone="pine" />
-        <Stat label="Working abroad" value={String(MEMBER_ROLL.basedAbroad)} sub="Chiefly the Gulf" tone="brass" />
+        <Stat label="Working abroad" value={String(MEMBER_ROLL.basedAbroad)} sub="Contributing through Indian accounts" tone="brass" />
         <Stat label="Outside the district" value={String(MEMBER_ROLL.basedOutOfDistrict)} sub="Mumbai, Bhiwandi and Pune" tone="maroon" />
       </div>
 

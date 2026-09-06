@@ -9,7 +9,7 @@ export const metadata = { title: "The Society" };
 const MILESTONES = [
   { year: "2015", text: "Twenty-two households of Pewe register the Society to put the village's informal relief collection on a proper footing." },
   { year: "2017", text: "First Ramzan ration distribution run against a verified household list rather than by word of mouth." },
-  { year: "2018", text: "Members working in the Gulf begin remitting directly; the Overseas Coordinator's post is created." },
+  { year: "2018", text: "Members working outside India begin contributing regularly through their Indian accounts; the Members Abroad Liaison post is created." },
   { year: "2020", text: "Monthly stipends for widows and the elderly are put on a standing sanction, renewed once a year." },
   { year: "2022", text: "Committee resolves that no work above ₹1,00,000 may be awarded on fewer than three written quotations." },
   { year: "2024", text: "Accounts moved to a receipt-number system; every rupee in becomes traceable to a head and a head to a work." },
@@ -34,12 +34,12 @@ export default function AboutPage() {
               the Sahyadri and the road out to the taluka town takes the better
               part of an hour. Like most villages on this coast, a good share of
               its working men are not in it — they are in Mumbai, in Bhiwandi, or
-              in the Gulf, and they have been sending money home for two
+              abroad, and they have been sending money home for two
               generations.
             </p>
             <p>
               What the village did not have was a record. Money was collected for
-              a funeral, for a hospital bill, for the masjid roof, and it was
+              a funeral, for a hospital bill, for a leaking roof, and it was
               spent, and that was the end of it. Nobody doubted anyone's honesty.
               But a man in Dammam who sends ₹40,000 has no way to see what became
               of it, and a widow who is refused a stipend has no way to know on

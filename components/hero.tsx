@@ -6,7 +6,7 @@ import { SOCIETY } from "@/lib/site";
 import { Seal } from "@/components/seal";
 import { GiveButton } from "@/components/give-panel";
 import {
-  LayerSky, LayerRidge, LayerHill, LayerPalms, LayerMasjid, LayerField,
+  LayerSky, LayerRidge, LayerHill, LayerPalms, LayerBuilding, LayerField,
 } from "@/components/konkan-engraving";
 
 /**
@@ -21,7 +21,7 @@ const LAYERS = [
   { key: "sky",    rate: 0.04, node: <LayerSky />,    shift: 0 },
   { key: "ridge",  rate: 0.09, node: <LayerRidge />,  shift: 0 },
   { key: "hill",   rate: 0.16, node: <LayerHill />,   shift: 0 },
-  { key: "masjid", rate: 0.22, node: <LayerMasjid />, shift: 140 },
+  { key: "building", rate: 0.22, node: <LayerBuilding />, shift: 140 },
   { key: "palms",  rate: 0.30, node: <LayerPalms />,  shift: 0 },
   { key: "field",  rate: 0.40, node: <LayerField />,  shift: 0 },
 ];
@@ -62,7 +62,7 @@ function Plate() {
   }
 
   if (SOCIETY.heroMode === "photo") {
-    const files = ["sky", "ridge", "ridge", "masjid", "fore", "fore"];
+    const files = ["sky", "ridge", "ridge", "building", "fore", "fore"];
     return (
       <div className="absolute inset-0 overflow-hidden">
         {LAYERS.map((l, i) => (
@@ -144,12 +144,12 @@ export function Hero() {
 
               <p className="mt-5 max-w-xl text-[17px] leading-[1.72] text-ink-2">
                 Pewe gaon ki apni welfare society. We run the water scheme, the
-                school works and the masjid repair — and we stand behind any
+                school works and the building repairs — and we stand behind any
                 household in the village that needs help in a hurry.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <GiveButton size="lg" label="Sadaqah dijiye · Give" />
+                <GiveButton size="lg" label="Zakat & Donation" />
                 <Link
                   href="/accounts"
                   className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"

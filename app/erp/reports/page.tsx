@@ -11,16 +11,16 @@ import { FISCAL_YEAR, SOCIETY } from "@/lib/site";
 export const metadata = { title: "Reports & audit" };
 
 const HEADS = [
-  { key: "Zakat & welfare", amount: TREASURY.zakatHead, token: "var(--color-mark-1)" },
-  { key: "Village projects", amount: TREASURY.projectHead, token: "var(--color-mark-2)" },
+  { key: "Welfare", amount: TREASURY.welfareHead, token: "var(--color-mark-1)" },
+  { key: "Development works", amount: TREASURY.developmentHead, token: "var(--color-mark-2)" },
   { key: "Relief & flash funds", amount: TREASURY.reliefHead, token: "var(--color-mark-3)" },
 ];
 
 const AUDIT_TRAIL = [
-  { at: "2026-08-31", who: "PSWS-006", what: "Receipt R-2627-0412 raised", detail: "₹1,85,000 international wire, value date 30 Aug" },
+  { at: "2026-08-31", who: "PSWS-006", what: "Receipt R-2627-0412 raised", detail: "₹1,85,000 bank transfer, value date 30 Aug" },
   { at: "2026-08-31", who: "PSWS-006", what: "Backdating flag raised", detail: "R-2627-0400 — value date 29 Jul precedes entry date 19 Aug" },
   { at: "2026-08-29", who: "PSWS-008", what: "Campaign closed", detail: "Monsoon Roof Repair — surplus ₹0, target met exactly" },
-  { at: "2026-08-28", who: "PSWS-003", what: "Notice published", detail: "Quotations for masjid roof to be opened on 8 September" },
+  { at: "2026-08-28", who: "PSWS-003", what: "Notice published", detail: "Quotations for the building repair to be opened on 8 September" },
   { at: "2026-08-21", who: "PSWS-008", what: "Welfare approved", detail: "ZR-2627-058 — ₹55,000, Emergency head" },
   { at: "2026-08-20", who: "PSWS-002", what: "Milestone completed", detail: "Water scheme — tank foundation cast" },
   { at: "2026-08-16", who: "PSWS-008", what: "Welfare disbursed", detail: "ZR-2627-057 — ₹24,000 paid direct to the eye camp" },

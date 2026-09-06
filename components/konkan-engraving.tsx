@@ -1,10 +1,10 @@
 /**
- * A tinted plate of the view at Pewe — the masjid seen across the paddy,
+ * A tinted plate of the view at Pewe — the community building seen across the paddy,
  * the Sahyadri ridges behind it, coconut palms, the compound wall in front.
  *
  * Drawn the way a letterhead engraving is drawn: ONE ink, laid at
  * different densities to make distance. Nothing here is a second colour
- * except the brass on the masjid's own trim — which is the colour the
+ * except the brass on the building's own trim — which is the colour the
  * building is actually painted. That restraint is what keeps it from
  * reading as clip art.
  *
@@ -14,14 +14,14 @@
 
 const INK = "#3A3025";        // the single ink
 const PAPER = "#F4EFE6";
-const RENDER = "#F8F5EE";     // the masjid's lime render, lighter than paper
+const RENDER = "#F8F5EE";     // the building's lime render, lighter than paper
 const BRASS = "#C9A063";
 const BRASS_DK = "#9C7436";
 
 /** Ink at a given density. */
 const ink = (a: number) => ({ fill: INK, fillOpacity: a });
 
-/** Pointed arch, as on the masjid windows. */
+/** Pointed arch, as on the building's windows. */
 function arch(x: number, y: number, w: number, h: number) {
   const spring = y + h * 0.44;
   const r = w * 0.66;
@@ -124,25 +124,26 @@ export function LayerHill() {
   );
 }
 
-/* ================= 4 — THE MASJID ================= */
+/* ================= 4 — THE COMMUNITY BUILDING ================= */
 
-export function LayerMasjid() {
+export function LayerBuilding() {
   const bx = 812, by = 716, bw = 392, bh = 224;
   const base = by + bh; // 940 — the field line
 
   return (
     <g>
-      {/* ---------- Tower, drum, dome ---------- */}
+      {/* ---------- Corner stair tower ----------
+          Flat slab roof and a vent opening. No dome, no finial — this is
+          the village's community building, not a religious structure, and
+          the drawing must not say otherwise. */}
       <g>
-        <rect x="726" y="668" width="82" height={base - 668} fill={RENDER} stroke={INK} strokeWidth="2" />
-        <rect x="719" y="659" width="96" height="10" fill={BRASS} stroke={INK} strokeWidth="1.4" />
-        <rect x="736" y="632" width="62" height="27" fill={RENDER} stroke={INK} strokeWidth="1.6" />
-        <path d="M 732 632 Q 767 566 802 632 Z" fill={RENDER} stroke={INK} strokeWidth="2" />
-        <path d="M 747 632 Q 767 588 787 632" fill="none" stroke={INK} strokeWidth="1" opacity="0.26" />
-        {/* finial and crescent */}
-        <line x1="767" y1="576" x2="767" y2="532" stroke={BRASS_DK} strokeWidth="3.4" />
-        <circle cx="767" cy="549" r="6" fill={BRASS} stroke={INK} strokeWidth="1.2" />
-        <path d="M 767 527 a 12 12 0 1 0 9 4 a 9.5 9.5 0 1 1 -9 -4 Z" fill={BRASS} stroke={INK} strokeWidth="1.1" />
+        <rect x="726" y="642" width="82" height={base - 642} fill={RENDER} stroke={INK} strokeWidth="2" />
+        {/* roof slab, slightly overhanging */}
+        <rect x="714" y="628" width="106" height="15" fill={INK} fillOpacity="0.55" stroke={INK} strokeWidth="1.7" />
+        <rect x="721" y="617" width="92" height="12" fill={BRASS} stroke={INK} strokeWidth="1.4" />
+        {/* stairwell vent */}
+        <rect x="750" y="664" width="34" height="22" fill={INK} fillOpacity="0.72" stroke={INK} strokeWidth="1.2" />
+        <line x1="767" y1="666" x2="767" y2="684" stroke={RENDER} strokeWidth="1.3" opacity="0.55" />
         {/* the pierced jali screen, as on the real corner pillar */}
         <rect x="740" y="722" width="54" height="176" fill={BRASS} stroke={INK} strokeWidth="1.6" />
         <g fill="none" stroke={RENDER} strokeWidth="2.2">

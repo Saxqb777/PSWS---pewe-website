@@ -3,7 +3,7 @@
 /* ============================================================
    PEWE SOCIAL WELFARE SOCIETY — Heritage / Archival
    Palette drawn from the Society seal (green, seal-red) and the
-   masjid itself (cream render, ochre/brass trim, laterite).
+   community building itself (cream render, ochre trim, laterite).
    Rules: no gradients on text, no glows, no blobs, no drop
    shadows, no pill-rounded everything. Hard edges. Thin rules.
    ============================================================ */
@@ -104,7 +104,7 @@ body {
 .marathi { font-family: var(--font-marathi); }
 
 /* ---------- The jali lattice ----------
-   Traced from the pierced concrete screen on the masjid's
+   Traced from the pierced concrete screen on the building's
    corner pillar. Used as section rules and watermarks. */
 
 .jali-band {
@@ -135,7 +135,7 @@ body {
 }
 
 /* ---------- The arcade ----------
-   The row of small arches under the masjid's roofline. */
+   The row of small arches under the building's roofline. */
 
 .arcade-band {
   height: 13px;

@@ -30,7 +30,7 @@ export default function ErpSponsorsPage() {
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Sponsors" value={`${active.length} of ${SPONSORS.length}`} sub="Currently active" />
         <Stat label="Longest standing" value={String(Math.min(...SPONSORS.map((s) => s.supportSince)))} sub="Guhagar Hardware & Cement" tone="brass" />
-        <Stat label="Overseas" value={String(SPONSORS.filter((s) => s.place.includes(",")).length)} sub="A member's firm in the Gulf" tone="pine" />
+        <Stat label="Outside the district" value={String(SPONSORS.filter((s) => s.place === "Mumbai" || s.place === "Ratnagiri").length)} sub="Members' firms elsewhere in Maharashtra" tone="pine" />
         <Stat label="Lapsed" value={String(SPONSORS.length - active.length)} sub="Kept listed with thanks" tone="maroon" />
       </div>
 

@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 
 /* ---------- Rules & bands ---------- */
 
-/** The jali lattice from the masjid's corner pillar, as a horizontal rule. */
+/** The jali lattice from the community building's corner pillar, as a rule. */
 export function JaliRule({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`jali-band ${className}`} />;
 }
 
-/** The arcade of small arches from under the masjid roofline. */
+/** The arcade of small arches from under the building's roofline. */
 export function ArcadeRule({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`arcade-band ${className}`} />;
 }
@@ -104,11 +104,14 @@ export function Stat({
   value,
   sub,
   tone = "ink",
+  provisional = false,
 }: {
   label: string;
   value: string;
   sub?: string;
   tone?: "ink" | "maroon" | "pine" | "brass";
+  /** Marks a figure the office has not yet reconciled to audit. */
+  provisional?: boolean;
 }) {
   const tones = {
     ink: "text-ink",
@@ -119,10 +122,26 @@ export function Stat({
   return (
     <div className="border-t-2 border-ink pt-3">
       <div className="label">{label}</div>
-      <div className={`num mt-2 text-[26px] leading-none font-medium ${tones[tone]}`}>
+      <div className={`num mt-2 text-[27px] leading-none font-medium ${tones[tone]}`}>
         {value}
       </div>
+      {provisional && <Provisional />}
       {sub && <div className="mt-2 text-[14.5px] text-ink-3 leading-snug">{sub}</div>}
+    </div>
+  );
+}
+
+/**
+ * The "we have not checked this yet" rule. A brass hairline and a quiet
+ * line of text — enough that nobody quotes the number as audited, not so
+ * loud that the page reads as a disclaimer.
+ */
+export function Provisional({ children }: { children?: ReactNode }) {
+  return (
+    <div className="mt-2 border-t border-brass pt-1.5">
+      <span className="text-[12.5px] italic leading-snug text-brass">
+        {children ?? "Approximate · pending audit"}
+      </span>
     </div>
   );
 }

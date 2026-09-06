@@ -39,10 +39,51 @@ Sponsors, Reports & audit.
 
 ## Language
 
-English throughout, written the way Pewe actually talks — *sadaqah*, *masjid*,
-*kabrastan*, *gram panchayat*, *taluka* kept as they are. Every major heading
-carries a Hinglish line under it (*Paisa kahan gaya*, *Zakat aur madad*,
-*Gaon ke kaam*). One version, no toggle.
+English throughout, written the way Pewe actually talks — *masjid* is never
+used (see the rules below), but *kabrastan*, *gram panchayat*, *taluka*,
+*nakad* stand as they are. Every major heading carries a Hinglish line under
+it (*Paisa kahan gaya*, *Zakat aur madad*, *Gaon ke kaam*). One version, no
+toggle.
+
+## Compliance rules — READ BEFORE EDITING COPY
+
+These come from the office and are not stylistic preferences. Breaking them
+creates a real problem at audit.
+
+**1. No religious structure, in word or picture.**
+PSWS is a registered *social welfare* body and cannot fund religious
+structures. The word for one must not appear anywhere on this site, and the
+hero artwork must not depict one — the drawn building has a flat slab roof
+and no dome or finial for exactly this reason. Building work is described as
+*community building*, *social structure*, *repair and maintenance*.
+
+**2. Domestic contributions only (FCRA).**
+The Society does not receive foreign-sourced funds. Payment channels are
+Cash, GPay, PhonePe, Bank Transfer and Cheque — no international wire.
+Members working abroad give through their own Indian accounts or through
+family, and the giving panel says so.
+
+**3. Giving vocabulary.**
+"Zakat", "donation", "charity" and "collection" are fine. Do **not** use
+*sadaqah* or *chanda*.
+
+**4. Religious activity belongs to a separate trust.**
+Building collection, imam salaries and religious education sit with the Pewe
+Jama-tul-Muslimeen Deeni Thali Fund — a different entity with its own books.
+That will be its own site. Do not mix the two here.
+
+## Real, provisional, and invented
+
+| | |
+|---|---|
+| **Real** | Name in three scripts, F/3584/RTG, MH/5602/RTG, est. 2015, the address, the phone, the seal |
+| **Provisional** | The eleven-year collection series, the works and their costs, this year's totals. Given verbally by the office, not yet audited. Shown under a brass "pending audit" rule everywhere they appear |
+| **Invented** | Every member, receipt, application, quotation and vendor |
+
+The office separately stated an eleven-year total nearer ₹3 crore, which does
+not reconcile with the year-by-year figures (~₹2.19 crore). Both are recorded
+in `lib/mock-data.ts` and the site shows the series, never an unsourced total.
+Replace when Irfan's statements arrive.
 
 ---
 

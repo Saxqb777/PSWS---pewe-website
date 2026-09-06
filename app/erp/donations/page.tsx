@@ -54,7 +54,7 @@ export default function DonationsPage() {
         <Stat label="Receipts this year" value={rupees(TREASURY.receiptsThisYear)} sub={`${DONATION_ROLL.entriesThisYear} entries`} tone="pine" />
         <Stat label="In this sample" value={rupees(sample)} sub={`${DONATIONS.length} most recent entries`} />
         <Stat label="Backdated" value={String(backdated.length)} sub="Awaiting auditor review" tone="maroon" />
-        <Stat label="Largest single entry" value={rupees(Math.max(...DONATIONS.map((d) => d.amount)))} sub="International wire" tone="brass" />
+        <Stat label="Largest single entry" value={rupees(Math.max(...DONATIONS.map((d) => d.amount)))} sub="Bank transfer" tone="brass" />
       </div>
 
       {/* Filter row — sits above the table, as filters should */}
