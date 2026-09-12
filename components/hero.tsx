@@ -56,7 +56,11 @@ function Plate() {
     return (
       <div className="absolute inset-0 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/hero/hero.jpg" alt="" className="hero-drift h-full w-full object-cover" />
+        <img
+          src="/images/hero/hero.jpg"
+          alt="Pewe seen across the paddy, with the Sahyadri behind"
+          className="hero-drift h-full w-full object-cover"
+        />
       </div>
     );
   }

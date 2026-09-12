@@ -50,12 +50,18 @@ toggle.
 These come from the office and are not stylistic preferences. Breaking them
 creates a real problem at audit.
 
-**1. No religious structure, in word or picture.**
+**1. Never name a religious structure.**
 PSWS is a registered *social welfare* body and cannot fund religious
-structures. The word for one must not appear anywhere on this site, and the
-hero artwork must not depict one — the drawn building has a flat slab roof
-and no dome or finial for exactly this reason. Building work is described as
-*community building*, *social structure*, *repair and maintenance*.
+structures. The word for one must not appear anywhere on this site. Building
+work is described as *community building*, *social structure*, *repair and
+maintenance*.
+
+The hero is a photograph of the village, chosen by the owner in full
+knowledge that the building in it carries domes. The rule above is about
+words and about what the Society claims to fund — not about whether the
+village may be shown. The drawn alternative is still in the code
+(`components/konkan-engraving.tsx`, `heroMode: "engraving"`) and has no
+dome or finial, should that decision ever be revisited.
 
 **2. Domestic contributions only (FCRA).**
 The Society does not receive foreign-sourced funds. Payment channels are
