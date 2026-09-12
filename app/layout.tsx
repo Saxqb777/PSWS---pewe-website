@@ -32,13 +32,52 @@ const tiroMarathi = Tiro_Devanagari_Marathi({
   display: "swap",
 });
 
+/**
+ * The site's own address. Link previews need absolute URLs, so this has to
+ * be right — set NEXT_PUBLIC_SITE_URL when the domain moves to pewe-sws.org
+ * and everything below follows.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://psws-pewe-website.vercel.app";
+
+const DESCRIPTION =
+  "Pewe Social Welfare Society — a registered welfare society of the village of Pewe, Taluka Guhagar, District Ratnagiri. Village projects, Zakat and welfare, and a published account of every rupee.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${SOCIETY.name} — Pewe, Guhagar, Ratnagiri`,
     template: `%s · ${SOCIETY.shortName}`,
   },
-  description:
-    "Pewe Social Welfare Society — a registered welfare society of the village of Pewe, Taluka Guhagar, District Ratnagiri. Village projects, Zakat and welfare, and a published account of every rupee.",
+  description: DESCRIPTION,
+  applicationName: SOCIETY.name,
+  keywords: [
+    "Pewe", "Pewe Social Welfare Society", "PSWS", "Guhagar", "Ratnagiri",
+    "Konkan", "village welfare society", "Zakat", "Maharashtra",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SOCIETY.name,
+    title: `${SOCIETY.name} — Pewe, Guhagar, Ratnagiri`,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_IN",
+    images: [
+      {
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${SOCIETY.name}, Pewe, Taluka Guhagar, District Ratnagiri`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SOCIETY.name} — Pewe, Guhagar, Ratnagiri`,
+    description: DESCRIPTION,
+    images: ["/og.jpg"],
+  },
 };
 
 export const viewport: Viewport = {

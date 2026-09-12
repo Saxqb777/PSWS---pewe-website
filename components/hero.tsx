@@ -52,6 +52,35 @@ function useParallax() {
 function Plate() {
   const y = useParallax();
 
+  if (SOCIETY.heroMode === "diptych") {
+    // Two frames of the same building, graded alike so they read as a pair,
+    // with a column of the jali motif standing between them as the seam.
+    return (
+      <div className="flex h-full w-full">
+        <div className="relative h-full w-[42%] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero/hero-left.jpg"
+            alt="The building at Pewe, seen from the lane"
+            className="hero-drift h-full w-full object-cover"
+            style={{ objectPosition: "center top" }}
+          />
+        </div>
+
+        <div aria-hidden className="jali-column w-[26px] shrink-0 bg-paper opacity-70" />
+
+        <div className="relative h-full flex-1 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero/hero-right.jpg"
+            alt="The pierced screen and the arcade, with the Sahyadri beyond"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (SOCIETY.heroMode === "photo-flat") {
     return (
       <div className="absolute inset-0 overflow-hidden">
@@ -99,6 +128,73 @@ function Plate() {
 }
 
 export function Hero() {
+  // The diptych is two photographs side by side, so nothing can sit on top
+  // of it — the plate becomes a band and the bookplate sits under it on
+  // paper. The single-image modes keep the older overlapping composition.
+  const band = SOCIETY.heroMode === "diptych";
+
+  if (band) {
+    return (
+      <section id="top" className="relative isolate border-b-2 border-ink">
+        <div className="relative h-[34dvh] min-h-[230px] w-full overflow-hidden sm:h-[42dvh] lg:h-[56dvh]">
+          <Plate />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+            style={{ background: "linear-gradient(to top, var(--color-paper), transparent)" }}
+          />
+        </div>
+
+        <div className="w-full px-4 pb-12 pt-8 sm:px-8 lg:px-12">
+          <div className="mx-auto w-full max-w-[1320px]">
+            <div className="max-w-2xl border border-ink bg-paper">
+              <div className="jali-band" />
+
+              <div className="px-5 py-7 sm:px-9 sm:py-9">
+                <div className="flex items-center gap-4">
+                  <Seal size={54} />
+                  <div className="min-w-0">
+                    <div className="label label-brass">
+                      Reg. {SOCIETY.registrationNo} · Est. {SOCIETY.foundedYear}
+                    </div>
+                    <div className="label mt-1">
+                      {SOCIETY.address.line1}, {SOCIETY.address.line2}
+                    </div>
+                  </div>
+                </div>
+
+                <h1 className="display mt-6 text-[34px] leading-[1.05] sm:text-[46px]">
+                  {SOCIETY.name}
+                </h1>
+                <p className="marathi mt-2 text-[19px] text-ink-2 sm:text-[21px]">
+                  {SOCIETY.nameMarathi}
+                </p>
+
+                <p className="mt-5 max-w-xl text-[17px] leading-[1.72] text-ink-2">
+                  Pewe gaon ki apni welfare society. We run the water scheme, the
+                  school works and the building repairs — and we stand behind any
+                  household in the village that needs help in a hurry.
+                </p>
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <GiveButton size="lg" label="Zakat & Donation" />
+                  <Link
+                    href="/accounts"
+                    className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
+                  >
+                    Where the money went
+                  </Link>
+                </div>
+              </div>
+
+              <div className="arcade-band" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       id="top"

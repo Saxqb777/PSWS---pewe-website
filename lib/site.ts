@@ -43,7 +43,7 @@ export const SOCIETY = {
    * A single un-layered photo also works — name it hero.jpg and set
    * heroMode to "photo-flat".
    */
-  heroMode: "photo-flat" as "engraving" | "photo" | "photo-flat",
+  heroMode: "diptych" as "engraving" | "photo" | "photo-flat" | "diptych",
 } as const;
 
 /** Fiscal year the prototype is showing. */
