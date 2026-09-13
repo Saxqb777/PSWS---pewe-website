@@ -1,0 +1,184 @@
+/* ============================================================
+   Minutes of Meeting — print sheet.
+   Rendered to A4 PDF. White ground so it prints cleanly; the
+   Society's cream, maroon and brass carry the identity, and the
+   jali and arcade bands do the work the letterhead border does.
+   ============================================================ */
+
+@page { size: A4; margin: 14mm 13mm 12mm; }
+
+.mom-sheet {
+  background: #fff;
+  color: #1C1815;
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  font-size: 10.6px;
+  line-height: 1.62;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ---------- letterhead ---------- */
+
+.mom-jali {
+  height: 11px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='none' stroke='%23A67C3D' stroke-width='1.5'><rect x='2.5' y='2.5' width='23' height='23'/><rect x='8' y='8' width='12' height='12'/><path d='M14 2.5 L14 8 M14 20 L14 25.5 M2.5 14 L8 14 M20 14 L25.5 14'/></g></svg>");
+  background-size: auto 22px;
+  background-repeat: repeat-x;
+  opacity: .6;
+}
+.mom-arcade {
+  height: 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='13' viewBox='0 0 22 13'><path d='M0 13 L0 7 Q0 0 5.5 0 Q11 0 11 7 L11 13 M11 13 L11 7 Q11 0 16.5 0 Q22 0 22 7 L22 13' fill='none' stroke='%23A67C3D' stroke-width='1.2'/></svg>");
+  background-repeat: repeat-x;
+  background-position: bottom;
+  opacity: .55;
+}
+
+.mom-head-row { display: flex; align-items: center; gap: 14px; padding-top: 12px; }
+.mom-head-id { flex: 1; min-width: 0; }
+.mom-name {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 21px; font-weight: 500; line-height: 1.12; letter-spacing: -.01em;
+}
+.mom-name-mr { font-family: var(--font-tiro-marathi), serif; font-size: 11.5px; color: #4A4239; margin-top: 2px; }
+.mom-name-ur { font-size: 12.5px; color: #4A4239; margin-top: 1px; text-align: left; }
+
+.mom-head-reg { text-align: right; font-family: var(--font-plex-mono), monospace; font-size: 8.6px; line-height: 1.75; color: #1C1815; }
+.mom-head-reg span {
+  display: inline-block; min-width: 68px; text-align: left;
+  font-family: var(--font-plex-sans), sans-serif; font-size: 7.6px;
+  letter-spacing: .12em; text-transform: uppercase; color: #786C5D;
+}
+
+.mom-head-addr {
+  margin-top: 9px; font-size: 8.8px; letter-spacing: .02em; color: #4A4239;
+}
+.mom-dot { color: #A67C3D; margin: 0 6px; }
+
+.mom-rule-strong { border-top: 2px solid #1C1815; margin-top: 8px; }
+
+/* ---------- title ---------- */
+
+.mom-title-block { margin-top: 20px; }
+.mom-kicker {
+  font-size: 8.4px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: #A67C3D;
+}
+.mom-title {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 30px; font-weight: 500; line-height: 1.08;
+  letter-spacing: -.015em; margin-top: 4px;
+}
+.mom-ref {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 8.6px; color: #786C5D; margin-top: 5px;
+}
+
+.mom-particulars {
+  margin-top: 14px; border-top: 1px solid #D6C9B2; border-bottom: 1px solid #D6C9B2;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+}
+.mom-particulars > div { padding: 8px 14px 8px 0; }
+.mom-particulars dt {
+  font-size: 7.6px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: #786C5D;
+}
+.mom-particulars dd { font-size: 10.4px; margin-top: 2px; }
+
+/* ---------- sections ---------- */
+
+.mom-sec { margin-top: 22px; }
+.mom-keep { break-inside: avoid; }
+
+.mom-h2 {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 15.5px; font-weight: 500; line-height: 1.2;
+  border-bottom: 1px solid #1C1815; padding-bottom: 5px;
+  display: flex; align-items: baseline; gap: 9px;
+}
+.mom-h2-n {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 9.5px; color: #7A2E2E; letter-spacing: .06em;
+}
+.mom-h3 {
+  font-size: 7.8px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: #7A2E2E; margin-bottom: 5px;
+}
+.mom-h3-sp { margin-top: 14px; }
+.mom-lede { margin-top: 9px; color: #4A4239; max-width: 62ch; }
+
+/* ---------- attendance ---------- */
+
+.mom-counts {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-top: 12px;
+}
+.mom-counts > div { border-top: 2px solid #1C1815; padding-top: 5px; }
+.mom-count {
+  display: block; font-family: var(--font-plex-mono), monospace;
+  font-size: 21px; line-height: 1; font-weight: 500;
+}
+.mom-count-ok { color: #1F5B3A; }
+.mom-count-no { color: #7A2E2E; }
+.mom-count-l {
+  display: block; margin-top: 4px; font-size: 7.6px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: #786C5D;
+}
+
+.mom-att { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 16px; }
+.mom-list { list-style: none; counter-reset: n; }
+.mom-list li {
+  counter-increment: n; position: relative;
+  padding: 3.5px 0 3.5px 20px; border-bottom: 1px solid #EDE6D9; font-size: 10.2px;
+}
+.mom-list li::before {
+  content: counter(n, decimal-leading-zero);
+  position: absolute; left: 0; top: 4px;
+  font-family: var(--font-plex-mono), monospace; font-size: 8px; color: #A67C3D;
+}
+.mom-li-note { display: block; font-size: 8.6px; font-style: italic; color: #786C5D; }
+
+/* ---------- definition blocks ---------- */
+
+.mom-defs { margin-top: 11px; }
+.mom-def { break-inside: avoid; padding: 8px 0; border-bottom: 1px solid #EDE6D9; }
+.mom-def:last-child { border-bottom: 0; }
+.mom-def-h { font-size: 10.6px; font-weight: 600; color: #1C1815; }
+.mom-def-p { margin-top: 2px; color: #4A4239; max-width: 76ch; }
+
+/* ---------- tables ---------- */
+
+.mom-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 10.2px; }
+.mom-table th {
+  text-align: left; background: #F4EFE6; border-bottom: 2px solid #1C1815;
+  padding: 6px 9px; font-size: 7.6px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: #4A4239;
+}
+.mom-table td { padding: 7px 9px; border-bottom: 1px solid #D6C9B2; vertical-align: top; }
+.mom-td-post { font-weight: 600; }
+.mom-td-name { color: #7A2E2E; font-weight: 500; }
+.mom-td-note { color: #786C5D; font-size: 9.4px; font-style: italic; }
+.mom-td-n { font-family: var(--font-plex-mono), monospace; color: #A67C3D; }
+.mom-td-who { font-size: 9.6px; color: #4A4239; }
+
+/* ---------- close & signatures ---------- */
+
+.mom-close {
+  margin-top: 4px; padding: 11px 14px; background: #F4EFE6;
+  border-left: 2px solid #7A2E2E; font-size: 10.4px; color: #1C1815;
+}
+.mom-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; margin-top: 40px; }
+.mom-sign-line { border-top: 1px solid #1C1815; }
+.mom-sign-n { margin-top: 5px; font-size: 10.2px; font-weight: 600; }
+.mom-sign-r {
+  font-size: 7.6px; font-weight: 600; letter-spacing: .13em;
+  text-transform: uppercase; color: #786C5D; margin-top: 1px;
+}
+
+/* ---------- footer ---------- */
+
+.mom-foot { margin-top: 26px; }
+.mom-foot-row {
+  display: flex; justify-content: space-between; padding-top: 7px;
+  font-size: 8px; letter-spacing: .04em; color: #786C5D;
+}
