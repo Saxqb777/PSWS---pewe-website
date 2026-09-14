@@ -13,6 +13,7 @@ import {
 } from "@/lib/mock-data";
 import { rupees, rupeesShort, pct, longDate, daysUntil } from "@/lib/format";
 import { FISCAL_YEAR, SOCIETY } from "@/lib/site";
+import { isUnlocked } from "./layout";
 
 const SECTIONS: NavSection[] = [
   { id: "urgent", label: "Urgent" },
@@ -26,7 +27,7 @@ const SECTIONS: NavSection[] = [
   { id: "contact", label: "Contact" },
 ];
 
-export default function HomePage() {
+function MembersHome() {
   const flash = flashFunds();
   const campaigns = activeCampaigns().filter((c) => !c.isFlashFund);
   const running = PROJECTS.filter((p) => p.status !== "COMPLETED").slice(0, 3);
@@ -446,4 +447,69 @@ export default function HomePage() {
       </section>
     </>
   );
+}
+
+
+/**
+ * What the village, and anyone else, sees.
+ *
+ * Everything past this point is filled with invented sample figures while
+ * the site is being built, so none of it is shown in public. Members enter
+ * the shared password and see the whole thing as it comes together.
+ */
+function Landing() {
+  return (
+    <>
+      <Hero unlocked={false} />
+
+      <section className="border-b-2 border-ink bg-paper-2">
+        <Container className="py-14 sm:py-20">
+          <div className="mx-auto max-w-2xl border border-ink bg-paper">
+            <div className="jali-band" />
+
+            <div className="px-6 py-8 sm:px-10 sm:py-10">
+              <div className="label label-brass">Under development</div>
+
+              <h2 className="display mt-3 text-[25px] leading-[1.16] sm:text-[30px]">
+                The rest of the site is still being built.
+              </h2>
+
+              <p className="mt-4 text-[16.5px] leading-[1.72] text-ink-2">
+                The pages for the work in the village, the accounts, the Zakat
+                record and the office side are being put together now. They
+                will open here once the Society&rsquo;s own figures are in and
+                checked.
+              </p>
+
+              <p className="mt-3 text-[16.5px] leading-[1.72] text-ink-2">
+                Members of the Society can sign in and watch it take shape as
+                it is pushed.
+              </p>
+
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/enter"
+                  className="inline-flex items-center justify-center bg-maroon px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-paper transition-colors hover:bg-maroon-dark"
+                >
+                  Members sign in
+                </Link>
+                <a
+                  href={SOCIETY.phoneHref}
+                  className="num inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[14px] text-ink transition-colors hover:bg-ink hover:text-paper"
+                >
+                  {SOCIETY.phone}
+                </a>
+              </div>
+            </div>
+
+            <div className="arcade-band" />
+          </div>
+        </Container>
+      </section>
+    </>
+  );
+}
+
+export default async function HomePage() {
+  return (await isUnlocked()) ? <MembersHome /> : <Landing />;
 }

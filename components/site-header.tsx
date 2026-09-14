@@ -15,7 +15,7 @@ const NAV = [
   { href: "/accounts", label: "Accounts", hinglish: "Poora hisaab" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ unlocked = true }: { unlocked?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -25,9 +25,13 @@ export function SiteHeader() {
       <div className="bg-ink text-paper no-print">
         <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2 sm:px-8 lg:px-12">
           <p className="text-[12.5px] leading-tight">
-            <span className="font-semibold uppercase tracking-[0.12em] text-brass-light">Prototype</span>
+            <span className="font-semibold uppercase tracking-[0.12em] text-brass-light">
+              {unlocked ? "Prototype" : "Under development"}
+            </span>
             <span className="mx-2 opacity-40">|</span>
-            Sample figures. Nothing here is a live record yet.
+            {unlocked
+              ? "Sample figures. Nothing here is a live record yet."
+              : "This site is being built."}
           </p>
           <p className="num text-[12.5px] opacity-70">{SOCIETY.website}</p>
         </div>
@@ -48,8 +52,8 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="ml-auto hidden lg:block">
+          {/* Desktop nav — hidden while the site is held behind the gate */}
+          <nav className={`ml-auto hidden lg:block ${unlocked ? "" : "lg:hidden"}`}>
             <ul className="flex items-center gap-1">
               {NAV.map((item) => {
                 const active =
@@ -75,7 +79,7 @@ export function SiteHeader() {
               <GiveButton size="md" label="Zakat & Donation" />
             </span>
             <Link
-              href="/login"
+              href={unlocked ? "/login" : "/enter"}
               className="hidden border border-ink px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.09em] text-ink transition-colors hover:bg-ink hover:text-paper xl:inline-block"
             >
               Members' Portal
@@ -85,7 +89,7 @@ export function SiteHeader() {
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-label="Menu"
-              className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] border border-ink lg:hidden cursor-pointer"
+              className={`h-11 w-11 flex-col items-center justify-center gap-[5px] border border-ink lg:hidden cursor-pointer ${unlocked ? "flex" : "hidden"}`}
             >
               <span className={`block h-[1.5px] w-5 bg-ink transition-transform ${open ? "translate-y-[6.5px] rotate-45" : ""}`} />
               <span className={`block h-[1.5px] w-5 bg-ink transition-opacity ${open ? "opacity-0" : ""}`} />

@@ -36,7 +36,7 @@ const COLUMNS = [
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ unlocked = true }: { unlocked?: boolean }) {
   return (
     <footer className="border-t-2 border-ink bg-paper-2">
       <div className="jali-band" />
@@ -84,7 +84,7 @@ export function SiteFooter() {
             </dl>
           </div>
 
-          {COLUMNS.map((col) => (
+          {unlocked && COLUMNS.map((col) => (
             <div key={col.title}>
               <h3 className="label label-brass border-b border-rule pb-2">{col.title}</h3>
               <p className="mt-2 text-[13.5px] italic text-ink-3">{col.hinglish}</p>

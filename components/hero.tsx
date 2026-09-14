@@ -53,16 +53,37 @@ function Plate() {
   const y = useParallax();
 
   if (SOCIETY.heroMode === "band") {
-    // One photograph, running the full width of its own band.
+    // The photograph is taller than it is wide, so filling a wide band with
+    // it would crop away everything but a strip of roof. It is mounted on
+    // the Society's own jali ground instead, whole, at its own proportion.
+    // On a phone the band is narrow enough for the picture to fill it.
     return (
-      <div className="relative h-full w-full overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/hero/hero-left.jpg"
-          alt="The building at Pewe, seen from the lane"
-          className="hero-drift h-full w-full object-cover"
-          style={{ objectPosition: "center 38%" }}
+      <div className="relative h-full w-full overflow-hidden bg-paper-2">
+        <div
+          aria-hidden
+          className="jali-column absolute inset-0 opacity-[0.11]"
+          style={{ backgroundSize: "34px 34px" }}
         />
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 42%, rgba(244,239,230,0.55) 20%, rgba(226,216,198,0.35) 70%, rgba(28,24,21,0.10) 100%)",
+          }}
+        />
+
+        <div className="relative mx-auto h-full w-full overflow-hidden sm:w-fit sm:shadow-[0_2px_10px_rgba(28,24,21,0.10),0_18px_44px_rgba(28,24,21,0.14)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero/hero-left.jpg"
+            alt="The building at Pewe, seen from the lane"
+            className="h-full w-full object-cover sm:w-auto sm:max-w-none"
+            style={{ objectPosition: "center 32%" }}
+          />
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 hidden w-px bg-brass/45 sm:block" />
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden w-px bg-brass/45 sm:block" />
+        </div>
       </div>
     );
   }
@@ -113,7 +134,7 @@ function Plate() {
   );
 }
 
-export function Hero() {
+export function Hero({ unlocked = true }: { unlocked?: boolean }) {
   // In band mode the photograph runs the full width, so nothing can sit on
   // top of it — the bookplate sits under it on paper instead. The other
   // modes keep the older overlapping composition.
@@ -122,7 +143,7 @@ export function Hero() {
   if (band) {
     return (
       <section id="top" className="relative isolate border-b-2 border-ink">
-        <div className="relative h-[34dvh] min-h-[230px] w-full overflow-hidden sm:h-[42dvh] lg:h-[56dvh]">
+        <div className="relative h-[38dvh] min-h-[250px] w-full overflow-hidden sm:h-[52dvh] lg:h-[64dvh]">
           <Plate />
           <div
             aria-hidden
@@ -173,10 +194,10 @@ export function Hero() {
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <GiveButton size="lg" label="Zakat & Donation" />
                   <Link
-                    href="/accounts"
+                    href={unlocked ? "/accounts" : "/enter"}
                     className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
                   >
-                    Where the money went
+                    {unlocked ? "Where the money went" : "Members sign in"}
                   </Link>
                 </div>
               </div>
@@ -253,10 +274,10 @@ export function Hero() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <GiveButton size="lg" label="Zakat & Donation" />
                 <Link
-                  href="/accounts"
+                  href={unlocked ? "/accounts" : "/enter"}
                   className="inline-flex items-center justify-center border border-ink px-7 py-3.5 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-ink hover:text-paper"
                 >
-                  Where the money went
+                  {unlocked ? "Where the money went" : "Members sign in"}
                 </Link>
               </div>
             </div>
