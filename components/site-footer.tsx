@@ -104,7 +104,7 @@ export function SiteFooter() {
         <div className="mt-12 flex flex-col gap-3 border-t border-rule pt-6 text-[13.5px] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {SOCIETY.foundedYear}–2026 {SOCIETY.name}. Registered under the
-            Bombay Public Trusts Act and the Societies Registration Act.
+            Maharashtra Public Trusts Act, 1950 and the Societies Registration Act.
           </p>
           <p className="num">{SOCIETY.website}</p>
         </div>

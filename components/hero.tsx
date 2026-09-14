@@ -171,9 +171,17 @@ export function Hero() {
                 </p>
 
                 <p className="mt-5 max-w-xl text-[17px] leading-[1.72] text-ink-2">
-                  Pewe gaon ki apni welfare society. We run the water scheme, the
-                  school works and the building repairs — and we stand behind any
-                  household in the village that needs help in a hurry.
+                  Pewe gaon ki apni welfare society — a public trust of Village
+                  Pewe, Taluka Guhagar, District Ratnagiri, registered under the
+                  Maharashtra Public Trusts Act, 1950. It was established to
+                  develop the village, to collect and distribute Zakat, and to
+                  carry out welfare projects, with every single rupee accounted
+                  for and audited.
+                </p>
+                <p className="mt-4 max-w-xl text-[17px] leading-[1.72] text-ink-2">
+                  We run the water scheme, the school works and the building
+                  repairs, and we stand behind any household in the village that
+                  needs help in a hurry.
                 </p>
 
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -243,9 +251,17 @@ export function Hero() {
               </p>
 
               <p className="mt-5 max-w-xl text-[17px] leading-[1.72] text-ink-2">
-                Pewe gaon ki apni welfare society. We run the water scheme, the
-                school works and the building repairs — and we stand behind any
-                household in the village that needs help in a hurry.
+                Pewe gaon ki apni welfare society — a public trust of Village
+                Pewe, Taluka Guhagar, District Ratnagiri, registered under the
+                Maharashtra Public Trusts Act, 1950. It was established to
+                develop the village, to collect and distribute Zakat, and to
+                carry out welfare projects, with every single rupee accounted
+                for and audited.
+              </p>
+              <p className="mt-4 max-w-xl text-[17px] leading-[1.72] text-ink-2">
+                We run the water scheme, the school works and the building
+                repairs, and we stand behind any household in the village that
+                needs help in a hurry.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
