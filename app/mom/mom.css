@@ -160,19 +160,11 @@
 .mom-td-n { font-family: var(--font-plex-mono), monospace; color: #A67C3D; }
 .mom-td-who { font-size: 9.6px; color: #4A4239; }
 
-/* ---------- close & signatures ---------- */
+/* ---------- close ---------- */
 
 .mom-close {
   margin-top: 4px; padding: 11px 14px; background: #F4EFE6;
   border-left: 2px solid #7A2E2E; font-size: 10.4px; color: #1C1815;
-}
-.mom-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; margin-top: 40px; }
-.mom-sign-3 { grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.mom-sign-line { border-top: 1px solid #1C1815; }
-.mom-sign-n { margin-top: 5px; font-size: 10.2px; font-weight: 600; }
-.mom-sign-r {
-  font-size: 7.6px; font-weight: 600; letter-spacing: .13em;
-  text-transform: uppercase; color: #786C5D; margin-top: 1px;
 }
 
 /* ---------- footer ---------- */

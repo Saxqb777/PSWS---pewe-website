@@ -180,23 +180,6 @@ export function MomSheet({ c }: { c: MomContent }) {
       {/* ---------------- CLOSE ---------------- */}
       <section className="mom-sec mom-keep">
         <div className="mom-close">{c.close}</div>
-        <div className="mom-sign mom-sign-3">
-          <div>
-            <div className="mom-sign-line" />
-            <div className="mom-sign-n">{c.meeting.chair}</div>
-            <div className="mom-sign-r">{c.signRoles.chair}</div>
-          </div>
-          <div>
-            <div className="mom-sign-line" />
-            <div className="mom-sign-n">{c.appointments[0].name}</div>
-            <div className="mom-sign-r">{c.signRoles.president}</div>
-          </div>
-          <div>
-            <div className="mom-sign-line" />
-            <div className="mom-sign-n">{c.appointments[1].name}</div>
-            <div className="mom-sign-r">{c.signRoles.secretary}</div>
-          </div>
-        </div>
       </section>
 
       {/* ---------------- ANNEXURE · THE ELECTION ---------------- */}

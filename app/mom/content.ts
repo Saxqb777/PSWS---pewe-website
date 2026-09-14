@@ -42,7 +42,6 @@ export interface MomContent {
   };
   elected: Elected[];
   close: string;
-  signRoles: { chair: string; president: string; secretary: string };
 }
 
 const ELECTED: Elected[] = [
@@ -187,7 +186,6 @@ export const EN: MomContent = {
   elected: ELECTED,
   close:
     "The meeting opened and closed with Tilawat-e-Quran by Shafi Saheb, and was adjourned with the closing dua led by Afzal Sarguro Saheb.",
-  signRoles: { chair: "Chair of the meeting", president: "President", secretary: "General Secretary" },
 };
 
 /* =============================== HINGLISH =============================== */
@@ -297,5 +295,4 @@ export const HI: MomContent = {
   elected: ELECTED,
   close:
     "Meeting ka aaghaz aur ikhtitam Shafi Saheb ki Tilawat-e-Quran se hua, aur aakhir mein Afzal Sarguro Saheb ne dua karwayi.",
-  signRoles: { chair: "Meeting ke chairman", president: "President", secretary: "General Secretary" },
 };

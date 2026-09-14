@@ -92,9 +92,7 @@
   .min-paper .mom-sheet { zoom: 1.08; }
 
   /* Two- and three-up blocks are laid out for a 183mm column. Stack them. */
-  .min-paper .mom-att,
-  .min-paper .mom-sign,
-  .min-paper .mom-sign-3 { grid-template-columns: 1fr; gap: 20px; }
+  .min-paper .mom-att { grid-template-columns: 1fr; gap: 20px; }
   .min-paper .mom-members-m { columns: 1; }
   .min-paper .mom-particulars { grid-template-columns: 1fr; }
   .min-paper .mom-particulars > div + div { border-top: 1px solid #D6C9B2; }
