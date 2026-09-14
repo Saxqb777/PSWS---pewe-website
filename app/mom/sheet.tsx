@@ -132,6 +132,13 @@ export function MomSheet({ c }: { c: MomContent }) {
             </div>
           ))}
         </div>
+
+        <div className="mom-members">
+          <div className="mom-comm-h">{c.membersBlock.head}</div>
+          <ul className="mom-comm-m mom-members-m">
+            {c.membersBlock.names.map((m) => <li key={m}>{m}</li>)}
+          </ul>
+        </div>
       </section>
 
       {/* ---------------- 05 · RESPONSIBILITIES ---------------- */}
@@ -173,11 +180,16 @@ export function MomSheet({ c }: { c: MomContent }) {
       {/* ---------------- CLOSE ---------------- */}
       <section className="mom-sec mom-keep">
         <div className="mom-close">{c.close}</div>
-        <div className="mom-sign">
+        <div className="mom-sign mom-sign-3">
           <div>
             <div className="mom-sign-line" />
             <div className="mom-sign-n">{c.meeting.chair}</div>
             <div className="mom-sign-r">{c.signRoles.chair}</div>
+          </div>
+          <div>
+            <div className="mom-sign-line" />
+            <div className="mom-sign-n">{c.appointments[0].name}</div>
+            <div className="mom-sign-r">{c.signRoles.president}</div>
           </div>
           <div>
             <div className="mom-sign-line" />

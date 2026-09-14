@@ -167,6 +167,7 @@
   border-left: 2px solid #7A2E2E; font-size: 10.4px; color: #1C1815;
 }
 .mom-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; margin-top: 40px; }
+.mom-sign-3 { grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .mom-sign-line { border-top: 1px solid #1C1815; }
 .mom-sign-n { margin-top: 5px; font-size: 10.2px; font-weight: 600; }
 .mom-sign-r {
@@ -219,6 +220,10 @@
 .mom-comm-m li::before {
   content: "·"; position: absolute; left: 2px; color: #A67C3D;
 }
+
+.mom-members { margin-top: 14px; border-top: 1px solid #D6C9B2; padding-top: 7px;
+               break-inside: avoid; }
+.mom-members-m { columns: 3; column-gap: 22px; }
 
 /* ---------- election annexure ---------- */
 
