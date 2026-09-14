@@ -182,3 +182,23 @@
   display: flex; justify-content: space-between; padding-top: 7px;
   font-size: 8px; letter-spacing: .04em; color: #786C5D;
 }
+
+/* ---------- added: language badge, open questions, done rows ---------- */
+
+.mom-refrow { display: flex; align-items: baseline; gap: 10px; margin-top: 5px; }
+.mom-lang {
+  font-size: 7.4px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: #7A2E2E; border: 1px solid #D6C9B2; padding: 1.5px 6px;
+}
+.mom-counts-3 { grid-template-columns: repeat(3, 1fr); }
+
+.mom-open { border-left: 2px solid #A67C3D; padding-left: 10px; }
+.mom-open-i { padding: 4px 0; }
+.mom-open-h { font-size: 9.6px; font-weight: 600; color: #7A2E2E; }
+.mom-open-p { font-size: 9.4px; line-height: 1.55; color: #4A4239; margin-top: 1px; }
+
+.mom-tr-done td { color: #786C5D; }
+.mom-tr-done .mom-td-n { color: #1F5B3A; font-weight: 700; }
+
+.mom-att > div { min-width: 0; }
+.mom-list li, .mom-li-note { overflow-wrap: anywhere; }
