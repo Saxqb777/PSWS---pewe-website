@@ -52,31 +52,17 @@ function useParallax() {
 function Plate() {
   const y = useParallax();
 
-  if (SOCIETY.heroMode === "diptych") {
-    // Two frames of the same building, graded alike so they read as a pair,
-    // with a column of the jali motif standing between them as the seam.
+  if (SOCIETY.heroMode === "band") {
+    // One photograph, running the full width of its own band.
     return (
-      <div className="flex h-full w-full">
-        <div className="relative h-full w-[42%] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/hero/hero-left.jpg"
-            alt="The building at Pewe, seen from the lane"
-            className="hero-drift h-full w-full object-cover"
-            style={{ objectPosition: "center top" }}
-          />
-        </div>
-
-        <div aria-hidden className="jali-column w-[26px] shrink-0 bg-paper opacity-70" />
-
-        <div className="relative h-full flex-1 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/hero/hero-right.jpg"
-            alt="The pierced screen and the arcade, with the Sahyadri beyond"
-            className="h-full w-full object-cover"
-          />
-        </div>
+      <div className="relative h-full w-full overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/hero/hero-left.jpg"
+          alt="The building at Pewe, seen from the lane"
+          className="hero-drift h-full w-full object-cover"
+          style={{ objectPosition: "center 38%" }}
+        />
       </div>
     );
   }
@@ -128,10 +114,10 @@ function Plate() {
 }
 
 export function Hero() {
-  // The diptych is two photographs side by side, so nothing can sit on top
-  // of it — the plate becomes a band and the bookplate sits under it on
-  // paper. The single-image modes keep the older overlapping composition.
-  const band = SOCIETY.heroMode === "diptych";
+  // In band mode the photograph runs the full width, so nothing can sit on
+  // top of it — the bookplate sits under it on paper instead. The other
+  // modes keep the older overlapping composition.
+  const band = SOCIETY.heroMode === "band";
 
   if (band) {
     return (

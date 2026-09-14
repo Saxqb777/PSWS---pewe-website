@@ -45,6 +45,35 @@ used (see the rules below), but *kabrastan*, *gram panchayat*, *taluka*,
 it (*Paisa kahan gaya*, *Zakat aur madad*, *Gaon ke kaam*). One version, no
 toggle.
 
+## The members' gate
+
+The front page is open to anyone. Everything behind it — The Society,
+Projects, Accounts, the members' portal — is held behind one shared
+password while it is being built, by `middleware.ts`.
+
+`/minutes` stays open, because the committee shares that link on purpose.
+
+**The password is not in this repository, and must never be put in it.**
+This repository is public. `lib/gate.ts` holds only a SHA-256 digest of the
+password, as a fallback so the gate works the moment it is deployed.
+
+To make the gate properly strong, set an environment variable in the Vercel
+project settings:
+
+```
+SITE_PASSWORD = <the password the committee shares>
+```
+
+With it set, nothing about the password can be worked out from this
+repository at all, and it can be changed at any time without a commit —
+Settings → Environment Variables → edit → redeploy.
+
+Entering the password sets an httpOnly cookie that lasts 30 days. A `DELETE`
+to `/api/enter` clears it, which is worth wiring to a button if the portal
+is ever opened on a shared phone.
+
+To open a path to the public, add it to `isOpenPath()` in `lib/gate.ts`.
+
 ## Compliance rules — READ BEFORE EDITING COPY
 
 These come from the office and are not stylistic preferences. Breaking them
