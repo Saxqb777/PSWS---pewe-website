@@ -99,9 +99,8 @@ export function MomSheet({ c }: { c: MomContent }) {
         <table className="mom-table">
           <thead>
             <tr>
-              <th style={{ width: "30%" }}>{c.appointmentsCols.post}</th>
-              <th style={{ width: "34%" }}>{c.appointmentsCols.name}</th>
-              <th>{c.appointmentsCols.note}</th>
+              <th style={{ width: "42%" }}>{c.appointmentsCols.post}</th>
+              <th>{c.appointmentsCols.name}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +108,6 @@ export function MomSheet({ c }: { c: MomContent }) {
               <tr key={a.post}>
                 <td className="mom-td-post">{a.post}</td>
                 <td className="mom-td-name">{a.name}</td>
-                <td className="mom-td-note">{a.note ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -232,7 +230,6 @@ export function MomSheet({ c }: { c: MomContent }) {
           </tbody>
         </table>
 
-        <p className="mom-elec-note">{c.election.note}</p>
       </section>
 
       <footer className="mom-foot">

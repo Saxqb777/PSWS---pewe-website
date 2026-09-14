@@ -26,8 +26,8 @@ export interface MomContent {
   absent: Person[];
   decisions: Named[];
   appointmentsLede: string;
-  appointmentsCols: { post: string; name: string; note: string };
-  appointments: { post: string; name: string; note?: string }[];
+  appointmentsCols: { post: string; name: string };
+  appointments: { post: string; name: string }[];
   committeesLede: string;
   committees: Committee[];
   responsibilities: Named[];
@@ -38,7 +38,6 @@ export interface MomContent {
     stats: { v: string; l: string }[];
     cols: { n: string; name: string; votes: string; share: string };
     newTag: string;
-    note: string;
   };
   elected: Elected[];
   close: string;
@@ -140,12 +139,11 @@ export const EN: MomContent = {
   ],
   appointmentsLede:
     "Appointed unanimously, for a term of two years.",
-  appointmentsCols: { post: "Office", name: "Appointed", note: "Note" },
+  appointmentsCols: { post: "Office", name: "Appointed" },
   appointments: [
     { post: "President", name: "Akhtar Khan" },
     { post: "General Secretary", name: "Irfan Anwar Khan" },
-    { post: "Treasurer", name: "Abdul Qayyum Khan",
-      note: "Appointed in absentia; accepted by message to the committee on 14 September 2026" },
+    { post: "Treasurer", name: "Abdul Qayyum Khan" },
     { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
     { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
     { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
@@ -158,12 +156,12 @@ export const EN: MomContent = {
     { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
   ],
   responsibilities: [
-    { head: "General administration",
-      text: "The General Secretary manages all documentation, meeting notes and administrative matters, including building and keeping the contact database." },
+    { head: "General Secretary",
+      text: "Manages all documentation, meeting notes and administrative matters, including building and keeping the contact database. Also carries the website, the Society's online presence and connections, and the automation work." },
     { head: "Zakat Committee",
       text: "Runs the collection and distribution of Zakat through the collection months, with dedicated support from the management team." },
     { head: "Development Committee",
-      text: "Manages the website, the online presence and connections, and drives the automation work." },
+      text: "Carries the village development works, and supports the General Secretary on the website, the online side and whatever else is needed." },
     { head: "Working across committees",
       text: "Members are encouraged to take part in more than one committee, according to what they are good at and what the Society needs." },
   ],
@@ -183,7 +181,6 @@ export const EN: MomContent = {
     ],
     cols: { n: "#", name: "Member", votes: "Votes", share: "Share" },
     newTag: "New",
-    note: "Abdul Wahid Badruddin Khan Sarguroh polled 42 votes and stood fifteenth on the day, and has stepped aside. The seat passed to Mubeen Mohiuddin Pavekar, next in line on 36. Every count here is as it fell on the day.",
   },
   elected: ELECTED,
   close:
@@ -251,12 +248,11 @@ export const HI: MomContent = {
   ],
   appointmentsLede:
     "Sab ki razamandi se, do saal ke term ke liye.",
-  appointmentsCols: { post: "Position", name: "Kaun", note: "Note" },
+  appointmentsCols: { post: "Position", name: "Kaun" },
   appointments: [
     { post: "President", name: "Akhtar Khan" },
     { post: "General Secretary", name: "Irfan Anwar Khan" },
-    { post: "Treasurer", name: "Abdul Qayyum Khan",
-      note: "Ghair-hazri mein chune gaye; 14 September 2026 ko message se accept kiya" },
+    { post: "Treasurer", name: "Abdul Qayyum Khan" },
     { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
     { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
     { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
@@ -269,12 +265,12 @@ export const HI: MomContent = {
     { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
   ],
   responsibilities: [
-    { head: "General admin",
-      text: "General Secretary saare kaagzaat, meeting ke notes aur admin ka kaam dekhenge, aur members ka contact database banayenge aur sambhalenge." },
+    { head: "General Secretary",
+      text: "Saare kaagzaat, meeting ke notes aur admin ka kaam dekhenge, aur members ka contact database banayenge aur sambhalenge. Website, online presence aur automation ka kaam bhi wahi sambhalenge." },
     { head: "Zakat Committee",
       text: "Zakat ke mahinon mein collection aur distribution ka kaam khud sambhalegi, management team ki poori madad ke saath." },
     { head: "Development Committee",
-      text: "Website, online kaam aur raabte dekhegi, aur automation ka kaam aage badhayegi." },
+      text: "Gaon ke development ke kaam sambhalegi, aur website, online kaam aur jo bhi zarurat ho usme General Secretary ki madad karegi." },
     { head: "Ek se zyada committee mein",
       text: "Members se guzarish hai ke jo jisme acha hai aur jahan Society ko zarurat hai, wahan ek se zyada committee mein hissa lein." },
   ],
@@ -294,7 +290,6 @@ export const HI: MomContent = {
     ],
     cols: { n: "#", name: "Member", votes: "Vote", share: "Hissa" },
     newTag: "Naya",
-    note: "Abdul Wahid Badruddin Khan Sarguroh ko 42 vote mile aur woh pandrahvein number par the, lekin unhone apni seat chhod di. Seat Mubeen Mohiuddin Pavekar ko gayi, jo 36 vote ke saath agle number par the. Har count wahi hai jo us din aaya tha.",
   },
   elected: ELECTED,
   close:

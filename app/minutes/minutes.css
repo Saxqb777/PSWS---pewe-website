@@ -1,0 +1,129 @@
+/* ============================================================
+   /minutes — the committee's minutes as a live page.
+   The sheet itself is app/mom/mom.css, which is sized for A4.
+   Everything here is the screen chrome around it, plus the
+   handful of rules that make an A4 sheet readable on a phone.
+   All of it disappears when the page is printed.
+   ============================================================ */
+
+.min-wrap { background: var(--color-paper-2); min-height: 100vh; }
+
+/* ---------- chrome ---------- */
+
+.min-bar { background: var(--color-ink); color: var(--color-paper); }
+.min-bar-in {
+  max-width: 1000px; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.min-bar-id { display: flex; align-items: center; gap: 11px; min-width: 0; color: inherit; }
+.min-bar-n {
+  display: block;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 16px; line-height: 1.15; letter-spacing: -0.01em;
+}
+.min-bar-s {
+  display: block;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-brass-light); margin-top: 2px;
+}
+.min-back {
+  font-size: 13px; color: var(--color-paper); opacity: 0.72;
+  white-space: nowrap; text-decoration: none;
+}
+.min-back:hover { opacity: 1; text-decoration: underline; }
+
+/* ---------- title + controls ---------- */
+
+.min-head {
+  max-width: 1000px; margin: 0 auto;
+  padding: 22px 20px 18px;
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  justify-content: space-between; gap: 16px;
+}
+.min-head-t {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 25px; line-height: 1.15; letter-spacing: -0.015em;
+  color: var(--color-ink);
+}
+.min-head-d { font-size: 13.5px; color: var(--color-ink-2); margin-top: 3px; }
+.min-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.min-seg { display: flex; border: 1px solid var(--color-ink); background: var(--color-paper); }
+.min-seg button {
+  font: inherit; font-size: 13px; padding: 7px 14px;
+  background: none; border: none; cursor: pointer; color: var(--color-ink);
+  white-space: nowrap;
+}
+.min-seg button + button { border-left: 1px solid var(--color-ink); }
+.min-seg button[aria-pressed="true"] { background: var(--color-ink); color: var(--color-paper); }
+
+.min-print {
+  font: inherit; font-size: 13px; padding: 7px 14px; cursor: pointer;
+  background: var(--color-maroon); color: var(--color-paper); border: 1px solid var(--color-maroon);
+  white-space: nowrap;
+}
+.min-print:hover { background: #63241f; border-color: #63241f; }
+
+/* ---------- the sheet on screen ---------- */
+
+.min-paper-out { max-width: 1000px; margin: 0 auto; padding: 0 20px 44px; }
+.min-paper {
+  background: #fff; max-width: 760px; margin: 0 auto;
+  padding: 30px 34px 38px;
+  border: 1px solid #D6C9B2;
+  box-shadow: 0 1px 2px rgba(28, 24, 21, 0.06), 0 14px 34px rgba(28, 24, 21, 0.09);
+}
+/* The sheet is set at print sizes. Scale it up so it can be read on a
+   screen without the reader leaning in. `zoom` reflows; transform would not. */
+.min-paper .mom-sheet { zoom: 1.34; }
+
+/* ---------- footer ---------- */
+
+.min-foot {
+  border-top: 1px solid var(--color-rule);
+  max-width: 1000px; margin: 0 auto; padding: 18px 20px 40px;
+  font-size: 12.5px; line-height: 1.65; color: var(--color-ink-2);
+}
+.min-foot a { color: var(--color-maroon); }
+
+/* ---------- narrow screens ---------- */
+
+@media (max-width: 700px) {
+  .min-bar-in { padding: 10px 14px; gap: 10px; }
+  .min-bar-n { font-size: 14.5px; }
+  .min-bar-s { display: none; }
+  .min-back { font-size: 12.5px; }
+
+  .min-head { padding: 18px 14px 14px; }
+  .min-head-t { font-size: 21px; }
+  .min-paper-out { padding: 0 12px 32px; }
+  .min-paper { padding: 18px 16px 24px; }
+  .min-paper .mom-sheet { zoom: 1.08; }
+
+  /* Two- and three-up blocks are laid out for a 183mm column. Stack them. */
+  .min-paper .mom-att,
+  .min-paper .mom-sign { grid-template-columns: 1fr; gap: 20px; }
+  .min-paper .mom-particulars { grid-template-columns: 1fr; }
+  .min-paper .mom-particulars > div + div { border-top: 1px solid #D6C9B2; }
+  .min-paper .mom-comm-m { columns: 1; }
+  .min-paper .mom-head-row { flex-wrap: wrap; gap: 10px; }
+  .min-paper .mom-head-reg { width: 100%; }
+}
+
+@media (max-width: 430px) {
+  .min-paper .mom-counts,
+  .min-paper .mom-elec-stats { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- print: chrome away, sheet only ---------- */
+
+@media print {
+  .min-wrap { background: #fff; }
+  .min-bar, .min-head, .min-foot { display: none !important; }
+  .min-paper-out { max-width: none; margin: 0; padding: 0; }
+  .min-paper {
+    max-width: none; margin: 0; padding: 0;
+    border: none; box-shadow: none;
+  }
+  .min-paper .mom-sheet { zoom: 1; }
+}

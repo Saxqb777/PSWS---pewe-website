@@ -1,34 +1,43 @@
-# Minutes of Meeting — print sheet
+# Minutes of Meeting
 
-Renders the Management Committee minutes on the Society letterhead and
-prints to A4 PDF.
+One layout, `sheet.tsx`, fed by `content.ts`, reached three ways.
 
-**This route is not on the public site.** It names every member of the
-committee, so it is gated behind `ALLOW_INTERNAL_DOCS` and returns 404
-wherever that flag is absent — which includes Vercel.
-
-Two versions come off the same layout:
-
-| Route | |
+| Route | What it is |
 |---|---|
-| `/mom` | English |
-| `/mom/hi` | Hinglish — Hindi/Urdu in Roman letters, as the committee speaks |
+| `/minutes` | **The live page.** Public in the sense that the link opens for anyone who has it. Carries the site's own chrome, an English ⇄ Urdu-English toggle and a Print button. |
+| `/mom` | The bare A4 sheet, English — for rendering a PDF headlessly. |
+| `/mom/hi` | The bare A4 sheet, Urdu-English. |
 
-## Regenerating, or writing the next set
+## Shared by link, not found by search
 
-1. Edit `content.ts` — the `EN` and `HI` objects share one shape, so
-   anything added to one needs the other. `sheet.tsx` renders either and
-   should not need touching.
-2. Build and serve with the flag on:
+`/minutes` names every member of the committee. It is kept out of sight
+three ways, and all three should stay:
 
-   ```bash
-   ALLOW_INTERNAL_DOCS=1 npm run build
-   ALLOW_INTERNAL_DOCS=1 npm start
-   ```
+1. It is **not in the site navigation** (`components/site-header.tsx`).
+2. It carries `robots: { index: false, follow: false, nocache: true }`.
+3. It is disallowed in `app/robots.ts`.
 
-3. Print `http://localhost:3000/mom` and `/mom/hi` to PDF — from the
-   browser (A4, background graphics on, margins 14/13/12 mm) or with
-   Playwright.
+The bare `/mom` routes are additionally gated behind `ALLOW_INTERNAL_DOCS`
+and 404 wherever that flag is absent, which includes Vercel.
+
+## Editing the minutes
+
+`content.ts` holds `EN` and `HI`, which share one shape — anything added
+to one needs the other, or TypeScript will say so. `sheet.tsx` renders
+either and should not need touching. Push, and the live page changes.
+
+## Getting a PDF
+
+From the page: open `/minutes` and press **Print / Save PDF**. The chrome
+drops out and the A4 sheet prints on its own.
+
+Headlessly, from `/mom`:
+
+```bash
+ALLOW_INTERNAL_DOCS=1 npm run build
+ALLOW_INTERNAL_DOCS=1 npm start
+# then render /mom and /mom/hi with Playwright at A4, printBackground: true
+```
 
 ## Two habits worth keeping
 
@@ -37,7 +46,7 @@ minutes carried a name that turned out not to have attended at all. Names
 in a permanent record should come from the attendance itself, not from who
 one assumes was present.
 
-**Record what has not been settled.** Where the meeting's own headcount did
-not match the names, the minutes say so under "To be settled" and carry it
-as an action, rather than quietly picking a number. A minute that admits a
-gap is worth more than one that hides it.
+**Keep the record to what the meeting decided.** Where an earlier draft
+explained why a seat changed hands, or how someone accepted a post, the
+committee took it out. A minute records what was resolved; the
+circumstances around it are not the record's business.
