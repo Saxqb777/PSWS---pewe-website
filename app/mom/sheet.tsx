@@ -47,7 +47,7 @@ export function MomSheet({ c }: { c: MomContent }) {
         <div><dt>{c.meeting.chairLabel}</dt><dd>{c.meeting.chair}</dd></div>
       </dl>
 
-      {/* ---------------- 1 · ATTENDANCE ---------------- */}
+      {/* ---------------- 01 · ATTENDANCE ---------------- */}
       <section className="mom-sec">
         <h2 className="mom-h2"><span className="mom-h2-n">01</span>{c.headings.attendance}</h2>
 
@@ -75,21 +75,11 @@ export function MomSheet({ c }: { c: MomContent }) {
                   {p.note && <span className="mom-li-note">{p.note}</span>}</li>
               ))}
             </ol>
-
-            <h3 className="mom-h3 mom-h3-sp">{c.headings.open}</h3>
-            <div className="mom-open">
-              {c.openQuestions.map((q) => (
-                <div key={q.head} className="mom-open-i">
-                  <div className="mom-open-h">{q.head}</div>
-                  <p className="mom-open-p">{q.text}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ---------------- 2 · DECISIONS ---------------- */}
+      {/* ---------------- 02 · DECISIONS ---------------- */}
       <section className="mom-sec">
         <h2 className="mom-h2"><span className="mom-h2-n">02</span>{c.headings.decisions}</h2>
         <div className="mom-defs">
@@ -102,15 +92,15 @@ export function MomSheet({ c }: { c: MomContent }) {
         </div>
       </section>
 
-      {/* ---------------- 3 · APPOINTMENTS ---------------- */}
+      {/* ---------------- 03 · OFFICE BEARERS ---------------- */}
       <section className="mom-sec mom-keep">
         <h2 className="mom-h2"><span className="mom-h2-n">03</span>{c.headings.appointments}</h2>
         <p className="mom-lede">{c.appointmentsLede}</p>
         <table className="mom-table">
           <thead>
             <tr>
-              <th style={{ width: "32%" }}>{c.appointmentsCols.post}</th>
-              <th style={{ width: "32%" }}>{c.appointmentsCols.name}</th>
+              <th style={{ width: "30%" }}>{c.appointmentsCols.post}</th>
+              <th style={{ width: "34%" }}>{c.appointmentsCols.name}</th>
               <th>{c.appointmentsCols.note}</th>
             </tr>
           </thead>
@@ -126,9 +116,29 @@ export function MomSheet({ c }: { c: MomContent }) {
         </table>
       </section>
 
-      {/* ---------------- 4 · RESPONSIBILITIES ---------------- */}
+      {/* ---------------- 04 · THE THREE COMMITTEES ---------------- */}
+      <section className="mom-sec mom-keep">
+        <h2 className="mom-h2"><span className="mom-h2-n">04</span>{c.headings.committees}</h2>
+        <p className="mom-lede">{c.committeesLede}</p>
+
+        <div className="mom-comms">
+          {c.committees.map((k) => (
+            <div key={k.head} className="mom-comm">
+              <div className="mom-comm-h">{k.head}</div>
+              <div className="mom-comm-lead">{k.lead}</div>
+              {k.members.length > 0 && (
+                <ul className="mom-comm-m">
+                  {k.members.map((m) => <li key={m}>{m}</li>)}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------------- 05 · RESPONSIBILITIES ---------------- */}
       <section className="mom-sec">
-        <h2 className="mom-h2"><span className="mom-h2-n">04</span>{c.headings.responsibilities}</h2>
+        <h2 className="mom-h2"><span className="mom-h2-n">05</span>{c.headings.responsibilities}</h2>
         <div className="mom-defs">
           {c.responsibilities.map((d) => (
             <div key={d.head} className="mom-def">
@@ -139,15 +149,15 @@ export function MomSheet({ c }: { c: MomContent }) {
         </div>
       </section>
 
-      {/* ---------------- 5 · ACTIONS ---------------- */}
+      {/* ---------------- 06 · ACTIONS ---------------- */}
       <section className="mom-sec mom-keep">
-        <h2 className="mom-h2"><span className="mom-h2-n">05</span>{c.headings.actions}</h2>
+        <h2 className="mom-h2"><span className="mom-h2-n">06</span>{c.headings.actions}</h2>
         <table className="mom-table">
           <thead>
             <tr>
               <th style={{ width: "6%" }}>{c.actionsCols.n}</th>
               <th>{c.actionsCols.what}</th>
-              <th style={{ width: "24%" }}>{c.actionsCols.who}</th>
+              <th style={{ width: "26%" }}>{c.actionsCols.who}</th>
             </tr>
           </thead>
           <tbody>
@@ -173,10 +183,56 @@ export function MomSheet({ c }: { c: MomContent }) {
           </div>
           <div>
             <div className="mom-sign-line" />
-            <div className="mom-sign-n">Irfan Anwar Saheb</div>
+            <div className="mom-sign-n">{c.appointments[1].name}</div>
             <div className="mom-sign-r">{c.signRoles.secretary}</div>
           </div>
         </div>
+      </section>
+
+      {/* ---------------- ANNEXURE · THE ELECTION ---------------- */}
+      <section className="mom-sec mom-annex">
+        <h2 className="mom-h2"><span className="mom-h2-n">A</span>{c.headings.election}</h2>
+        <p className="mom-lede">{c.election.lede}</p>
+
+        <div className="mom-elec-stats">
+          {c.election.stats.map((st) => (
+            <div key={st.l}>
+              <span className="mom-elec-v">{st.v}</span>
+              <span className="mom-elec-l">{st.l}</span>
+            </div>
+          ))}
+        </div>
+
+        <table className="mom-table mom-elec-t">
+          <thead>
+            <tr>
+              <th style={{ width: "7%" }}>{c.election.cols.n}</th>
+              <th>{c.election.cols.name}</th>
+              <th style={{ width: "13%" }} className="mom-th-r">{c.election.cols.votes}</th>
+              <th style={{ width: "22%" }}>{c.election.cols.share}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.elected.map((e) => (
+              <tr key={e.n}>
+                <td className="mom-td-n">{e.n}</td>
+                <td>
+                  {e.name}
+                  {e.isNew && <span className="mom-new">{c.election.newTag}</span>}
+                </td>
+                <td className="mom-td-num">{e.votes}</td>
+                <td>
+                  <span className="mom-barwrap">
+                    <span className="mom-bar" style={{ width: `${e.pct}%` }} />
+                  </span>
+                  <span className="mom-bar-v">{e.pct}%</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <p className="mom-elec-note">{c.election.note}</p>
       </section>
 
       <footer className="mom-foot">

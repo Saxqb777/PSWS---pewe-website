@@ -1,12 +1,14 @@
 /**
- * Minutes content, in both the English and the Hinglish the committee
- * actually speaks. One shape, two fillings — the sheet component renders
- * either. The next set of minutes is an edit here and nowhere else.
+ * Minutes content, in English and in the Urdu-English the committee
+ * actually speaks. One shape, two fillings — sheet.tsx renders either.
+ * Names follow the election result of 5 September 2026.
  */
 
 export interface Person { name: string; note?: string }
 export interface Named { head: string; text: string }
 export interface Action { what: string; who: string; done?: boolean }
+export interface Elected { n: number; name: string; votes: number; pct: number; isNew?: boolean }
+export interface Committee { head: string; lead: string; members: string[] }
 
 export interface MomContent {
   lang: "en" | "hi";
@@ -18,23 +20,67 @@ export interface MomContent {
   roll: { total: number; present: number; absent: number };
   rollLabels: { total: string; present: string; absent: string };
   headings: { attendance: string; decisions: string; appointments: string;
-              responsibilities: string; actions: string;
-              present: string; absent: string; open: string };
+              committees: string; responsibilities: string; actions: string;
+              present: string; absent: string; election: string };
   present: Person[];
   absent: Person[];
-  openQuestions: Named[];
   decisions: Named[];
   appointmentsLede: string;
   appointmentsCols: { post: string; name: string; note: string };
   appointments: { post: string; name: string; note?: string }[];
+  committeesLede: string;
+  committees: Committee[];
   responsibilities: Named[];
   actionsCols: { n: string; what: string; who: string };
   actions: Action[];
+  election: {
+    lede: string;
+    stats: { v: string; l: string }[];
+    cols: { n: string; name: string; votes: string; share: string };
+    newTag: string;
+    note: string;
+  };
+  elected: Elected[];
   close: string;
   signRoles: { chair: string; secretary: string };
 }
 
-/* ---------------------------------------------------------------- */
+const ELECTED: Elected[] = [
+  { n: 1,  name: "Akhtar Khan",                        votes: 92, pct: 84 },
+  { n: 2,  name: "Irfan Anwar Khan",                   votes: 79, pct: 72 },
+  { n: 3,  name: "Afzal Abdul Rahiman Khan Sarguro",   votes: 76, pct: 70 },
+  { n: 4,  name: "Ibrahim Usman Sarguroh",             votes: 76, pct: 70 },
+  { n: 5,  name: "Khalid A. Razzak Khan Sarguroh",     votes: 74, pct: 68 },
+  { n: 6,  name: "Nisar Sarguroh",                     votes: 73, pct: 67 },
+  { n: 7,  name: "Aslam Ahmed Khan",                   votes: 69, pct: 63 },
+  { n: 8,  name: "Bilal Sarguroh",                     votes: 69, pct: 63 },
+  { n: 9,  name: "Sadiq Latif Khan",                   votes: 66, pct: 61 },
+  { n: 10, name: "Maqbool Pevekar",                    votes: 58, pct: 53 },
+  { n: 11, name: "S. M. S. G. Khan",                   votes: 53, pct: 49 },
+  { n: 12, name: "Gayasali Mahamood Khan S.",          votes: 49, pct: 45 },
+  { n: 13, name: "Mukri Mohammed Hussain A.",          votes: 45, pct: 41, isNew: true },
+  { n: 14, name: "Musaddiq Khan",                      votes: 44, pct: 40, isNew: true },
+  { n: 15, name: "Abdul Qayyum Khan",                  votes: 41, pct: 38, isNew: true },
+  { n: 16, name: "Shakeel Ahmed Abdul Samad",          votes: 38, pct: 35 },
+  { n: 17, name: "Mubeen Mohiuddin Pavekar",           votes: 36, pct: 33, isNew: true },
+];
+
+/** The eleven who hold no office — they make up the Development Committee. */
+const REST = [
+  "Ibrahim Usman Sarguroh",
+  "Khalid A. Razzak Khan Sarguroh",
+  "Nisar Sarguroh",
+  "Bilal Sarguroh",
+  "Sadiq Latif Khan",
+  "Maqbool Pevekar",
+  "S. M. S. G. Khan",
+  "Gayasali Mahamood Khan S.",
+  "Mukri Mohammed Hussain A.",
+  "Musaddiq Khan",
+  "Shakeel Ahmed Abdul Samad",
+];
+
+/* ================================ ENGLISH ================================ */
 
 export const EN: MomContent = {
   lang: "en",
@@ -45,193 +91,213 @@ export const EN: MomContent = {
     ref: "PSWS/MOM/2026-27/01",
     dateLabel: "Date", date: "Saturday, 13 September 2026",
     heldLabel: "Held", held: "Online meeting",
-    chairLabel: "In the chair", chair: "S. M. S. G. Khan Saheb (Shafi Saheb)",
+    chairLabel: "In the chair", chair: "Akhtar Khan",
   },
   roll: { total: 17, present: 13, absent: 4 },
   rollLabels: { total: "On the committee", present: "Present", absent: "Absent" },
   headings: {
     attendance: "Attendance",
-    decisions: "Decisions and structural changes",
-    appointments: "Leadership appointments",
-    responsibilities: "Committee responsibilities",
+    decisions: "Decisions and structure",
+    appointments: "Office bearers",
+    committees: "The three committees",
+    responsibilities: "What each committee does",
     actions: "Action items",
     present: "Present", absent: "Absent",
-    open: "To be settled",
+    election: "The committee as elected",
   },
   present: [
-    { name: "Akhtar Khan Saheb" },
-    { name: "Irfan Anwar Saheb" },
-    { name: "Afzal Sarguro Saheb" },
-    { name: "S. M. S. G. Khan Saheb (Shafi Saheb)" },
-    { name: "Aslam Khan Saheb" },
-    { name: "Gayasali Khan Saheb" },
-    { name: "Nisar Sarguroh Saheb" },
-    { name: "Mohammad Husain Saheb" },
-    { name: "Mussadiq Saheb" },
-    { name: "Khalid Saheb" },
-    { name: "Makbool Saheb" },
-    { name: "Bilal Saheb" },
-    { name: "Mubin Pewekar Saheb" },
+    { name: "Akhtar Khan" },
+    { name: "Irfan Anwar Khan" },
+    { name: "Afzal Abdul Rahiman Khan Sarguro" },
+    { name: "Khalid A. Razzak Khan Sarguroh" },
+    { name: "Nisar Sarguroh" },
+    { name: "Aslam Ahmed Khan" },
+    { name: "Bilal Sarguroh" },
+    { name: "Maqbool Pevekar" },
+    { name: "S. M. S. G. Khan (Shafi Saheb)" },
+    { name: "Gayasali Mahamood Khan S." },
+    { name: "Mukri Mohammed Hussain A." },
+    { name: "Musaddiq Khan" },
+    { name: "Mubeen Mohiuddin Pavekar" },
   ],
   absent: [
-    { name: "Sadiq Latif Saheb" },
-    { name: "Ibrahim Usman Saheb" },
-    { name: "Abdul Qayum Saheb", note: "Unwell; sent his apology. Accepted the post by message the next day" },
-    { name: "Shakeel Saheb" },
-  ],
-  openQuestions: [
-    {
-      head: "The fourteenth attendee",
-      text: "The meeting showed fourteen people connected at one point, while thirteen members are named above. The fourteenth is to be identified and these minutes corrected accordingly.",
-    },
-    {
-      head: "Recording",
-      text: "The link to the meeting recording has not yet been circulated. To be shared with the minutes.",
-    },
+    { name: "Ibrahim Usman Sarguroh" },
+    { name: "Sadiq Latif Khan" },
+    { name: "Abdul Qayyum Khan", note: "Unwell; sent his apology. Accepted the post by message the next day" },
+    { name: "Shakeel Ahmed Abdul Samad" },
   ],
   decisions: [
-    { head: "Streamlined hierarchy",
-      text: "The committee agreed unanimously to simplify the management hierarchy, so that responsibilities are clear and participation is active." },
-    { head: "Six core positions",
-      text: "The structure will consist of President, General Secretary, Treasurer, and three Committee Heads — Zakat, Development and Advisory." },
+    { head: "A simpler structure",
+      text: "The committee agreed unanimously to simplify the management structure, so that responsibilities are clear and everybody takes part." },
+    { head: "Six offices",
+      text: "President, General Secretary, Treasurer, and the heads of the three committees — Zakat, Development and Advisory." },
     { head: "Reporting",
       text: "All committee heads and members report directly to the President." },
     { head: "Joint Secretary deferred",
-      text: "The proposal for a Joint Secretary was deferred. The structure will be reviewed after one year to determine whether further roles are required." },
-    { head: "Tenure and review",
-      text: "The appointed leadership serves a term of two years, with a performance review after the first year." },
+      text: "The proposal for a Joint Secretary was deferred. The structure will be looked at again after one year to see whether further roles are needed." },
+    { head: "Term and review",
+      text: "The office bearers serve for two years, with a review of the work after the first year." },
   ],
   appointmentsLede:
-    "The following members were nominated and appointed unanimously to the six core positions, for a term of two years.",
-  appointmentsCols: { post: "Position", name: "Appointed", note: "Note" },
+    "Appointed unanimously, for a term of two years.",
+  appointmentsCols: { post: "Office", name: "Appointed", note: "Note" },
   appointments: [
-    { post: "President", name: "Akhtar Khan Saheb" },
-    { post: "General Secretary", name: "Irfan Anwar Saheb" },
-    { post: "Treasurer", name: "Abdul Qayum Raza Khan Saheb",
+    { post: "President", name: "Akhtar Khan" },
+    { post: "General Secretary", name: "Irfan Anwar Khan" },
+    { post: "Treasurer", name: "Abdul Qayyum Khan",
       note: "Appointed in absentia; accepted by message to the committee on 14 September 2026" },
-    { post: "Head, Zakat Committee", name: "Afzal Sarguro Saheb" },
-    { post: "Head, Development Committee", name: "Mubin Mohiddin Khan Saheb" },
-    { post: "Head, Advisory Committee", name: "Aslam Ahmad Khan Saheb" },
+    { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
+    { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
+    { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
+  ],
+  committeesLede:
+    "Every elected member sits on a committee. The eleven who hold no office form the Development Committee, which carries the bulk of the working load.",
+  committees: [
+    { head: "Zakat Committee", lead: "Afzal Abdul Rahiman Khan Sarguro", members: [] },
+    { head: "Development Committee", lead: "Mubeen Mohiuddin Pavekar", members: REST },
+    { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
   ],
   responsibilities: [
     { head: "General administration",
-      text: "The General Secretary manages all documentation, meeting notes and administrative matters, including building and maintaining the contact database." },
+      text: "The General Secretary manages all documentation, meeting notes and administrative matters, including building and keeping the contact database." },
     { head: "Zakat Committee",
-      text: "Actively manages the collection and distribution of Zakat through the collection months, with dedicated support from the management team." },
+      text: "Runs the collection and distribution of Zakat through the collection months, with dedicated support from the management team." },
     { head: "Development Committee",
-      text: "Manages the website, online presence and connections, and drives the automation work." },
-    { head: "Cross-committee support",
-      text: "Members are encouraged to take part across more than one committee, according to their own expertise and the needs of the Society." },
+      text: "Manages the website, the online presence and connections, and drives the automation work." },
+    { head: "Working across committees",
+      text: "Members are encouraged to take part in more than one committee, according to what they are good at and what the Society needs." },
   ],
   actionsCols: { n: "#", what: "Action", who: "With" },
   actions: [
     { what: "Confirm the Treasurer's acceptance of the position.", who: "Management", done: true },
-    { what: "Identify the fourteenth attendee and correct these minutes.", who: "General Secretary" },
-    { what: "Circulate the link to the meeting recording.", who: "General Secretary" },
     { what: "Create a form to collect email addresses and updated contact details from all members for the official record.", who: "General Secretary" },
-    { what: "Distribute these minutes to all members.", who: "General Secretary" },
     { what: "Announce the confirmed appointments in the general WhatsApp group once final approvals are secured.", who: "Management" },
   ],
+  election: {
+    lede: "The general election for Pewe was held on 5 September 2026. These are the seventeen the village returned, in the order the count placed them.",
+    stats: [
+      { v: "110", l: "Registered" },
+      { v: "109", l: "Voted" },
+      { v: "99.1%", l: "Turnout" },
+      { v: "1,853", l: "Votes counted" },
+    ],
+    cols: { n: "#", name: "Member", votes: "Votes", share: "Share" },
+    newTag: "New",
+    note: "Abdul Wahid Badruddin Khan Sarguroh polled 42 votes and stood fifteenth on the day, and has stepped aside. The seat passed to Mubeen Mohiuddin Pavekar, next in line on 36. Every count here is as it fell on the day.",
+  },
+  elected: ELECTED,
   close:
     "The meeting opened and closed with Tilawat-e-Quran by Shafi Saheb, and was adjourned with the closing dua led by Afzal Sarguro Saheb.",
-  signRoles: { chair: "Chair of the meeting", secretary: "General Secretary" },
+  signRoles: { chair: "President, and chair of the meeting", secretary: "General Secretary" },
 };
 
-/* ---------------------------------------------------------------- */
+/* =============================== HINGLISH =============================== */
 
 export const HI: MomContent = {
   lang: "hi",
-  langLabel: "Hinglish",
+  langLabel: "Urdu-English",
   meeting: {
     kicker: "Management Committee",
     title: "Meeting ke Minutes",
     ref: "PSWS/MOM/2026-27/01",
-    dateLabel: "Tareekh", date: "Sanivar, 13 September 2026",
+    dateLabel: "Date", date: "Sanivar, 13 September 2026",
     heldLabel: "Kahan", held: "Online meeting",
-    chairLabel: "Sadarat", chair: "S. M. S. G. Khan Saheb (Shafi Saheb)",
+    chairLabel: "Chairman", chair: "Akhtar Khan",
   },
   roll: { total: 17, present: 13, absent: 4 },
-  rollLabels: { total: "Committee mein kul", present: "Hazir", absent: "Ghair-hazir" },
+  rollLabels: { total: "Committee mein total", present: "Aaye", absent: "Nahi aaye" },
   headings: {
-    attendance: "Hazri",
-    decisions: "Faisle aur naya dhancha",
-    appointments: "Zimmedariyon ki taqseem",
-    responsibilities: "Committee ki zimmedariyan",
-    actions: "Karne ke kaam",
-    present: "Hazir", absent: "Ghair-hazir",
-    open: "Abhi tay hona baaki",
+    attendance: "Kaun aaya",
+    decisions: "Faisle aur naya structure",
+    appointments: "Kaun kya sambhalega",
+    committees: "Teen committee",
+    responsibilities: "Har committee ka kaam",
+    actions: "Aage ke kaam",
+    present: "Aaye", absent: "Nahi aaye",
+    election: "Election mein chune gaye 17",
   },
   present: [
-    { name: "Akhtar Khan Saheb" },
-    { name: "Irfan Anwar Saheb" },
-    { name: "Afzal Sarguro Saheb" },
-    { name: "S. M. S. G. Khan Saheb (Shafi Saheb)" },
-    { name: "Aslam Khan Saheb" },
-    { name: "Gayasali Khan Saheb" },
-    { name: "Nisar Sarguroh Saheb" },
-    { name: "Mohammad Husain Saheb" },
-    { name: "Mussadiq Saheb" },
-    { name: "Khalid Saheb" },
-    { name: "Makbool Saheb" },
-    { name: "Bilal Saheb" },
-    { name: "Mubin Pewekar Saheb" },
+    { name: "Akhtar Khan" },
+    { name: "Irfan Anwar Khan" },
+    { name: "Afzal Abdul Rahiman Khan Sarguro" },
+    { name: "Khalid A. Razzak Khan Sarguroh" },
+    { name: "Nisar Sarguroh" },
+    { name: "Aslam Ahmed Khan" },
+    { name: "Bilal Sarguroh" },
+    { name: "Maqbool Pevekar" },
+    { name: "S. M. S. G. Khan (Shafi Saheb)" },
+    { name: "Gayasali Mahamood Khan S." },
+    { name: "Mukri Mohammed Hussain A." },
+    { name: "Musaddiq Khan" },
+    { name: "Mubeen Mohiuddin Pavekar" },
   ],
   absent: [
-    { name: "Sadiq Latif Saheb" },
-    { name: "Ibrahim Usman Saheb" },
-    { name: "Abdul Qayum Saheb", note: "Tabiyat theek nahi thi; maafi bheji. Agle din message se ohda qubool kiya" },
-    { name: "Shakeel Saheb" },
-  ],
-  openQuestions: [
-    { head: "Chaudhvan kaun tha",
-      text: "Meeting mein ek waqt 14 log jude hue the, lekin upar 13 members ke naam hain. Chaudhvan kaun tha yeh maloom karke in minutes mein durusti ki jaye." },
-    { head: "Recording",
-      text: "Meeting ki recording ka link abhi tak share nahi hua hai. Minutes ke saath bheja jaye." },
+    { name: "Ibrahim Usman Sarguroh" },
+    { name: "Sadiq Latif Khan" },
+    { name: "Abdul Qayyum Khan", note: "Tabiyat theek nahi thi; maafi bheji. Agle din message se position accept ki" },
+    { name: "Shakeel Ahmed Abdul Samad" },
   ],
   decisions: [
-    { head: "Dhancha aasan kiya gaya",
-      text: "Committee ne ittefaq se faisla kiya ke management ka dhancha aasan kiya jaye, taake zimmedariyan saaf rahein aur sab ki shirkat rahe." },
-    { head: "Chhe buniyadi ohde",
-      text: "Dhanche mein rahenge — President, General Secretary, Khazanchi, aur teen Committee Heads: Zakat, Development aur Advisory." },
+    { head: "Structure simple kiya",
+      text: "Committee ne sab ne milkar faisla kiya ke management ka structure simple rakha jaye, taaki har kisi ko pata rahe kiski kya zimmedari hai aur sab hissa lein." },
+    { head: "Chhe position",
+      text: "President, General Secretary, Treasurer, aur teen committee ke head — Zakat, Development aur Advisory." },
     { head: "Reporting",
-      text: "Saare committee heads aur members seedha President ko report karenge." },
+      text: "Saare committee head aur members seedha President ko report karenge." },
     { head: "Joint Secretary abhi nahi",
-      text: "Joint Secretary ki tajweez filhaal rok di gayi. Ek saal baad dhanche par nazar-e-sani hogi ke aur ohde chahiye ya nahi." },
-    { head: "Muddat aur jaiza",
-      text: "Muqarrar ki gayi qayadat do saal ke liye hai, aur pehle saal ke baad kaam ka jaiza liya jayega." },
+      text: "Joint Secretary ki baat filhaal rok di gayi. Ek saal baad structure dobara dekha jayega ke aur position ki zarurat hai ya nahi." },
+    { head: "Term aur review",
+      text: "Jo position par aaye hain unka term do saal ka hai, aur pehle saal ke baad kaam ka review hoga." },
   ],
   appointmentsLede:
-    "Neeche diye gaye members ko ittefaq-e-raay se chhe buniyadi ohdon par, do saal ki muddat ke liye muqarrar kiya gaya.",
-  appointmentsCols: { post: "Ohda", name: "Muqarrar hue", note: "Note" },
+    "Sab ki razamandi se, do saal ke term ke liye.",
+  appointmentsCols: { post: "Position", name: "Kaun", note: "Note" },
   appointments: [
-    { post: "President", name: "Akhtar Khan Saheb" },
-    { post: "General Secretary", name: "Irfan Anwar Saheb" },
-    { post: "Khazanchi (Treasurer)", name: "Abdul Qayum Raza Khan Saheb",
-      note: "Ghair-hazri mein muqarrar; 14 September 2026 ko message se qubool kiya" },
-    { post: "Head, Zakat Committee", name: "Afzal Sarguro Saheb" },
-    { post: "Head, Development Committee", name: "Mubin Mohiddin Khan Saheb" },
-    { post: "Head, Advisory Committee", name: "Aslam Ahmad Khan Saheb" },
+    { post: "President", name: "Akhtar Khan" },
+    { post: "General Secretary", name: "Irfan Anwar Khan" },
+    { post: "Treasurer", name: "Abdul Qayyum Khan",
+      note: "Ghair-hazri mein chune gaye; 14 September 2026 ko message se accept kiya" },
+    { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
+    { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
+    { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
+  ],
+  committeesLede:
+    "Har chune gaye member kisi na kisi committee mein hai. Jin gyarah ke paas koi position nahi hai, woh Development Committee mein hain — sabse zyada kaam yahi committee sambhalegi.",
+  committees: [
+    { head: "Zakat Committee", lead: "Afzal Abdul Rahiman Khan Sarguro", members: [] },
+    { head: "Development Committee", lead: "Mubeen Mohiuddin Pavekar", members: REST },
+    { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
   ],
   responsibilities: [
-    { head: "Aam intezamiya",
-      text: "General Secretary saare kaagzaat, meeting ke notes aur intezami kaam dekhenge, jismein members ka contact database banana aur sambhalna bhi shamil hai." },
+    { head: "General admin",
+      text: "General Secretary saare kaagzaat, meeting ke notes aur admin ka kaam dekhenge, aur members ka contact database banayenge aur sambhalenge." },
     { head: "Zakat Committee",
-      text: "Zakat ke mahinon mein Zakat ki wusooli aur taqseem ka kaam khud dekhegi, management team ki poori madad ke saath." },
+      text: "Zakat ke mahinon mein collection aur distribution ka kaam khud sambhalegi, management team ki poori madad ke saath." },
     { head: "Development Committee",
       text: "Website, online kaam aur raabte dekhegi, aur automation ka kaam aage badhayegi." },
-    { head: "Ek dusre ki madad",
-      text: "Members se guzarish hai ke apni salahiyat aur Society ki zarurat ke mutabiq ek se zyada committee mein hissa lein." },
+    { head: "Ek se zyada committee mein",
+      text: "Members se guzarish hai ke jo jisme acha hai aur jahan Society ko zarurat hai, wahan ek se zyada committee mein hissa lein." },
   ],
   actionsCols: { n: "#", what: "Kaam", who: "Kis ke zimme" },
   actions: [
-    { what: "Khazanchi ke ohde ki qubooliyat ki tasdeeq karna.", who: "Management", done: true },
-    { what: "Chaudhvan hazir kaun tha yeh maloom karke minutes durust karna.", who: "General Secretary" },
-    { what: "Meeting ki recording ka link sab ko bhejna.", who: "General Secretary" },
+    { what: "Treasurer ki position ki acceptance confirm karna.", who: "Management", done: true },
     { what: "Sab members se email aur naya contact number lene ke liye ek form banana, record ke liye.", who: "General Secretary" },
-    { what: "Yeh minutes sab members ko bhejna.", who: "General Secretary" },
-    { what: "Aakhri manzoori ke baad ohdon ka elaan aam WhatsApp group mein karna.", who: "Management" },
+    { what: "Final approval ke baad positions ka announcement aam WhatsApp group mein karna.", who: "Management" },
   ],
+  election: {
+    lede: "Pewe ka general election 5 September 2026 ko hua. Yeh hain woh sattrah jo gaon ne chune, count ke order mein.",
+    stats: [
+      { v: "110", l: "Registered" },
+      { v: "109", l: "Vote diya" },
+      { v: "99.1%", l: "Turnout" },
+      { v: "1,853", l: "Vote gine gaye" },
+    ],
+    cols: { n: "#", name: "Member", votes: "Vote", share: "Hissa" },
+    newTag: "Naya",
+    note: "Abdul Wahid Badruddin Khan Sarguroh ko 42 vote mile aur woh pandrahvein number par the, lekin unhone apni seat chhod di. Seat Mubeen Mohiuddin Pavekar ko gayi, jo 36 vote ke saath agle number par the. Har count wahi hai jo us din aaya tha.",
+  },
+  elected: ELECTED,
   close:
     "Meeting ka aaghaz aur ikhtitam Shafi Saheb ki Tilawat-e-Quran se hua, aur aakhir mein Afzal Sarguro Saheb ne dua karwayi.",
-  signRoles: { chair: "Meeting ke sadar", secretary: "General Secretary" },
+  signRoles: { chair: "President, aur meeting ke chairman", secretary: "General Secretary" },
 };
