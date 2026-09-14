@@ -53,14 +53,6 @@ export function MinutesView() {
           <MomSheet c={c} />
         </div>
       </div>
-
-      <div className="min-foot">
-        This page carries the Management Committee&rsquo;s own minutes. It is shared by
-        link only — it is not listed on the website and search engines are asked not
-        to index it. When the record is corrected, this page changes with it.
-        <br />
-        <Link href="/">{SOCIETY.website}</Link>
-      </div>
     </div>
   );
 }

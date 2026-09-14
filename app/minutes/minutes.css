@@ -77,15 +77,6 @@
    screen without the reader leaning in. `zoom` reflows; transform would not. */
 .min-paper .mom-sheet { zoom: 1.34; }
 
-/* ---------- footer ---------- */
-
-.min-foot {
-  border-top: 1px solid var(--color-rule);
-  max-width: 1000px; margin: 0 auto; padding: 18px 20px 40px;
-  font-size: 12.5px; line-height: 1.65; color: var(--color-ink-2);
-}
-.min-foot a { color: var(--color-maroon); }
-
 /* ---------- narrow screens ---------- */
 
 @media (max-width: 700px) {
@@ -119,7 +110,7 @@
 
 @media print {
   .min-wrap { background: #fff; }
-  .min-bar, .min-head, .min-foot { display: none !important; }
+  .min-bar, .min-head { display: none !important; }
   .min-paper-out { max-width: none; margin: 0; padding: 0; }
   .min-paper {
     max-width: none; margin: 0; padding: 0;
