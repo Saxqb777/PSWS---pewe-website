@@ -48,9 +48,25 @@ export interface Submission {
   member_name: string;
   phone: string;
   gmail: string;
+  work_country: string;
+  work_city: string;
   submitted_at: string;
   updated_at: string;
 }
+
+/**
+ * Offered as suggestions, not enforced. The committee is spread between the
+ * village, Mumbai and the Gulf, and a fixed list would shut out whoever is
+ * somewhere it did not think of.
+ */
+export const COUNTRY_HINTS = [
+  "India", "United Arab Emirates", "Saudi Arabia", "Oman",
+  "Qatar", "Kuwait", "Bahrain",
+];
+export const CITY_HINTS = [
+  "Pewe", "Mumbai", "Chiplun", "Khed", "Guhagar", "Ratnagiri",
+  "Pune", "Dubai", "Abu Dhabi", "Sharjah", "Muscat", "Doha",
+];
 
 function db() {
   const url = process.env.DATABASE_URL;
@@ -66,21 +82,27 @@ export function isConfigured(): boolean {
 export async function allSubmissions(): Promise<Submission[]> {
   const sql = db();
   return (await sql`
-    SELECT member_slug, member_name, phone, gmail, submitted_at, updated_at
+    SELECT member_slug, member_name, phone, gmail,
+           work_country, work_city, submitted_at, updated_at
     FROM kyc_submission
     ORDER BY updated_at DESC
   `) as Submission[];
 }
 
 /** One row per member — filling the form again corrects what is held. */
-export async function saveSubmission(m: Member, phone: string, gmail: string) {
+export async function saveSubmission(
+  m: Member, phone: string, gmail: string, country: string, city: string,
+) {
   const sql = db();
   await sql`
-    INSERT INTO kyc_submission (member_slug, member_name, phone, gmail)
-    VALUES (${m.slug}, ${m.name}, ${phone}, ${gmail})
+    INSERT INTO kyc_submission
+      (member_slug, member_name, phone, gmail, work_country, work_city)
+    VALUES (${m.slug}, ${m.name}, ${phone}, ${gmail}, ${country}, ${city})
     ON CONFLICT (member_slug) DO UPDATE
       SET phone = EXCLUDED.phone,
           gmail = EXCLUDED.gmail,
+          work_country = EXCLUDED.work_country,
+          work_city = EXCLUDED.work_city,
           member_name = EXCLUDED.member_name,
           updated_at = now()
   `;
@@ -98,6 +120,18 @@ export function cleanPhone(raw: string): string | null {
 export function cleanGmail(raw: string): string | null {
   const v = raw.trim().toLowerCase();
   return /^[a-z0-9][a-z0-9._%+-]*@gmail\.com$/.test(v) ? v : null;
+}
+
+/**
+ * Tidies a typed place name so the record does not carry "india", "INDIA"
+ * and "India" as three different answers. Returns it, or null if empty.
+ */
+export function cleanPlace(raw: string): string | null {
+  const v = raw.trim().replace(/\s+/g, " ");
+  if (v.length < 2 || v.length > 60) return null;
+  // Leave anything already carrying capitals alone — UAE, Ras Al Khaimah.
+  if (/[A-Z]/.test(v)) return v;
+  return v.replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
 export function formatPhone(digits: string): string {

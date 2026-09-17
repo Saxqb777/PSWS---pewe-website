@@ -70,3 +70,7 @@
 .kyc-foot {
   margin-top: 18px; font-size: 13.5px; line-height: 1.6; color: var(--color-ink-3);
 }
+
+.kyc-hint {
+  margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--color-ink-3);
+}

@@ -89,9 +89,17 @@ box. Nobody who was not elected can be entered, and a stranger with the link
 has no name to submit as. Filling it again replaces what is held, so a wrong
 number is corrected by filling it once more.
 
-It stores a name, a mobile number and a Gmail address. Nothing else, and
-**no identity documents** — no Aadhaar, no PAN, no bank details. If the bank
-asks for KYC of that kind, it does not belong on this site.
+It stores a name, a mobile number, a Gmail address, and the country and
+city the member works in — the committee is spread between the village,
+Mumbai and the Gulf, so where somebody is matters for calling a meeting.
+Nothing else, and **no identity documents** — no Aadhaar, no PAN, no bank
+details. If the bank asks for KYC of that kind, it does not belong on this
+site.
+
+Country and city are typed, with common answers suggested. A fixed list
+would shut out whoever is somewhere it did not think of. What is typed is
+tidied — trimmed, and capitalised unless it already carries capitals, so
+`india` and `INDIA` do not end up as two different answers.
 
 ### Wiring it up
 
@@ -115,6 +123,8 @@ CREATE TABLE kyc_submission (
   member_name  text        NOT NULL,
   phone        text        NOT NULL,
   gmail        text        NOT NULL,
+  work_country text        NOT NULL DEFAULT '',
+  work_city    text        NOT NULL DEFAULT '',
   submitted_at timestamptz NOT NULL DEFAULT now(),
   updated_at   timestamptz NOT NULL DEFAULT now()
 );

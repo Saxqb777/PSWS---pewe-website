@@ -31,6 +31,7 @@
 .rep-num { font-family: var(--font-plex-mono), monospace; font-size: 9.8px; white-space: nowrap; }
 .rep-mail { font-family: var(--font-plex-mono), monospace; font-size: 9.6px; overflow-wrap: anywhere; }
 .rep-when { font-size: 9.2px; color: #786C5D; white-space: nowrap; }
+.rep-place { font-size: 9.6px; overflow-wrap: anywhere; }
 .rep-pending { columns: 2; column-gap: 26px; }
 .rep-pending li { break-inside: avoid; }
 

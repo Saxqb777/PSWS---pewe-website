@@ -15,10 +15,6 @@ export const dynamic = "force-dynamic";
 const DATE = new Intl.DateTimeFormat("en-GB", {
   day: "numeric", month: "long", year: "numeric",
 });
-const TIME = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false,
-  timeZone: "Asia/Kolkata",
-});
 
 export default async function KycReport() {
   let rows: Submission[] = [];
@@ -110,11 +106,12 @@ export default async function KycReport() {
                   <table className="mom-table">
                     <thead>
                       <tr>
-                        <th style={{ width: "5%" }}>#</th>
-                        <th style={{ width: "30%" }}>Member</th>
-                        <th style={{ width: "18%" }}>Mobile</th>
+                        <th style={{ width: "4%" }}>#</th>
+                        <th style={{ width: "24%" }}>Member</th>
+                        <th style={{ width: "15%" }}>Mobile</th>
                         <th>Gmail</th>
-                        <th style={{ width: "13%" }}>Given</th>
+                        <th style={{ width: "13%" }}>City</th>
+                        <th style={{ width: "13%" }}>Country</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -126,7 +123,8 @@ export default async function KycReport() {
                             <td className="mom-td-post">{m.name}</td>
                             <td className="rep-num">{formatPhone(r.phone)}</td>
                             <td className="rep-mail">{r.gmail}</td>
-                            <td className="rep-when">{TIME.format(new Date(r.updated_at))}</td>
+                            <td className="rep-place">{r.work_city || "—"}</td>
+                            <td className="rep-place">{r.work_country || "—"}</td>
                           </tr>
                         );
                       })}

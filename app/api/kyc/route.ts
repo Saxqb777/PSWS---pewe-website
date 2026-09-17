@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { memberBySlug, saveSubmission, cleanPhone, cleanGmail, isConfigured } from "@/lib/kyc";
+import {
+  memberBySlug, saveSubmission, cleanPhone, cleanGmail, cleanPlace, isConfigured,
+} from "@/lib/kyc";
 
 /** Takes one member's details from the form and holds them for the office. */
 export async function POST(req: Request) {
@@ -21,10 +23,16 @@ export async function POST(req: Request) {
   const gmail = cleanGmail(String(form.get("gmail") ?? ""));
   if (!gmail) return back("gmail", slug);
 
+  const country = cleanPlace(String(form.get("country") ?? ""));
+  if (!country) return back("country", slug);
+
+  const city = cleanPlace(String(form.get("city") ?? ""));
+  if (!city) return back("city", slug);
+
   if (!isConfigured()) return back("server", slug);
 
   try {
-    await saveSubmission(member, phone, gmail);
+    await saveSubmission(member, phone, gmail, country, city);
   } catch {
     return back("server", slug);
   }
