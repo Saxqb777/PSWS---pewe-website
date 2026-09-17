@@ -121,7 +121,7 @@ export default async function KycReport() {
                           <tr key={m.slug}>
                             <td className="mom-td-n">{i + 1}</td>
                             <td className="mom-td-post">{m.name}</td>
-                            <td className="rep-num">{formatPhone(r.phone)}</td>
+                            <td className="rep-num">{formatPhone(r.phone, r.phone_cc)}</td>
                             <td className="rep-mail">{r.gmail}</td>
                             <td className="rep-place">{r.work_city || "—"}</td>
                             <td className="rep-place">{r.work_country || "—"}</td>

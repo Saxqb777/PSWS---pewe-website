@@ -96,10 +96,19 @@ Nothing else, and **no identity documents** — no Aadhaar, no PAN, no bank
 details. If the bank asks for KYC of that kind, it does not belong on this
 site.
 
-Country and city are typed, with common answers suggested. A fixed list
-would shut out whoever is somewhere it did not think of. What is typed is
-tidied — trimmed, and capitalised unless it already carries capitals, so
-`india` and `INDIA` do not end up as two different answers.
+Country is picked from a list (`lib/countries.ts`), with India and the Gulf
+at the top. Picking it sets the dialling code shown against the mobile
+field, so members type only their national number and the record holds all
+seventeen the same way — a code and a number, not `+91 98…` from one and
+`0098…` from the next. Whatever is typed is reduced to digits, and a
+leading zero or a repeated country code is dropped.
+
+**If a member is somewhere not on the list, the form cannot be filled.**
+Add the country to `lib/countries.ts` and push.
+
+City is typed, with common answers suggested, and tidied — trimmed and
+capitalised unless it already carries capitals, so `india` and `INDIA` do
+not end up as two different answers.
 
 ### Wiring it up
 
@@ -123,6 +132,7 @@ CREATE TABLE kyc_submission (
   member_name  text        NOT NULL,
   phone        text        NOT NULL,
   gmail        text        NOT NULL,
+  phone_cc     text        NOT NULL DEFAULT '91',
   work_country text        NOT NULL DEFAULT '',
   work_city    text        NOT NULL DEFAULT '',
   submitted_at timestamptz NOT NULL DEFAULT now(),

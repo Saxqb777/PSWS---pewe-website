@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { countryByCode, type Country } from "./countries";
 
 /**
  * Member details, collected from the Management Committee.
@@ -48,21 +49,14 @@ export interface Submission {
   member_name: string;
   phone: string;
   gmail: string;
+  phone_cc: string;
   work_country: string;
   work_city: string;
   submitted_at: string;
   updated_at: string;
 }
 
-/**
- * Offered as suggestions, not enforced. The committee is spread between the
- * village, Mumbai and the Gulf, and a fixed list would shut out whoever is
- * somewhere it did not think of.
- */
-export const COUNTRY_HINTS = [
-  "India", "United Arab Emirates", "Saudi Arabia", "Oman",
-  "Qatar", "Kuwait", "Bahrain",
-];
+/** Offered as suggestions on the city box; anything may be typed. */
 export const CITY_HINTS = [
   "Pewe", "Mumbai", "Chiplun", "Khed", "Guhagar", "Ratnagiri",
   "Pune", "Dubai", "Abu Dhabi", "Sharjah", "Muscat", "Doha",
@@ -82,7 +76,7 @@ export function isConfigured(): boolean {
 export async function allSubmissions(): Promise<Submission[]> {
   const sql = db();
   return (await sql`
-    SELECT member_slug, member_name, phone, gmail,
+    SELECT member_slug, member_name, phone, phone_cc, gmail,
            work_country, work_city, submitted_at, updated_at
     FROM kyc_submission
     ORDER BY updated_at DESC
@@ -91,15 +85,17 @@ export async function allSubmissions(): Promise<Submission[]> {
 
 /** One row per member — filling the form again corrects what is held. */
 export async function saveSubmission(
-  m: Member, phone: string, gmail: string, country: string, city: string,
+  m: Member, phone: string, cc: string, gmail: string,
+  country: string, city: string,
 ) {
   const sql = db();
   await sql`
     INSERT INTO kyc_submission
-      (member_slug, member_name, phone, gmail, work_country, work_city)
-    VALUES (${m.slug}, ${m.name}, ${phone}, ${gmail}, ${country}, ${city})
+      (member_slug, member_name, phone, phone_cc, gmail, work_country, work_city)
+    VALUES (${m.slug}, ${m.name}, ${phone}, ${cc}, ${gmail}, ${country}, ${city})
     ON CONFLICT (member_slug) DO UPDATE
       SET phone = EXCLUDED.phone,
+          phone_cc = EXCLUDED.phone_cc,
           gmail = EXCLUDED.gmail,
           work_country = EXCLUDED.work_country,
           work_city = EXCLUDED.work_city,
@@ -110,10 +106,27 @@ export async function saveSubmission(
 
 /* ---------------- what the form will accept ---------------- */
 
-/** Ten digits, however they typed it. Returns the digits, or null. */
-export function cleanPhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "").replace(/^0+/, "").replace(/^91(?=\d{10}$)/, "");
-  return /^[6-9]\d{9}$/.test(digits) ? digits : null;
+/**
+ * The national number, checked against the country the member picked.
+ *
+ * Whatever they type is reduced to digits, then a leading zero and a
+ * leading copy of the country's own dialling code are dropped — people
+ * write 0982…, +91 982… and 0091 982… for the same number. Where a country
+ * has one fixed length, that is enforced; otherwise six to fourteen digits.
+ */
+export function cleanPhone(raw: string, country: Country): string | null {
+  let d = raw.replace(/\D/g, "").replace(/^0+/, "");
+  if (d.startsWith(country.dial) && d.length > country.dial.length + 5) {
+    d = d.slice(country.dial.length).replace(/^0+/, "");
+  }
+  if (country.starts && !country.starts.includes(d[0] ?? "")) return null;
+  if (country.digits) return d.length === country.digits ? d : null;
+  return d.length >= 6 && d.length <= 14 ? d : null;
+}
+
+/** The country a member picked, by ISO code. */
+export function pickCountry(code: string): Country | null {
+  return countryByCode(code.trim().toUpperCase()) ?? null;
 }
 
 /** A Gmail address, lowercased. Returns it, or null. */
@@ -134,6 +147,9 @@ export function cleanPlace(raw: string): string | null {
   return v.replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
-export function formatPhone(digits: string): string {
-  return digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : digits;
+export function formatPhone(digits: string, cc: string): string {
+  const grouped = digits.length === 10
+    ? `${digits.slice(0, 5)} ${digits.slice(5)}`
+    : digits;
+  return cc ? `+${cc} ${grouped}` : grouped;
 }

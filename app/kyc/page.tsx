@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Seal } from "@/components/seal";
 import { SOCIETY } from "@/lib/site";
-import { ROLL, memberBySlug, COUNTRY_HINTS, CITY_HINTS } from "@/lib/kyc";
+import { ROLL, memberBySlug } from "@/lib/kyc";
+import { KycFields } from "./fields";
 import "./kyc.css";
 
 export const metadata = {
@@ -13,8 +14,9 @@ const TROUBLE: Record<string, string> = {
   member: "Please choose your name from the list.",
   phone: "That mobile number does not look right. Ten digits, starting 6 to 9.",
   gmail: "Please give a Gmail address — it must end in @gmail.com.",
-  country: "Please give the country you are working in.",
-  city: "Please give the city or town you are working in.",
+  country: "Please choose your country from the list.",
+  phonecc: "That number does not match the country you chose.",
+  city: "Please give your city or town.",
   server: "Something went wrong saving it. Please try once more.",
 };
 
@@ -73,38 +75,8 @@ export default async function KycForm({
                   ))}
                 </select>
 
-                <label className="label" htmlFor="phone">Mobile number</label>
-                <input
-                  id="phone" name="phone" type="tel" inputMode="numeric"
-                  autoComplete="tel" placeholder="98XXXXXXXX" required
-                />
+                <KycFields />
 
-                <label className="label" htmlFor="gmail">Gmail address</label>
-                <input
-                  id="gmail" name="gmail" type="email" inputMode="email"
-                  autoComplete="email" placeholder="yourname@gmail.com" required
-                />
-
-                <label className="label" htmlFor="country">Country of work</label>
-                <input
-                  id="country" name="country" list="country-hints"
-                  autoComplete="country-name" placeholder="India" required
-                />
-                <datalist id="country-hints">
-                  {COUNTRY_HINTS.map((c) => <option key={c} value={c} />)}
-                </datalist>
-
-                <label className="label" htmlFor="city">City of work</label>
-                <input
-                  id="city" name="city" list="city-hints"
-                  autoComplete="address-level2" placeholder="Pewe" required
-                />
-                <datalist id="city-hints">
-                  {CITY_HINTS.map((c) => <option key={c} value={c} />)}
-                </datalist>
-                <p className="kyc-hint">
-                  Where you are based. In the village, that is India and Pewe.
-                </p>
 
                 <button type="submit" className="kyc-btn">Send my details</button>
               </form>

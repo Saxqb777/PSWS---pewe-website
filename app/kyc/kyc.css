@@ -74,3 +74,16 @@
 .kyc-hint {
   margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: var(--color-ink-3);
 }
+
+/* Mobile number, with the chosen country's dialling code fixed alongside it. */
+.kyc-tel { display: flex; margin-top: 7px; }
+.kyc-tel .kyc-dial {
+  display: flex; align-items: center; flex: 0 0 auto;
+  padding: 13px 12px;
+  font-family: var(--font-plex-mono), monospace; font-size: 16px;
+  color: var(--color-ink); background: var(--color-paper-2);
+  border: 1px solid var(--color-ink); border-right: none;
+  min-width: 62px; justify-content: center;
+}
+.kyc-tel input { margin-top: 0; }
+.kyc-tel:focus-within .kyc-dial { box-shadow: 0 0 0 2px var(--color-brass); }
