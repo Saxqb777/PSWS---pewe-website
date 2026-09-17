@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { NEAR, REST_OF_WORLD, countryByCode } from "@/lib/countries";
-import { CITY_HINTS } from "@/lib/kyc";
+import { NEAR, REST_OF_WORLD, countryByCode, CITY_HINTS } from "@/lib/countries";
 
 /**
  * Country, mobile and city.
@@ -17,7 +16,7 @@ export function KycFields({ country = "IN" }: { country?: string }) {
 
   return (
     <>
-      <label className="label" htmlFor="country">Country</label>
+      <label className="label" htmlFor="country">Country of work</label>
       <select
         id="country"
         name="country"

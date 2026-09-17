@@ -1,3 +1,4 @@
+import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { countryByCode, type Country } from "./countries";
 
@@ -56,11 +57,6 @@ export interface Submission {
   updated_at: string;
 }
 
-/** Offered as suggestions on the city box; anything may be typed. */
-export const CITY_HINTS = [
-  "Pewe", "Mumbai", "Chiplun", "Khed", "Guhagar", "Ratnagiri",
-  "Pune", "Dubai", "Abu Dhabi", "Sharjah", "Muscat", "Doha",
-];
 
 function db() {
   const url = process.env.DATABASE_URL;

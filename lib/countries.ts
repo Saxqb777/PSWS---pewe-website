@@ -112,3 +112,9 @@ export const COUNTRIES: Country[] = [...NEAR, ...REST_OF_WORLD];
 export function countryByCode(code: string): Country | undefined {
   return COUNTRIES.find((c) => c.code === code);
 }
+
+/** Offered as suggestions on the city box; anything may be typed. */
+export const CITY_HINTS = [
+  "Pewe", "Mumbai", "Chiplun", "Khed", "Guhagar", "Ratnagiri",
+  "Pune", "Dubai", "Abu Dhabi", "Sharjah", "Muscat", "Doha",
+];
