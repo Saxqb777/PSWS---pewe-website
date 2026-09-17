@@ -53,5 +53,8 @@ export function isOpenPath(pathname: string): boolean {
   if (pathname === "/") return true;
   if (pathname === "/enter" || pathname === "/api/enter") return true;
   if (pathname === "/minutes") return true;
+  // The details form is opened from a WhatsApp link, so members are not sent
+  // hunting for a password to fill it. Its report is held, like everything else.
+  if (pathname === "/kyc" || pathname === "/api/kyc") return true;
   return false;
 }

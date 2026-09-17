@@ -74,6 +74,55 @@ is ever opened on a shared phone.
 
 To open a path to the public, add it to `isOpenPath()` in `lib/gate.ts`.
 
+## Member contact form
+
+Action 2 of the minutes of 13 September 2026 asked the General Secretary to
+collect the committee's contact details. `/kyc` is that form.
+
+| Route | |
+|---|---|
+| `/kyc` | The form. **Open by link** — it is shared in the WhatsApp group so members are not sent hunting for a password. |
+| `/kyc/report` | The record, on the Society's letterhead. **Held behind the members' password**, because it carries seventeen people's phone numbers. |
+
+The form offers the roll of seventeen as a dropdown rather than a free text
+box. Nobody who was not elected can be entered, and a stranger with the link
+has no name to submit as. Filling it again replaces what is held, so a wrong
+number is corrected by filling it once more.
+
+It stores a name, a mobile number and a Gmail address. Nothing else, and
+**no identity documents** — no Aadhaar, no PAN, no bank details. If the bank
+asks for KYC of that kind, it does not belong on this site.
+
+### Wiring it up
+
+The store is a Neon Postgres database. Set the connection string in the
+Vercel project settings:
+
+```
+DATABASE_URL = postgresql://…
+```
+
+It is never committed — this repository is public. Without it the form says
+it could not save and the report says the record cannot be read, rather
+than breaking.
+
+The table:
+
+```sql
+CREATE TABLE kyc_submission (
+  id           bigserial PRIMARY KEY,
+  member_slug  text        NOT NULL UNIQUE,
+  member_name  text        NOT NULL,
+  phone        text        NOT NULL,
+  gmail        text        NOT NULL,
+  submitted_at timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+```
+
+The roll lives in `lib/kyc.ts`. When the committee changes, change it there —
+the slugs are what rows are keyed on, so keep existing ones as they are.
+
 ## Compliance rules — READ BEFORE EDITING COPY
 
 These come from the office and are not stylistic preferences. Breaking them

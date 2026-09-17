@@ -1,0 +1,72 @@
+/* The details form. One card on paper, large enough to fill on a phone
+   held in one hand, since that is where every one of these will be filled. */
+
+.kyc-wrap {
+  min-height: 100dvh; background: var(--color-paper-2);
+  display: flex; align-items: center; justify-content: center;
+  padding: 28px 16px 44px;
+}
+.kyc-card {
+  width: 100%; max-width: 460px;
+  background: var(--color-paper); border: 1px solid var(--color-ink);
+}
+.kyc-body { padding: 26px 22px 24px; }
+@media (min-width: 480px) { .kyc-body { padding: 30px 30px 28px; } }
+
+.kyc-head { display: flex; align-items: center; gap: 13px; }
+.kyc-soc {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 18px; line-height: 1.16; margin-top: 2px;
+}
+
+.kyc-h1 {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 27px; line-height: 1.15; letter-spacing: -0.015em;
+  color: var(--color-ink); margin-top: 22px;
+}
+.kyc-p { margin-top: 10px; font-size: 16px; line-height: 1.7; color: var(--color-ink-2); }
+
+.kyc-bad {
+  margin-top: 16px; padding: 10px 13px;
+  background: var(--color-maroon-tint); border-left: 2px solid var(--color-maroon);
+  font-size: 14.5px; line-height: 1.6; color: var(--color-ink);
+}
+
+.kyc-form { margin-top: 22px; }
+.kyc-form .label { display: block; margin-top: 16px; }
+.kyc-form .label:first-child { margin-top: 0; }
+
+.kyc-form select,
+.kyc-form input {
+  width: 100%; margin-top: 7px; padding: 13px 14px;
+  /* 16px or larger, or the phone zooms the page when the field is tapped. */
+  font: inherit; font-size: 16px;
+  color: var(--color-ink); background: var(--color-paper);
+  border: 1px solid var(--color-ink); border-radius: 0;
+  outline: none; appearance: none;
+}
+.kyc-form select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1 L6 6 L11 1' fill='none' stroke='%231C1815' stroke-width='1.6'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 38px;
+}
+.kyc-form select:focus,
+.kyc-form input:focus { box-shadow: 0 0 0 2px var(--color-brass); }
+
+.kyc-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; margin-top: 24px; padding: 14px 20px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none;
+  color: var(--color-paper); background: var(--color-maroon);
+  border: 1px solid var(--color-maroon); cursor: pointer;
+}
+.kyc-btn:hover { background: var(--color-maroon-dark); border-color: var(--color-maroon-dark); }
+.kyc-btn-quiet {
+  color: var(--color-ink); background: none; border-color: var(--color-ink);
+}
+.kyc-btn-quiet:hover { color: var(--color-paper); background: var(--color-ink); }
+
+.kyc-foot {
+  margin-top: 18px; font-size: 13.5px; line-height: 1.6; color: var(--color-ink-3);
+}
