@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { NEAR, REST_OF_WORLD, countryByCode } from "@/lib/countries";
 import { statesOf, citiesOf, hasStates } from "@/lib/places";
 import type { Member } from "@/lib/kyc-types";
@@ -8,9 +8,14 @@ import type { Member } from "@/lib/kyc-types";
 /**
  * The body of the details form.
  *
- * The name is a list you can type into: typing narrows it, but nothing is
- * accepted that is not on it, and a member who has already given their
- * details is not on it at all.
+ * The name is a plain dropdown rather than a box you type into. A text box
+ * beside a telephone and an email is exactly what the browser's own address
+ * autofill pounces on — it drops its list of saved contacts over the top,
+ * which is confusing and offers names that are not on the committee. A
+ * dropdown it leaves alone, opens as a proper picker on a phone, and still
+ * jumps to a name when the first letters are typed.
+ *
+ * Members who have already given their details are not in it at all.
  *
  * Country, then state, then city. Choosing the country sets the dialling
  * code against the mobile field and refills the states; choosing the state
@@ -23,118 +28,35 @@ export function KycForm({
   available: Member[];
   error?: string;
 }) {
-  // --- the name
-  const [slug, setSlug] = useState("");
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [cursor, setCursor] = useState(0);
-  const box = useRef<HTMLDivElement>(null);
-
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return available;
-    return available.filter((m) => m.name.toLowerCase().includes(q));
-  }, [available, query]);
-
-  useEffect(() => {
-    const away = (e: MouseEvent) => {
-      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", away);
-    return () => document.removeEventListener("mousedown", away);
-  }, []);
-
-  function choose(m: Member) {
-    setSlug(m.slug);
-    setQuery(m.name);
-    setOpen(false);
-  }
-
-  function onKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      setOpen(true);
-      setCursor((c) => {
-        const next = e.key === "ArrowDown" ? c + 1 : c - 1;
-        return Math.max(0, Math.min(matches.length - 1, next));
-      });
-    } else if (e.key === "Enter" && open && matches[cursor]) {
-      e.preventDefault();
-      choose(matches[cursor]);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  }
-
-  // --- where they are
   const [code, setCode] = useState("IN");
   const country = countryByCode(code) ?? countryByCode("IN")!;
   const states = statesOf(code);
   const [state, setState] = useState(states[0]?.name ?? "");
   const cities = citiesOf(code, state);
 
-  function onCountry(next: string) {
-    setCode(next);
-    setState(statesOf(next)[0]?.name ?? "");
+  function clearCity() {
     const city = document.getElementById("city") as HTMLInputElement | null;
     if (city) city.value = "";
   }
 
-  function onState(next: string) {
-    setState(next);
-    const city = document.getElementById("city") as HTMLInputElement | null;
-    if (city) city.value = "";
+  function onCountry(next: string) {
+    setCode(next);
+    setState(statesOf(next)[0]?.name ?? "");
+    clearCity();
   }
 
   const nothingLeft = available.length === 0;
 
   return (
     <form method="POST" action="/api/kyc" className="kyc-form">
-      {/* ---------------- name ---------------- */}
-      <label className="label" htmlFor="member-search">Your name</label>
-      <div className="kyc-combo" ref={box}>
-        <input
-          id="member-search"
-          type="text"
-          role="combobox"
-          aria-expanded={open}
-          aria-controls="member-list"
-          aria-autocomplete="list"
-          autoComplete="off"
-          disabled={nothingLeft}
-          placeholder={nothingLeft ? "Everyone has filled it" : "Start typing your name…"}
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setSlug(""); setOpen(true); setCursor(0); }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={onKey}
-          required
-        />
-        {open && !nothingLeft && (
-          <ul className="kyc-options" id="member-list" role="listbox">
-            {matches.length === 0 ? (
-              <li className="kyc-none">No name matches. Check the spelling.</li>
-            ) : (
-              matches.map((m, i) => (
-                <li key={m.slug}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={m.slug === slug}
-                    className={i === cursor ? "is-on" : ""}
-                    onMouseEnter={() => setCursor(i)}
-                    onClick={() => choose(m)}
-                  >
-                    {m.name}
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
-        )}
-      </div>
-      <input type="hidden" name="member" value={slug} />
+      <label className="label" htmlFor="member">Your name</label>
+      <select id="member" name="member" defaultValue="" required disabled={nothingLeft}>
+        <option value="" disabled>Choose your name…</option>
+        {available.map((m) => (
+          <option key={m.slug} value={m.slug}>{m.name}</option>
+        ))}
+      </select>
 
-      {/* ---------------- country ---------------- */}
       <label className="label" htmlFor="country">Country of work</label>
       <select
         id="country"
@@ -148,7 +70,6 @@ export function KycForm({
         {REST_OF_WORLD.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
       </select>
 
-      {/* ---------------- state, where the country has them ---------------- */}
       {hasStates(code) && (
         <>
           <label className="label" htmlFor="state">
@@ -158,7 +79,7 @@ export function KycForm({
             id="state"
             name="state"
             value={state}
-            onChange={(e) => onState(e.target.value)}
+            onChange={(e) => { setState(e.target.value); clearCity(); }}
             required
           >
             {states.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
@@ -166,7 +87,6 @@ export function KycForm({
         </>
       )}
 
-      {/* ---------------- city ---------------- */}
       <label className="label" htmlFor="city">City</label>
       <input
         id="city"
@@ -180,7 +100,6 @@ export function KycForm({
         {cities.map((c) => <option key={c} value={c} />)}
       </datalist>
 
-      {/* ---------------- mobile ---------------- */}
       <label className="label" htmlFor="phone">Mobile number</label>
       <div className="kyc-tel">
         <span className="kyc-dial" aria-hidden>+{country.dial}</span>
@@ -199,7 +118,6 @@ export function KycForm({
         Just your number — the <strong>+{country.dial}</strong> is added for you.
       </p>
 
-      {/* ---------------- gmail ---------------- */}
       <label className="label" htmlFor="gmail">Gmail address</label>
       <input
         id="gmail"

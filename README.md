@@ -84,9 +84,13 @@ collect the committee's contact details. `/kyc` is that form.
 | `/kyc` | The form. **Open by link** — it is shared in the WhatsApp group so members are not sent hunting for a password. |
 | `/kyc/report` | The record, on the Society's letterhead. **Held behind the members' password**, because it carries seventeen people's phone numbers. |
 
-The name is a list you can type into: typing narrows it, but only a name on
-it is accepted, so nobody who was not elected can be entered and a stranger
-with the link has no name to submit as.
+The name is a plain dropdown. It was briefly a box you could type into,
+which the browser's own address autofill promptly covered with a list of
+saved contacts — names that are not on the committee, over the top of the
+ones that are. A dropdown the browser leaves alone, opens as a proper
+picker on a phone, and still jumps to a name when the first letters are
+typed. Only a name on it is accepted, so nobody who was not elected can be
+entered and a stranger with the link has no name to submit as.
 
 **Details given once stand.** A member who has filled the form is not on the
 list any more, and the server refuses a second attempt even if one is forced
