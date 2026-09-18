@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Seal } from "@/components/seal";
 import { SOCIETY } from "@/lib/site";
-import { ROLL, memberBySlug } from "@/lib/kyc";
-import { KycFields } from "./fields";
+import { ROLL, memberBySlug, takenSlugs, isConfigured } from "@/lib/kyc";
+import { KycForm } from "./fields";
 import "./kyc.css";
 
 export const metadata = {
@@ -10,23 +10,34 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+export const dynamic = "force-dynamic";
+
 const TROUBLE: Record<string, string> = {
-  member: "Please choose your name from the list.",
-  phone: "That mobile number does not look right. Ten digits, starting 6 to 9.",
-  gmail: "Please give a Gmail address — it must end in @gmail.com.",
+  member: "Please select your name from the drop-down list.",
+  already: "Those details are already with the office. Ask the General Secretary to change them.",
   country: "Please choose your country from the list.",
+  state: "Please choose your state from the list.",
+  phone: "That mobile number does not look right. Ten digits, starting 6 to 9.",
   phonecc: "That number does not match the country you chose.",
+  gmail: "Please give a Gmail address — it must end in @gmail.com.",
   city: "Please give your city or town.",
   server: "Something went wrong saving it. Please try once more.",
 };
 
-export default async function KycForm({
+export default async function KycPage({
   searchParams,
 }: {
-  searchParams: Promise<{ done?: string; error?: string; member?: string }>;
+  searchParams: Promise<{ done?: string; error?: string }>;
 }) {
-  const { done, error, member } = await searchParams;
+  const { done, error } = await searchParams;
   const saved = done ? memberBySlug(done) : undefined;
+
+  // Whoever has already given their details is not offered again.
+  let taken = new Set<string>();
+  if (isConfigured()) {
+    try { taken = await takenSlugs(); } catch { /* fall back to the whole roll */ }
+  }
+  const available = ROLL.filter((m) => !taken.has(m.slug));
 
   return (
     <div className="kyc-wrap">
@@ -46,40 +57,31 @@ export default async function KycForm({
             <>
               <h1 className="kyc-h1">Thank you, {saved.name.split(" ")[0]}.</h1>
               <p className="kyc-p">
-                Your details are with the General Secretary. If you gave the
-                wrong number or address, fill the form again — the newer one
-                replaces it.
+                Your details are with the General Secretary. If anything needs
+                changing, tell him — the form will not take them twice.
               </p>
-              <Link href="/kyc" className="kyc-btn kyc-btn-quiet">
-                Fill it again
+              <Link href="/" className="kyc-btn kyc-btn-quiet">
+                Go to the website
               </Link>
+            </>
+          ) : available.length === 0 ? (
+            <>
+              <h1 className="kyc-h1">All seventeen are in.</h1>
+              <p className="kyc-p">
+                Every member of the committee has given their details. Nothing
+                further is needed here.
+              </p>
             </>
           ) : (
             <>
               <h1 className="kyc-h1">Your details, please</h1>
-              <p className="kyc-p">
-                The Society is putting together one list of the committee&rsquo;s
-                contact details. Your <strong>Gmail</strong> address is what a
-                Google Meet invitation needs, so please give that one rather
-                than any other email.
-              </p>
+              <p className="kyc-p">Please select your name from the drop-down list.</p>
 
-              {error && <p className="kyc-bad">{TROUBLE[error] ?? TROUBLE.server}</p>}
+              {error && error !== "member" && (
+                <p className="kyc-bad">{TROUBLE[error] ?? TROUBLE.server}</p>
+              )}
 
-              <form method="POST" action="/api/kyc" className="kyc-form">
-                <label className="label" htmlFor="member">Your name</label>
-                <select id="member" name="member" defaultValue={member ?? ""} required>
-                  <option value="" disabled>Choose your name…</option>
-                  {ROLL.map((m) => (
-                    <option key={m.slug} value={m.slug}>{m.name}</option>
-                  ))}
-                </select>
-
-                <KycFields />
-
-
-                <button type="submit" className="kyc-btn">Send my details</button>
-              </form>
+              <KycForm available={available} error={error} />
 
               <p className="kyc-foot">
                 Seen only by the Society&rsquo;s office. Not shown anywhere on

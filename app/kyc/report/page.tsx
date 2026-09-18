@@ -107,11 +107,12 @@ export default async function KycReport() {
                     <thead>
                       <tr>
                         <th style={{ width: "4%" }}>#</th>
-                        <th style={{ width: "24%" }}>Member</th>
-                        <th style={{ width: "15%" }}>Mobile</th>
+                        <th style={{ width: "22%" }}>Member</th>
+                        <th style={{ width: "14%" }}>Mobile</th>
                         <th>Gmail</th>
-                        <th style={{ width: "13%" }}>City</th>
-                        <th style={{ width: "13%" }}>Country</th>
+                        <th style={{ width: "12%" }}>City</th>
+                        <th style={{ width: "12%" }}>State</th>
+                        <th style={{ width: "12%" }}>Country</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -124,6 +125,7 @@ export default async function KycReport() {
                             <td className="rep-num">{formatPhone(r.phone, r.phone_cc)}</td>
                             <td className="rep-mail">{r.gmail}</td>
                             <td className="rep-place">{r.work_city || "—"}</td>
+                            <td className="rep-place">{r.work_state || "—"}</td>
                             <td className="rep-place">{r.work_country || "—"}</td>
                           </tr>
                         );

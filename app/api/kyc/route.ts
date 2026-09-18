@@ -3,6 +3,7 @@ import {
   memberBySlug, saveSubmission, pickCountry, cleanPhone, cleanGmail,
   cleanPlace, isConfigured,
 } from "@/lib/kyc";
+import { isKnownState, hasStates } from "@/lib/places";
 
 /** Takes one member's details from the form and holds them for the office. */
 export async function POST(req: Request) {
@@ -26,6 +27,11 @@ export async function POST(req: Request) {
   const phone = cleanPhone(String(form.get("phone") ?? ""), country);
   if (!phone) return back(country.digits ? "phone" : "phonecc", slug);
 
+  const state = hasStates(country.code)
+    ? String(form.get("state") ?? "").trim()
+    : "";
+  if (!isKnownState(country.code, state)) return back("state", slug);
+
   const gmail = cleanGmail(String(form.get("gmail") ?? ""));
   if (!gmail) return back("gmail", slug);
 
@@ -35,7 +41,10 @@ export async function POST(req: Request) {
   if (!isConfigured()) return back("server", slug);
 
   try {
-    await saveSubmission(member, phone, country.dial, gmail, country.name, city);
+    const saved = await saveSubmission(
+      member, phone, country.dial, gmail, country.name, state, city);
+    // Details already given stand as they are.
+    if (!saved) return back("already", slug);
   } catch {
     return back("server", slug);
   }

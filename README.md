@@ -84,10 +84,14 @@ collect the committee's contact details. `/kyc` is that form.
 | `/kyc` | The form. **Open by link** — it is shared in the WhatsApp group so members are not sent hunting for a password. |
 | `/kyc/report` | The record, on the Society's letterhead. **Held behind the members' password**, because it carries seventeen people's phone numbers. |
 
-The form offers the roll of seventeen as a dropdown rather than a free text
-box. Nobody who was not elected can be entered, and a stranger with the link
-has no name to submit as. Filling it again replaces what is held, so a wrong
-number is corrected by filling it once more.
+The name is a list you can type into: typing narrows it, but only a name on
+it is accepted, so nobody who was not elected can be entered and a stranger
+with the link has no name to submit as.
+
+**Details given once stand.** A member who has filled the form is not on the
+list any more, and the server refuses a second attempt even if one is forced
+past the page — the insert does nothing and the page says to ask the General
+Secretary. A correction is his to make, not whoever fills the form last.
 
 It stores a name, a mobile number, a Gmail address, and the country and
 city the member works in — the committee is spread between the village,
@@ -97,7 +101,11 @@ details. If the bank asks for KYC of that kind, it does not belong on this
 site.
 
 Country is picked from a list (`lib/countries.ts`), with India and the Gulf
-at the top. Picking it sets the dialling code shown against the mobile
+at the top, and then a state and a city from `lib/places.ts` — India by its
+thirty-six states and union territories, the UAE by its seven emirates,
+Saudi Arabia and Oman by region. Countries with no state list ask only for
+a city. Cities are suggested and never insisted upon; states are strict,
+because a typed state is how one place ends up in the record three ways. Picking it sets the dialling code shown against the mobile
 field, so members type only their national number and the record holds all
 seventeen the same way — a code and a number, not `+91 98…` from one and
 `0098…` from the next. Whatever is typed is reduced to digits, and a
@@ -134,6 +142,7 @@ CREATE TABLE kyc_submission (
   gmail        text        NOT NULL,
   phone_cc     text        NOT NULL DEFAULT '91',
   work_country text        NOT NULL DEFAULT '',
+  work_state   text        NOT NULL DEFAULT '',
   work_city    text        NOT NULL DEFAULT '',
   submitted_at timestamptz NOT NULL DEFAULT now(),
   updated_at   timestamptz NOT NULL DEFAULT now()

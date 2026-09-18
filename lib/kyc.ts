@@ -19,7 +19,8 @@ import { countryByCode, type Country } from "./countries";
  * are seventeen people's phone numbers.
  */
 
-export interface Member { slug: string; name: string }
+export type { Member } from "./kyc-types";
+import type { Member } from "./kyc-types";
 
 export const ROLL: Member[] = [
   { slug: "akhtar-khan",            name: "Akhtar Khan" },
@@ -52,6 +53,7 @@ export interface Submission {
   gmail: string;
   phone_cc: string;
   work_country: string;
+  work_state: string;
   work_city: string;
   submitted_at: string;
   updated_at: string;
@@ -73,31 +75,42 @@ export async function allSubmissions(): Promise<Submission[]> {
   const sql = db();
   return (await sql`
     SELECT member_slug, member_name, phone, phone_cc, gmail,
-           work_country, work_city, submitted_at, updated_at
+           work_country, work_state, work_city, submitted_at, updated_at
     FROM kyc_submission
     ORDER BY updated_at DESC
   `) as Submission[];
 }
 
-/** One row per member — filling the form again corrects what is held. */
+/** The members who have already given their details. */
+export async function takenSlugs(): Promise<Set<string>> {
+  const sql = db();
+  const rows = (await sql`
+    SELECT member_slug FROM kyc_submission
+  `) as { member_slug: string }[];
+  return new Set(rows.map((r) => r.member_slug));
+}
+
+/**
+ * Holds one member's details. Once given they stand: a second attempt by
+ * the same member writes nothing and comes back false, so the record cannot
+ * be overwritten by whoever fills the form last. A correction goes through
+ * the General Secretary.
+ */
 export async function saveSubmission(
   m: Member, phone: string, cc: string, gmail: string,
-  country: string, city: string,
-) {
+  country: string, state: string, city: string,
+): Promise<boolean> {
   const sql = db();
-  await sql`
+  const rows = (await sql`
     INSERT INTO kyc_submission
-      (member_slug, member_name, phone, phone_cc, gmail, work_country, work_city)
-    VALUES (${m.slug}, ${m.name}, ${phone}, ${cc}, ${gmail}, ${country}, ${city})
-    ON CONFLICT (member_slug) DO UPDATE
-      SET phone = EXCLUDED.phone,
-          phone_cc = EXCLUDED.phone_cc,
-          gmail = EXCLUDED.gmail,
-          work_country = EXCLUDED.work_country,
-          work_city = EXCLUDED.work_city,
-          member_name = EXCLUDED.member_name,
-          updated_at = now()
-  `;
+      (member_slug, member_name, phone, phone_cc, gmail,
+       work_country, work_state, work_city)
+    VALUES (${m.slug}, ${m.name}, ${phone}, ${cc}, ${gmail},
+            ${country}, ${state}, ${city})
+    ON CONFLICT (member_slug) DO NOTHING
+    RETURNING member_slug
+  `) as { member_slug: string }[];
+  return rows.length > 0;
 }
 
 /* ---------------- what the form will accept ---------------- */
