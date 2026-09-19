@@ -115,8 +115,9 @@ seventeen the same way — a code and a number, not `+91 98…` from one and
 `0098…` from the next. Whatever is typed is reduced to digits, and a
 leading zero or a repeated country code is dropped.
 
-**If a member is somewhere not on the list, the form cannot be filled.**
-Add the country to `lib/countries.ts` and push.
+`lib/countries.ts` carries every country there is. It began as a short list
+of where members were expected to be, which was wrong: a member in a
+country nobody thought of could not fill the form at all. Keep it complete.
 
 City is typed, with common answers suggested, and tidied — trimmed and
 capitalised unless it already carries capitals, so `india` and `INDIA` do

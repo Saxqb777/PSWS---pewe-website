@@ -60,6 +60,13 @@ export default async function KycPage({
                 Your details are with the General Secretary. If anything needs
                 changing, tell him — the form will not take them twice.
               </p>
+              <p className="kyc-p">
+                Members can see who has filled it in and who is still to come.
+                It asks for the Society&rsquo;s password.
+              </p>
+              <Link href="/kyc/report" className="kyc-btn">
+                See the record
+              </Link>
               <Link href="/" className="kyc-btn kyc-btn-quiet">
                 Go to the website
               </Link>
