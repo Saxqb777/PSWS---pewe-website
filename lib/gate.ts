@@ -46,8 +46,9 @@ export function digestsMatch(a: string, b: string): boolean {
 }
 
 /**
- * Paths anyone may open without the password: the front page, the gate
- * itself, and the minutes, which the committee shares by link on purpose.
+ * Paths anyone may open without the password: the front page (which decides
+ * for itself what to show), the gate itself, and the minutes, which the
+ * committee shares by link on purpose.
  */
 export function isOpenPath(pathname: string): boolean {
   if (pathname === "/") return true;
@@ -56,5 +57,7 @@ export function isOpenPath(pathname: string): boolean {
   // The details form is opened from a WhatsApp link, so members are not sent
   // hunting for a password to fill it. Its report is held, like everything else.
   if (pathname === "/kyc" || pathname === "/api/kyc") return true;
+  // The private preview link for the new front page checks its own key.
+  if (pathname === "/preview") return true;
   return false;
 }

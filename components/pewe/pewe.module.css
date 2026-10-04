@@ -1,0 +1,952 @@
+/*
+ * Pewe, the front page. A living 3D model of the village with a few paper
+ * plates laid over it: the name, the clock, the buttons, and a card for
+ * whichever place is open. Ink on lime-wash paper, square corners.
+ */
+
+.root {
+  --paper: #eef1ef;
+  --paper-2: #e3e8e5;
+  --ink: #18201d;
+  --ink-2: #3a4541;
+  --ink-3: #5d6964;
+  --laterite: #a4472b;
+  --laterite-2: #8c3a22;
+  --serif: var(--font-newsreader), "Newsreader", Georgia, serif;
+  --sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
+  --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --edge: 20px;
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- plates */
+
+.plate {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.brand {
+  position: absolute;
+  top: var(--edge);
+  left: var(--edge);
+  padding: 12px 18px 13px;
+  z-index: 5;
+  transition: opacity 0.6s ease;
+}
+
+.brandName {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.brandSub {
+  margin: 7px 0 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.clock {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  z-index: 5;
+  padding: 11px 16px 12px;
+  text-align: right;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.clock:hover .clockHint {
+  color: var(--laterite);
+}
+
+.clockLabel {
+  display: block;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.clockTime {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--serif);
+  font-size: 27px;
+  line-height: 1.05;
+}
+
+.clockLine {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.clockHint {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color 0.2s ease;
+}
+
+.timePanel {
+  position: absolute;
+  top: calc(var(--edge) + 128px);
+  right: var(--edge);
+  z-index: 6;
+  width: 300px;
+  padding: 16px 18px 18px;
+}
+
+.timeTitle {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.range {
+  width: 100%;
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--ink);
+}
+
+.range::-moz-range-track {
+  height: 2px;
+  background: var(--ink);
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  background: var(--laterite);
+  border: 1px solid var(--ink);
+}
+
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
+  background: var(--laterite);
+  border: 1px solid var(--ink);
+}
+
+.rangeScale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.liveButton {
+  margin-top: 14px;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.dock {
+  position: absolute;
+  left: var(--edge);
+  bottom: var(--edge);
+  z-index: 5;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.dockHidden {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 22px;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 500;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.primary:hover {
+  background: var(--laterite);
+  border-color: var(--laterite);
+}
+
+.secondary {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.secondary:hover,
+.secondaryOn {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.play {
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid currentColor;
+}
+
+.corner {
+  position: absolute;
+  right: var(--edge);
+  bottom: var(--edge);
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+.cornerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.cornerLink:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--laterite);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------- places */
+
+.placesList {
+  position: absolute;
+  left: var(--edge);
+  bottom: calc(var(--edge) + 64px);
+  z-index: 6;
+  width: 320px;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+}
+
+.placesItem {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  font-family: var(--serif);
+  font-size: 21px;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.placesItem:hover {
+  background: var(--paper-2);
+}
+
+.placesMeta {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------- card */
+
+.card {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  bottom: var(--edge);
+  z-index: 7;
+  width: min(430px, 40vw);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cardIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+.cardScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 28px 20px;
+}
+
+.cardClose {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--paper);
+  border: 0;
+  border-left: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  cursor: pointer;
+}
+
+.cardClose:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.coords {
+  margin: 0 56px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+.cardMeta {
+  margin: 18px 0 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--laterite);
+}
+
+.cardTitle {
+  margin: 8px 0 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 46px;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.cardBody {
+  margin: 18px 0 0;
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.cardPhoto {
+  margin: 22px 0 0;
+  border: 1px solid var(--ink);
+}
+
+.cardPhoto img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.cardPhoto figcaption {
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  border-top: 1px solid var(--ink);
+}
+
+.cardActions {
+  display: flex;
+  border-top: 1px solid var(--ink);
+}
+
+.cardAction {
+  flex: 1;
+  min-height: 58px;
+  font-family: var(--sans);
+  font-size: 16.5px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--paper);
+  border: 0;
+  cursor: pointer;
+}
+
+.cardAction + .cardAction {
+  border-left: 1px solid var(--ink);
+}
+
+.cardAction:hover {
+  background: var(--paper-2);
+}
+
+.cardActionMain {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.cardActionMain:hover {
+  background: var(--laterite);
+}
+
+.about p {
+  margin: 14px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.aboutNames {
+  margin-top: 10px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.aboutRows {
+  margin: 20px 0 0;
+  border-top: 1px solid var(--ink);
+}
+
+.aboutRows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(24, 32, 29, 0.2);
+}
+
+.aboutRows dt {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.aboutRows dd {
+  margin: 0;
+  font-size: 16px;
+  text-align: right;
+}
+
+.aboutRows a {
+  color: var(--ink);
+}
+
+.credits {
+  margin-top: 22px !important;
+  font-family: var(--mono);
+  font-size: 11.5px !important;
+  line-height: 1.6 !important;
+  color: var(--ink-3) !important;
+}
+
+/* ----------------------------------------------------------------- tour */
+
+.caption {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--edge) + 6px);
+  z-index: 6;
+  width: min(760px, calc(100vw - 2 * var(--edge)));
+  transform: translateX(-50%);
+  padding: 18px 26px 20px;
+  text-align: center;
+}
+
+.captionText {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1.25;
+  animation: captionIn 0.7s ease both;
+}
+
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.progress {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: -1px;
+  height: 3px;
+  background: rgba(24, 32, 29, 0.15);
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--laterite);
+  transition: width 1.2s ease;
+}
+
+.skip {
+  position: absolute;
+  top: calc(var(--edge) + 128px);
+  right: var(--edge);
+  z-index: 6;
+}
+
+/* ---------------------------------------------------------------- intro */
+
+.intro {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  transition: opacity 1.1s ease, visibility 1.1s;
+  pointer-events: none;
+}
+
+.introGone {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.introInner {
+  text-align: center;
+  padding: 0 24px;
+}
+
+.introWord {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(96px, 19vw, 260px);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+
+.introCoords {
+  margin: 18px 0 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--ink-2);
+}
+
+.introPlace {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.introBar {
+  width: 220px;
+  height: 1px;
+  margin: 34px auto 0;
+  background: rgba(24, 32, 29, 0.2);
+  overflow: hidden;
+}
+
+.introBarFill {
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.6s ease;
+}
+
+/* -------------------------------------------------------------- labels */
+
+.labels {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.major,
+.minor,
+.city {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% -100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  will-change: transform, opacity;
+}
+
+.major {
+  cursor: pointer;
+}
+
+.tag {
+  display: block;
+  padding: 6px 10px 6px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.major:hover .tag,
+.active .tag {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.active .tag {
+  background: var(--laterite);
+  border-color: var(--laterite);
+}
+
+.stem {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 28px;
+  background: var(--ink);
+}
+
+.stem::after {
+  content: "";
+  position: absolute;
+  left: -2.5px;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--ink);
+}
+
+.minor .tag {
+  padding: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  text-shadow:
+    0 0 2px var(--paper),
+    0 0 3px var(--paper),
+    0 0 6px var(--paper),
+    0 0 10px rgba(238, 241, 239, 0.8);
+}
+
+.minor .stem {
+  height: 6px;
+  background: none;
+}
+
+.minor .stem::after {
+  display: none;
+}
+
+.city .tag {
+  padding: 2px 0;
+  font-size: 13px;
+  background: none;
+  border: 0;
+}
+
+.city .stem {
+  height: 14px;
+  background: none;
+}
+
+.city .stem::after {
+  display: none;
+}
+
+.city[data-label="world-pewe"] .tag {
+  color: var(--laterite);
+}
+
+/* ------------------------------------------------------------ fallback */
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 32px 24px 48px;
+}
+
+.fallbackInner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.fallback img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ink);
+  margin: 24px 0;
+}
+
+.fallbackPlace {
+  padding: 16px 0;
+  border-top: 1px solid var(--ink);
+}
+
+.fallbackPlace h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 28px;
+}
+
+.fallbackPlace p {
+  margin: 6px 0 0;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* --------------------------------------------------------------- phone */
+
+@media (max-width: 760px) {
+  .root {
+    --edge: 12px;
+  }
+
+  .brand {
+    padding: 9px 12px 10px;
+  }
+
+  .brandName {
+    font-size: 30px;
+  }
+
+  .brandSub {
+    font-size: 11px;
+    max-width: 150px;
+  }
+
+  .clock {
+    padding: 8px 11px 9px;
+  }
+
+  .clockTime {
+    font-size: 21px;
+  }
+
+  .clockLine {
+    font-size: 11.5px;
+  }
+
+  .clockHint {
+    display: none;
+  }
+
+  .timePanel {
+    top: calc(var(--edge) + 92px);
+    width: calc(100vw - 2 * var(--edge));
+  }
+
+  .dock {
+    left: var(--edge);
+    right: var(--edge);
+    bottom: calc(var(--edge) + 50px);
+    flex-wrap: wrap;
+  }
+
+  .primary {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: 54px;
+  }
+
+  .secondary {
+    flex: 1;
+    justify-content: center;
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .corner {
+    left: var(--edge);
+    right: var(--edge);
+    justify-content: space-between;
+  }
+
+  .placesList {
+    left: var(--edge);
+    right: var(--edge);
+    width: auto;
+    bottom: calc(var(--edge) + 172px);
+  }
+
+  .card {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 64vh;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    animation-name: sheetIn;
+  }
+
+  @keyframes sheetIn {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+  }
+
+  .cardScroll {
+    padding: 20px 18px 14px;
+  }
+
+  .cardTitle {
+    font-size: 34px;
+  }
+
+  .cardBody {
+    font-size: 17.5px;
+  }
+
+  .cardPhoto img {
+    aspect-ratio: 16 / 9;
+  }
+
+  .caption {
+    bottom: calc(var(--edge) + 4px);
+    padding: 14px 16px 16px;
+  }
+
+  .captionText {
+    font-size: 21px;
+  }
+
+  .skip {
+    top: calc(var(--edge) + 92px);
+  }
+
+  .tag {
+    font-size: 11.5px;
+    padding: 5px 8px;
+  }
+
+  .minor .tag {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .captionText {
+    animation: none;
+  }
+
+  .intro,
+  .dock,
+  .progressFill {
+    transition: none;
+  }
+}
