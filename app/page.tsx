@@ -71,7 +71,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   return (
     <>
       {isPublicLaunch() && <Structured />}
-      <PeweExperience initialPlace={initial} />
+      {/* until launch, the page also lists what the office still has to fill in */}
+      <PeweExperience initialPlace={initial} draft={!isPublicLaunch()} />
     </>
   );
 }

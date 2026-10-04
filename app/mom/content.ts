@@ -4,10 +4,22 @@
  * Names follow the election result of 5 September 2026.
  */
 
+import {
+  COMMITTEES,
+  COMMITTEE_WORK,
+  ELECTED,
+  ELECTION,
+  MEMBERS_WITHOUT_OFFICE as REST,
+  OFFICE_BEARERS,
+  ROLL,
+  type Elected,
+} from "@/lib/committee";
+
+export type { Elected };
+
 export interface Person { name: string; note?: string }
 export interface Named { head: string; text: string }
 export interface Action { what: string; who: string; done?: boolean }
-export interface Elected { n: number; name: string; votes: number; pct: number; isNew?: boolean }
 export interface Committee { head: string; lead: string; members: string[] }
 
 export interface MomContent {
@@ -44,40 +56,9 @@ export interface MomContent {
   close: string;
 }
 
-const ELECTED: Elected[] = [
-  { n: 1,  name: "Akhtar Khan",                        votes: 92, pct: 84 },
-  { n: 2,  name: "Irfan Anwar Khan",                   votes: 79, pct: 72 },
-  { n: 3,  name: "Afzal Abdul Rahiman Khan Sarguro",   votes: 76, pct: 70 },
-  { n: 4,  name: "Ibrahim Usman Sarguroh",             votes: 76, pct: 70 },
-  { n: 5,  name: "Khalid A. Razzak Khan Sarguroh",     votes: 74, pct: 68 },
-  { n: 6,  name: "Nisar Sarguroh",                     votes: 73, pct: 67 },
-  { n: 7,  name: "Aslam Ahmed Khan",                   votes: 69, pct: 63 },
-  { n: 8,  name: "Bilal Sarguroh",                     votes: 69, pct: 63 },
-  { n: 9,  name: "Sadiq Latif Khan",                   votes: 66, pct: 61 },
-  { n: 10, name: "Maqbool Pevekar",                    votes: 58, pct: 53 },
-  { n: 11, name: "S. M. S. G. Khan",                   votes: 53, pct: 49 },
-  { n: 12, name: "Gayasali Mahamood Khan S.",          votes: 49, pct: 45 },
-  { n: 13, name: "Mukri Mohammed Hussain A.",          votes: 45, pct: 41, isNew: true },
-  { n: 14, name: "Musaddiq Khan",                      votes: 44, pct: 40, isNew: true },
-  { n: 15, name: "Abdul Qayyum Khan",                  votes: 41, pct: 38, isNew: true },
-  { n: 16, name: "Shakeel Ahmed Abdul Samad",          votes: 38, pct: 35 },
-  { n: 17, name: "Mubeen Mohiuddin Pavekar",           votes: 36, pct: 33, isNew: true },
-];
 
-/** The eleven who hold no office — they make up the Development Committee. */
-const REST = [
-  "Ibrahim Usman Sarguroh",
-  "Khalid A. Razzak Khan Sarguroh",
-  "Nisar Sarguroh",
-  "Bilal Sarguroh",
-  "Sadiq Latif Khan",
-  "Maqbool Pevekar",
-  "S. M. S. G. Khan (Shafi Saheb)",
-  "Gayasali Mahamood Khan S.",
-  "Mukri Mohammed Hussain A.",
-  "Musaddiq Khan",
-  "Shakeel Ahmed Abdul Samad",
-];
+
+
 
 /* ================================ ENGLISH ================================ */
 
@@ -92,7 +73,7 @@ export const EN: MomContent = {
     heldLabel: "Held", held: "Online meeting on Google Meet",
     chairLabel: "In the chair", chair: "S. M. S. G. Khan (Shafi Saheb)",
   },
-  roll: { total: 17, present: 13, absent: 4 },
+  roll: ROLL,
   rollLabels: { total: "On the committee", present: "Present", absent: "Absent" },
   headings: {
     attendance: "Attendance",
@@ -140,29 +121,18 @@ export const EN: MomContent = {
   appointmentsLede:
     "Appointed unanimously, for a term of two years.",
   appointmentsCols: { post: "Office", name: "Appointed" },
-  appointments: [
-    { post: "President", name: "Akhtar Khan" },
-    { post: "General Secretary", name: "Irfan Anwar Khan" },
-    { post: "Treasurer", name: "Abdul Qayyum Khan" },
-    { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
-    { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
-    { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
-  ],
+  appointments: OFFICE_BEARERS,
   committeesLede:
     "Each committee is led by the office bearer named above. Every other elected member serves as a member of the Society, and takes part in the work of whichever committee needs them.",
-  committees: [
-    { head: "Zakat Committee", lead: "Afzal Abdul Rahiman Khan Sarguro", members: [] },
-    { head: "Development Committee", lead: "Mubeen Mohiuddin Pavekar", members: [] },
-    { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
-  ],
+  committees: COMMITTEES,
   membersBlock: { head: "Members", names: REST },
   responsibilities: [
     { head: "General Secretary",
       text: "Manages all documentation, meeting notes and administrative matters, including building and keeping the contact database. Carries the website, the Society's online presence and the automation work, with the support of Afzal Saheb, Akhtar Saheb and the whole management team." },
     { head: "Zakat Committee",
-      text: "Runs the collection and distribution of Zakat through the collection months, with dedicated support from the management team." },
+      text: COMMITTEE_WORK.zakat },
     { head: "Development Committee",
-      text: "Carries the village development works." },
+      text: COMMITTEE_WORK.development },
     { head: "Working across committees",
       text: "Members are encouraged to take part in more than one committee, according to what they are good at and what the Society needs." },
   ],
@@ -175,10 +145,10 @@ export const EN: MomContent = {
   election: {
     lede: "The general election for Pewe was held on 5 September 2026. These are the seventeen the village returned, in the order the count placed them.",
     stats: [
-      { v: "110", l: "Registered" },
-      { v: "109", l: "Voted" },
-      { v: "99.1%", l: "Turnout" },
-      { v: "1,853", l: "Votes counted" },
+      { v: ELECTION.registered, l: "Registered" },
+      { v: ELECTION.voted, l: "Voted" },
+      { v: ELECTION.turnout, l: "Turnout" },
+      { v: ELECTION.counted, l: "Votes counted" },
     ],
     cols: { n: "#", name: "Member", votes: "Votes", share: "Share" },
     newTag: "New",
@@ -201,7 +171,7 @@ export const HI: MomContent = {
     heldLabel: "Kahan", held: "Online meeting, Google Meet par",
     chairLabel: "Chairman", chair: "S. M. S. G. Khan (Shafi Saheb)",
   },
-  roll: { total: 17, present: 13, absent: 4 },
+  roll: ROLL,
   rollLabels: { total: "Committee mein total", present: "Aaye", absent: "Nahi aaye" },
   headings: {
     attendance: "Kaun aaya",
@@ -249,21 +219,10 @@ export const HI: MomContent = {
   appointmentsLede:
     "Sab ki razamandi se, do saal ke term ke liye.",
   appointmentsCols: { post: "Position", name: "Kaun" },
-  appointments: [
-    { post: "President", name: "Akhtar Khan" },
-    { post: "General Secretary", name: "Irfan Anwar Khan" },
-    { post: "Treasurer", name: "Abdul Qayyum Khan" },
-    { post: "Head, Zakat Committee", name: "Afzal Abdul Rahiman Khan Sarguro" },
-    { post: "Head, Development Committee", name: "Mubeen Mohiuddin Pavekar" },
-    { post: "Head, Advisory Committee", name: "Aslam Ahmed Khan" },
-  ],
+  appointments: OFFICE_BEARERS,
   committeesLede:
     "Har committee ka head upar diya gaya hai. Baaki jitne chune gaye members hain, woh Society ke members hain, aur jis committee ko zarurat ho wahan kaam mein hissa lenge.",
-  committees: [
-    { head: "Zakat Committee", lead: "Afzal Abdul Rahiman Khan Sarguro", members: [] },
-    { head: "Development Committee", lead: "Mubeen Mohiuddin Pavekar", members: [] },
-    { head: "Advisory Committee", lead: "Aslam Ahmed Khan", members: [] },
-  ],
+  committees: COMMITTEES,
   membersBlock: { head: "Members", names: REST },
   responsibilities: [
     { head: "General Secretary",
@@ -284,10 +243,10 @@ export const HI: MomContent = {
   election: {
     lede: "Pewe ka general election 5 September 2026 ko hua. Yeh hain woh sattrah jo gaon ne chune, count ke order mein.",
     stats: [
-      { v: "110", l: "Registered" },
-      { v: "109", l: "Vote diya" },
-      { v: "99.1%", l: "Turnout" },
-      { v: "1,853", l: "Vote gine gaye" },
+      { v: ELECTION.registered, l: "Registered" },
+      { v: ELECTION.voted, l: "Vote diya" },
+      { v: ELECTION.turnout, l: "Turnout" },
+      { v: ELECTION.counted, l: "Vote gine gaye" },
     ],
     cols: { n: "#", name: "Member", votes: "Vote", share: "Hissa" },
     newTag: "Naya",

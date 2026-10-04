@@ -1,4 +1,14 @@
-import { COMPLETED_WORKS, ELEVEN_YEARS, YEARLY_COLLECTION, type CompletedWork } from "@/lib/record";
+import { COMPLETED_WORKS, ELEVEN_YEARS, STATEMENT, YEARLY_COLLECTION, type CompletedWork } from "@/lib/record";
+import {
+  COMMITTEES,
+  COMMITTEE_WORK,
+  ELECTED,
+  ELECTION,
+  MEETING_DATE,
+  MEMBERS_WITHOUT_OFFICE,
+  OFFICE_BEARERS,
+  ROLL,
+} from "@/lib/committee";
 import type { PlaceId } from "./places";
 
 /**
@@ -35,7 +45,11 @@ export const COSTED_WORKS = WORKS.filter((w) => w.approxCost).sort((a, b) => b.a
 
 export const ZAKAT_HEADS: { title: string; hinglish: string; line: string }[] = [
   { title: "Medical", hinglish: "Ilaaj", line: "Treatment, surgery, medicines and travel to hospital." },
-  { title: "Monthly stipend", hinglish: "Maheena", line: "Paid straight to the household's bank account, reviewed every year." },
+  {
+    title: "Monthly stipend",
+    hinglish: "Maheena",
+    line: "Paid straight to the household's bank account, reviewed every year.",
+  },
   { title: "Education", hinglish: "Padhai", line: "School fees, books, hostel, and courses that lead to work." },
   { title: "Livelihood", hinglish: "Rozgaar", line: "The one-time cost of earning again: nets, a cart, tools." },
   { title: "Emergency", hinglish: "Aafat", line: "Fire, a house collapse, or the sudden loss of the earning member." },
@@ -47,4 +61,88 @@ export const GIVE_WAYS: { head: string; hinglish: string; line: string }[] = [
   { head: "GPay or PhonePe", hinglish: "UPI se", line: "The office gives you the Society's UPI details." },
   { head: "Bank transfer", hinglish: "Bank se", line: "NEFT, IMPS or RTGS. The office gives you the account details." },
   { head: "Cheque", hinglish: "Cheque se", line: "Drawn in the Society's name." },
+];
+
+/* ------------------------------------------------------------------ */
+/*  The three heads of work: what the trust was set up to do.          */
+/*  Each carries one figure that the record can stand behind.          */
+/* ------------------------------------------------------------------ */
+
+const costedTotal = COSTED_WORKS.reduce((s, w) => s + (w.approxCost ?? 0), 0);
+
+export const THREE_HEADS = [
+  {
+    key: "development",
+    title: "Develop the village",
+    hinglish: "Gaon ke kaam",
+    line: "Water, roads and street lights, wells, boundary walls, and the repair of the Community Building.",
+    figure: `≈ ₹${+(costedTotal / 1e5).toFixed(1)} lakh`,
+    figureLabel: "on the water scheme, the roads and the Community Building since 2016 · approx., pending audit",
+    href: "#work",
+  },
+  {
+    key: "zakat",
+    title: "Collect and give Zakat",
+    hinglish: "Zakat aur madad",
+    line: "Collected from Pewe's people at home and abroad, and given under five heads: medical, monthly stipends, education, livelihood and emergencies.",
+    figure: `${STATEMENT.stipendHouseholds} households`,
+    figureLabel: "on a monthly stipend, paid by NEFT to their own account · Aug–Sep 2026",
+    href: "#zakat",
+  },
+  {
+    key: "welfare",
+    title: "Welfare for families",
+    hinglish: "Madad ke kaam",
+    line: "Standing behind any household in the village that needs help in a hurry.",
+    figure: `≈ ₹${+(ELEVEN_YEARS.familySupportTenYears / 1e7).toFixed(1)} crore`,
+    figureLabel:
+      "direct family support over ten years: housing, livelihood, medical and education · approx., pending audit",
+    href: "#accounts",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  The committee and the notices: the facts the minutes of            */
+/*  13 September 2026 record (lib/committee.ts, shared with them).     */
+/* ------------------------------------------------------------------ */
+
+export const COMMITTEE = {
+  electionDate: ELECTION.date,
+  meetingDate: MEETING_DATE,
+  registered: ELECTION.registered,
+  voted: ELECTION.voted,
+  turnout: ELECTION.turnout,
+  elected: ELECTED.length,
+  stats: [
+    { v: ELECTION.registered, l: "Registered to vote" },
+    { v: ELECTION.voted, l: "Voted" },
+    { v: ELECTION.turnout, l: "Turnout" },
+    { v: String(ELECTED.length), l: "Members elected" },
+  ],
+  officers: OFFICE_BEARERS,
+  committees: [
+    { name: "Zakat Committee", lead: COMMITTEES[0].lead, does: COMMITTEE_WORK.zakat },
+    { name: "Development Committee", lead: COMMITTEES[1].lead, does: COMMITTEE_WORK.development },
+    { name: "Advisory Committee", lead: COMMITTEES[2].lead, does: "" },
+  ],
+  members: MEMBERS_WITHOUT_OFFICE,
+  present: ROLL.present,
+  total: ROLL.total,
+};
+
+export const NOTICES = [
+  {
+    date: "13 Sep 2026",
+    kind: "Meeting",
+    title: "The new committee meets and appoints its office bearers",
+    body: `Meeting online, ${ROLL.present} of the ${ROLL.total} elected members agreed a simpler structure: six offices, the President, General Secretary and Treasurer, and the heads of the Zakat, Development and Advisory committees. They serve two years, with a review of the work after the first.`,
+    link: { href: "/minutes", label: "Read the minutes" },
+  },
+  {
+    date: "5 Sep 2026",
+    kind: "Election",
+    title: "Pewe elects its committee",
+    body: `${ELECTION.voted} of the ${ELECTION.registered} registered members voted, a turnout of ${ELECTION.turnout}. Seventeen members were returned.`,
+    link: { href: "#committee", label: "See the committee" },
+  },
 ];

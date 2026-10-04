@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SOCIETY } from "@/lib/site";
 import type { PeweEngine, ClockInfo } from "./engine/engine";
 import { CARD_ORDER, PLACES, PLACE_BY_ID, crore, lakh, type PlaceId } from "./places";
-import { COSTED_WORKS, ELEVEN_YEARS, GIVE_WAYS, WORKS, ZAKAT_HEADS } from "./content";
+import { COMMITTEE, COSTED_WORKS, ELEVEN_YEARS, GIVE_WAYS, NOTICES, THREE_HEADS, WORKS, ZAKAT_HEADS } from "./content";
+import { ToFill } from "./to-fill";
 import { YearsChart } from "./years-chart";
 import { Statement } from "./statement";
 import { STATEMENT } from "@/lib/record";
@@ -26,9 +27,11 @@ function onSlowData() {
 
 const SECTIONS = [
   { id: "about", label: "Who we are" },
+  { id: "committee", label: "Committee" },
   { id: "accounts", label: "Accounts" },
   { id: "work", label: "Our work" },
   { id: "zakat", label: "Zakat & help" },
+  { id: "notices", label: "Notices" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -75,7 +78,17 @@ const fmt = (m: number) => {
   return `${h12}:${String(m % 60).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 };
 
-export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId | null }) {
+/**
+ * The front page. `draft` is true on the private preview: the boxes that
+ * list what the office still has to fill in show there, and nowhere else.
+ */
+export function PeweExperience({
+  initialPlace = null,
+  draft = false,
+}: {
+  initialPlace?: PlaceId | null;
+  draft?: boolean;
+}) {
   const heroRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
@@ -618,7 +631,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
             )}
           </div>
 
-          <a className={styles.scrollCue} href="#about">
+          <a className={styles.scrollCue} href="#what">
             Read about PSWS <span aria-hidden="true">↓</span>
           </a>
 
@@ -635,8 +648,33 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
           </nav>
         </section>
 
+        {/* ------------------------------------------------ what we do */}
+        <section id="what" className={styles.section}>
+          <div>
+            <p className={styles.eyebrow}>What the Society does · Hum kya karte hain</p>
+            <h2 className={styles.sectionTitle}>Three heads of work, one account book.</h2>
+            <p className={styles.text}>
+              The trust was set up for three things: to develop the village, to collect and distribute Zakat, and to
+              carry out welfare projects. Everything the Society does falls under one of them.
+            </p>
+            <ul className={styles.threeHeads}>
+              {THREE_HEADS.map((h) => (
+                <li key={h.key}>
+                  <a className={styles.threeHead} href={h.href}>
+                    <p className={styles.threeHeadHinglish}>{h.hinglish}</p>
+                    <h3 className={styles.threeHeadTitle}>{h.title}</h3>
+                    <p className={styles.threeHeadLine}>{h.line}</p>
+                    <p className={styles.threeHeadFigure}>{h.figure}</p>
+                    <p className={styles.threeHeadLabel}>{h.figureLabel}</p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         {/* ------------------------------------------------ who we are */}
-        <section id="about" className={styles.section}>
+        <section id="about" className={`${styles.section} ${styles.sectionAlt}`}>
           <div className={styles.split}>
             <div>
               <p className={styles.eyebrow}>Who we are · Society ke baare mein</p>
@@ -661,6 +699,16 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   </>
                 )}
               </p>
+              {draft && (
+                <ToFill
+                  title="How the Society began"
+                  asks={[
+                    "Who started it, and in which year the work began",
+                    "Why the village needed it",
+                    "Two or three moments since then that the village remembers",
+                  ]}
+                />
+              )}
             </div>
             <div className={`${styles.plate} ${styles.register}`}>
               <div className={styles.registerHead}>
@@ -693,6 +741,12 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   </dd>
                 </div>
                 <div>
+                  <dt>Committee</dt>
+                  <dd>
+                    <a href="#committee">{COMMITTEE.elected} elected, Sep 2026</a>
+                  </dd>
+                </div>
+                <div>
                   <dt>Contributions</dt>
                   <dd>Domestic only</dd>
                 </div>
@@ -701,11 +755,70 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
           </div>
         </section>
 
+        {/* ------------------------------------------------ the committee */}
+        <section id="committee" className={styles.section}>
+          <div>
+            <p className={styles.eyebrow}>The committee · Society kaun chalata hai</p>
+            <h2 className={styles.sectionTitle}>Elected by the village.</h2>
+            <p className={styles.text}>
+              The general election for Pewe was held on {COMMITTEE.electionDate}. {COMMITTEE.voted} of the{" "}
+              {COMMITTEE.registered} registered members voted, and {COMMITTEE.elected} were returned. On{" "}
+              {COMMITTEE.meetingDate} they appointed six office bearers, for two years.
+            </p>
+            <dl className={styles.electionStats}>
+              {COMMITTEE.stats.map((s) => (
+                <div key={s.l}>
+                  <dd>{s.v}</dd>
+                  <dt>{s.l}</dt>
+                </div>
+              ))}
+            </dl>
+            <h3 className={styles.subTitle}>Office bearers</h3>
+            <ul className={styles.officers}>
+              {COMMITTEE.officers.map((o) => (
+                <li key={o.post}>
+                  <p className={styles.officerPost}>{o.post}</p>
+                  <p className={styles.officerName}>{o.name}</p>
+                </li>
+              ))}
+            </ul>
+            <h3 className={styles.subTitle}>The three committees</h3>
+            <ul className={styles.committees}>
+              {COMMITTEE.committees.map((c) => (
+                <li key={c.name}>
+                  <p className={styles.committeeName}>{c.name}</p>
+                  <p className={styles.committeeLead}>Led by {c.lead}</p>
+                  {c.does && <p className={styles.committeeDoes}>{c.does}</p>}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.members}>
+              <p className={styles.officerPost}>Members of the committee</p>
+              <p className={styles.membersNames}>{COMMITTEE.members.join(" · ")}</p>
+            </div>
+            <p className={styles.committeeNote}>
+              Every committee head and member reports to the President. Office bearers serve two years, with a review of
+              the work after the first. From the minutes of the meeting of {COMMITTEE.meetingDate}.{" "}
+              <a href="/minutes">Read the minutes →</a>
+            </p>
+            {draft && (
+              <ToFill
+                title="Before the committee goes public"
+                asks={[
+                  "Confirm that these names may be shown on the public website",
+                  "What the Advisory Committee does, in a line",
+                  "Photographs of the office bearers, if they want them shown",
+                ]}
+              />
+            )}
+          </div>
+        </section>
+
         {/* ------------------------------------------------ the accounts */}
         <section id="accounts" className={`${styles.section} ${styles.sectionAlt}`}>
           <div>
-            <p className={styles.eyebrow}>Accounts · Paisa kahan gaya</p>
-            <h2 className={styles.sectionTitle}>Where the money goes.</h2>
+            <p className={styles.eyebrow}>Accounts · Paisa kahan gaya, poora hisaab</p>
+            <h2 className={styles.sectionTitle}>Where the money went.</h2>
             <p className={styles.text}>
               First, the last two months straight from the Society&rsquo;s bank statement. Then the eleven years before,
               from the office&rsquo;s own record.
@@ -741,13 +854,23 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
               eleven-year total nearer ₹3 crore; that does not yet match the yearly figures, so this page shows only the
               years until the audited statements settle it.
             </p>
+            {draft && (
+              <ToFill
+                title="Audited statements"
+                asks={[
+                  "Which years' audited statements are filed, and with whom",
+                  "The latest audited statement, to put up for anyone to download",
+                  "Which eleven-year total is right: the yearly figures (₹2.18 crore) or ₹3 crore",
+                ]}
+              />
+            )}
           </div>
         </section>
 
         {/* ------------------------------------------------ our work */}
         <section id="work" className={styles.section}>
           <div>
-            <p className={styles.eyebrow}>Our work · Gaon ke kaam</p>
+            <p className={styles.eyebrow}>Our work · Gaon ke kaam, ab tak kya bana</p>
             <h2 className={styles.sectionTitle}>What eleven years has built.</h2>
             <p className={styles.text}>
               Works finished or still running since 2015. Where the office has put a cost to a work, it is shown,
@@ -792,6 +915,17 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                 </li>
               ))}
             </ul>
+            {draft && (
+              <ToFill
+                title="Works running now · Abhi ke kaam"
+                asks={[
+                  "Each work running now: what it is, and where in the village",
+                  "Its budget, and what has been spent so far",
+                  "The quotations received, if the committee wants them public",
+                  "What is planned next",
+                ]}
+              />
+            )}
           </div>
         </section>
 
@@ -810,9 +944,23 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                 by NEFT into their own bank account, and the Society paid fees directly to 11 schools, colleges and
                 institutes.
               </p>
+              <p className={styles.text}>
+                The totals are public. The names of the families helped, and their circumstances, never are.
+              </p>
               <a className={styles.primary} href={SOCIETY.phoneHref}>
                 Ask the office for help
               </a>
+              {draft && (
+                <ToFill
+                  title="How to ask for help"
+                  asks={[
+                    "Who a family should speak to first",
+                    "How a request is decided, and by whom",
+                    "How long it usually takes",
+                    "When Zakat is collected each year",
+                  ]}
+                />
+              )}
             </div>
             <ul className={styles.heads}>
               {ZAKAT_HEADS.map((z) => (
@@ -827,6 +975,42 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
           </div>
         </section>
 
+        {/* ------------------------------------------------ notices */}
+        <section id="notices" className={styles.section}>
+          <div>
+            <p className={styles.eyebrow}>Notice board · Suchna</p>
+            <h2 className={styles.sectionTitle}>What the office has put up.</h2>
+            <p className={styles.text}>
+              Meeting notices and reports. A member working abroad sees the same notice on the same day as a member in
+              the village.
+            </p>
+            <ol className={styles.notices}>
+              {NOTICES.map((n) => (
+                <li key={n.title} className={styles.notice}>
+                  <p className={styles.noticeMeta}>
+                    <span>{n.date}</span>
+                    <span className={styles.noticeKind}>{n.kind}</span>
+                  </p>
+                  <h3 className={styles.noticeTitle}>{n.title}</h3>
+                  <p className={styles.noticeBody}>{n.body}</p>
+                  <a className={styles.noticeLink} href={n.link.href}>
+                    {n.link.label} →
+                  </a>
+                </li>
+              ))}
+            </ol>
+            {draft && (
+              <ToFill
+                title="More notices"
+                asks={[
+                  "The next General Body meeting: date, place and agenda",
+                  "Any other notice the office wants every member to see",
+                ]}
+              />
+            )}
+          </div>
+        </section>
+
         {/* ------------------------------------------------ give */}
         <section id="give" className={`${styles.section} ${styles.sectionInk}`}>
           <div className={styles.split}>
@@ -836,6 +1020,12 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
               <p className={styles.text}>
                 However it arrives, every rupee is entered against its head and audited with the rest. Call the office
                 and they will give you the details.
+              </p>
+              <p className={styles.text}>
+                Read the accounts first. We would rather you gave having seen where last year&rsquo;s money went.{" "}
+                <a className={styles.inkLink} href="#accounts">
+                  Where the money went ↑
+                </a>
               </p>
               <a className={styles.primaryOnInk} href={SOCIETY.phoneHref}>
                 Call the office · {SOCIETY.phone}
@@ -859,6 +1049,18 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   through family at home.
                 </p>
               </div>
+              {draft && (
+                <ToFill
+                  onInk
+                  title="For donors · and sponsors (Hamare saath)"
+                  asks={[
+                    "Bank account and UPI details, only if the office wants them public",
+                    "Whether every donor gets a receipt, and how",
+                    "Any appeal open right now: what it is for, the target, and how much has come in",
+                    "Businesses that support the Society's running costs, if any, and whether they want to be named",
+                  ]}
+                />
+              )}
             </div>
           </div>
         </section>
@@ -868,7 +1070,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
           <div className={styles.split}>
             <div>
               <p className={styles.eyebrow}>Contact · Sampark</p>
-              <h2 className={styles.sectionTitle}>Talk to the office.</h2>
+              <h2 className={styles.sectionTitle}>Where to find us.</h2>
               <a className={styles.bigPhone} href={SOCIETY.phoneHref}>
                 {SOCIETY.phone}
               </a>
@@ -886,6 +1088,16 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   </dd>
                 </div>
               </dl>
+              {draft && (
+                <ToFill
+                  title="Office details"
+                  asks={[
+                    "Office timings",
+                    "An email address, if the office has one",
+                    "The right PIN code: the old records say 415703, the bank statement says 415724",
+                  ]}
+                />
+              )}
             </div>
             <figure className={styles.figure}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -899,17 +1111,59 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div>
-            <p className={styles.footerName}>{SOCIETY.name}</p>
+            <div className={styles.footerId}>
+              <Seal size={56} />
+              <div>
+                <p className={styles.footerName}>{SOCIETY.name}</p>
+                <p className={styles.footerAlt}>{SOCIETY.nameMarathi}</p>
+                <p className={styles.footerAlt} dir="rtl" lang="ur">
+                  {SOCIETY.nameUrdu}
+                </p>
+              </div>
+            </div>
             <p className={styles.footerSmall}>
-              Public trust · Reg. {SOCIETY.registrationNo} · {SOCIETY.societyRegNo} · Est. {SOCIETY.foundedYear}
+              {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}, {SOCIETY.address.state}
+              <br />
+              <a href={SOCIETY.phoneHref}>{SOCIETY.phone}</a>
+            </p>
+            <p className={styles.footerSmall}>
+              Public Trust Reg. {SOCIETY.registrationNo} · Society Reg. {SOCIETY.societyRegNo} · Est.{" "}
+              {SOCIETY.foundedYear}
             </p>
           </div>
-          <p className={styles.footerSmall}>
-            The land in the 3D village is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus
-            Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from
-            Natural Earth. Weather from Open-Meteo.
-          </p>
+          <nav className={styles.footerCols} aria-label="More">
+            <div>
+              <p className={styles.footerHead}>
+                The Society <span>Society</span>
+              </p>
+              <a href="#about">Who we are</a>
+              <a href="#committee">The committee</a>
+              <a href="#accounts">Accounts</a>
+              <a href="#work">Our work</a>
+            </div>
+            <div>
+              <p className={styles.footerHead}>
+                Take part <span>Saath dijiye</span>
+              </p>
+              <a href="#zakat">Ask for help</a>
+              <a href="#give">Zakat &amp; Donation</a>
+              <a href="#notices">Notices</a>
+              <a href="#contact">Contact</a>
+            </div>
+            <div>
+              <p className={styles.footerHead}>
+                Members <span>Members</span>
+              </p>
+              <a href="/erp">Members&rsquo; area</a>
+              <a href="/minutes">Minutes</a>
+            </div>
+          </nav>
         </div>
+        <p className={styles.footerCredits}>
+          The land in the 3D village is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus Defence
+          and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from Natural
+          Earth. Weather from Open-Meteo.
+        </p>
       </footer>
     </div>
   );
