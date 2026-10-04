@@ -8,15 +8,14 @@ import { WORKS, ZAKAT_HEADS } from "./content";
 import styles from "./pewe.module.css";
 
 type Phase = "loading" | "intro" | "explore" | "tour" | "fallback";
-type Panel = "work" | "zakat" | "about" | "contact" | null;
 
-const NAV: { id: Exclude<Panel, null> | "village"; label: string }[] = [
-  { id: "village", label: "The village" },
+const SECTIONS = [
+  { id: "about", label: "Who we are" },
   { id: "work", label: "Our work" },
   { id: "zakat", label: "Zakat & help" },
-  { id: "about", label: "About" },
+  { id: "people", label: "Pewe's people" },
   { id: "contact", label: "Contact" },
-];
+] as const;
 
 const isPlace = (s: string | null | undefined): s is PlaceId => !!s && s in PLACE_BY_ID;
 
@@ -31,14 +30,13 @@ function safeSet(k: string, v: string) {
   try {
     window.localStorage.setItem(k, v);
   } catch {
-    /* private mode: the tour just plays again next time */
+    /* private mode: nothing to remember */
   }
 }
 
 function webglAvailable() {
   try {
-    const c = document.createElement("canvas");
-    return !!c.getContext("webgl2");
+    return !!document.createElement("canvas").getContext("webgl2");
   } catch {
     return false;
   }
@@ -46,8 +44,7 @@ function webglAvailable() {
 
 /** A Date for today in Pewe at the given minute of the day. */
 function peweToday(minutes: number) {
-  const now = new Date();
-  const ist = new Date(now.getTime() + 330 * 60000);
+  const ist = new Date(Date.now() + 330 * 60000);
   const midnight = Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - 330 * 60000;
   return new Date(midnight + minutes * 60000);
 }
@@ -59,12 +56,14 @@ function peweMinutesNow() {
 
 const fmt = (m: number) => {
   const h = Math.floor(m / 60);
-  const mm = m % 60;
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(mm).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
+  return `${h12}:${String(m % 60).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`;
 };
 
 export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId | null }) {
+  const heroRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const copyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<PeweEngine | null>(null);
@@ -74,7 +73,6 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
   const [progress, setProgress] = useState(0.05);
   const [introGone, setIntroGone] = useState(false);
   const [active, setActive] = useState<PlaceId | null>(null);
-  const [panel, setPanel] = useState<Panel>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
   const [caption, setCaption] = useState<string | null>(null);
@@ -82,12 +80,23 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
   const [clock, setClock] = useState<ClockInfo | null>(null);
   const [timeOpen, setTimeOpen] = useState(false);
   const [minutes, setMinutes] = useState<number | null>(null);
+  const [coarse, setCoarse] = useState(false);
 
+  // the open place lives in the address, so a copied link opens it again
   const setHash = (id: PlaceId | null) => {
     const url = new URL(window.location.href);
-    url.hash = id ? id : "";
     url.searchParams.delete("p");
+    if (!id && !isPlace(url.hash.slice(1))) return;
     window.history.replaceState(null, "", url.pathname + url.search + (id ? `#${id}` : ""));
+  };
+
+  // bring the map up the screen; on a phone the text sits above it, so go to the map itself
+  const revealMap = () => {
+    const phone = window.innerWidth <= 760;
+    const el = phone ? stageRef.current : heroRef.current;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top;
+    if (Math.abs(top) > 80) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const startTour = useCallback(async () => {
@@ -95,10 +104,9 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     if (!engine) return;
     activeRef.current = null;
     setActive(null);
-    setPanel(null);
+    setHash(null);
     setPlacesOpen(false);
     setTimeOpen(false);
-    setHash(null);
     setPhase("tour");
     setTourP(0);
     safeSet("pewe:seen", "1");
@@ -121,11 +129,12 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       if (phase === "tour") engine.cancelTour();
       activeRef.current = id;
       setActive(id);
-      setPanel(null);
+      setHash(id);
+      // after the places list has folded away, so the scroll lands where it should
+      if (window.innerWidth <= 760) requestAnimationFrame(() => requestAnimationFrame(revealMap));
       setPlacesOpen(false);
       setCaption(null);
       setPhase("explore");
-      setHash(id);
       engine.focus(id);
       void engine.flyTo(id);
     },
@@ -154,22 +163,28 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     setPhase("explore");
   }, []);
 
-  // keep select() fresh for the engine's label clicks
+  /** From the sections below: go up to the map and open a place there. */
+  const showOnMap = (id: PlaceId) => {
+    setMenuOpen(false);
+    revealMap();
+    window.setTimeout(() => select(id), 450);
+  };
+
   const selectRef = useRef(select);
   selectRef.current = select;
 
   useEffect(() => {
+    setCoarse(window.matchMedia("(pointer: coarse)").matches);
     if (!webglAvailable()) {
       setPhase("fallback");
       return;
     }
     let disposed = false;
     let engine: PeweEngine | null = null;
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
     const q = new URLSearchParams(window.location.search);
     const lowPower =
       q.get("low") === "1" ||
-      coarse ||
+      window.matchMedia("(pointer: coarse)").matches ||
       Math.min(window.innerWidth, window.innerHeight) < 700 ||
       (navigator.hardwareConcurrency ?? 8) <= 4;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -194,7 +209,10 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
             tag: styles.tag,
             stem: styles.stem,
           },
-          timeOverride: timeQ && /^\d{1,2}:\d{2}$/.test(timeQ) ? peweToday(Number(timeQ.split(":")[0]) * 60 + Number(timeQ.split(":")[1])) : null,
+          timeOverride:
+            timeQ && /^\d{1,2}:\d{2}$/.test(timeQ)
+              ? peweToday(Number(timeQ.split(":")[0]) * 60 + Number(timeQ.split(":")[1]))
+              : null,
           monthOverride: monthQ >= 1 && monthQ <= 12 ? monthQ : null,
           weatherOverride: q.get("weather"),
           onSelect: (id) => selectRef.current(id),
@@ -210,17 +228,19 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         const deep = initialPlace ?? (isPlace(hash) ? hash : null);
         const seen = safeGet("pewe:seen");
         setIntroGone(true);
-        if (deep && deep !== "busstop") {
+        // if the visitor starts the tour or picks a place mid-intro, the intro gives way
+        if (deep === "busstop") {
+          const whole = await engine.playIntro(reduced ? "none" : "short");
+          if (!disposed && whole) await startTour();
+        } else if (deep) {
           setPhase("explore");
-          await engine.playIntro(reduced ? "none" : "short");
-          if (!disposed) selectRef.current(deep);
-        } else if ((!seen || deep === "busstop") && !reduced) {
-          setPhase("intro");
-          await engine.playIntro("full");
-          if (!disposed) await startTour();
+          const whole = await engine.playIntro(reduced ? "none" : "short");
+          if (!disposed && whole) selectRef.current(deep);
         } else {
-          setPhase("explore");
-          await engine.playIntro(reduced ? "none" : "short");
+          setPhase("intro");
+          await engine.playIntro(reduced ? "none" : seen ? "short" : "full");
+          safeSet("pewe:seen", "1");
+          if (!disposed) setPhase((p) => (p === "intro" ? "explore" : p));
         }
       } catch (e) {
         console.error(e);
@@ -231,16 +251,20 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     const onResize = () => engine?.resize();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (engineRef.current && activeRef.current) close();
+      if (activeRef.current) close();
       else skipTour();
       setPlacesOpen(false);
-      setPanel(null);
       setTimeOpen(false);
+      setMenuOpen(false);
     };
+    // stop drawing the map while it is scrolled out of view
+    const io = new IntersectionObserver(([entry]) => engine?.setPaused(!entry.isIntersecting), { threshold: 0.02 });
+    if (heroRef.current) io.observe(heroRef.current);
     window.addEventListener("resize", onResize);
     window.addEventListener("keydown", onKey);
     return () => {
       disposed = true;
+      io.disconnect();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKey);
       engine?.dispose();
@@ -249,33 +273,35 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const openNav = (id: Exclude<Panel, null> | "village") => {
-    setMenuOpen(false);
-    setPlacesOpen(false);
-    setTimeOpen(false);
-    if (phase === "tour") skipTour();
-    if (activeRef.current) close();
-    if (id === "village") {
-      setPanel(null);
-      void engineRef.current?.flyTo("home");
-      return;
-    }
-    setPanel(id);
-  };
-
-  // keep the place in view beside (or above) whatever card is open
+  // keep the open place in view beside (or above) its card, and the village clear of the welcome text
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine) return;
-    const el = document.querySelector<HTMLElement>("[data-card]");
-    if (!el) {
+    const stage = stageRef.current;
+    if (!engine || !stage) return;
+    const place = () => {
+      const s = stage.getBoundingClientRect();
+      const phone = window.innerWidth <= 760;
+      const card = stage.querySelector<HTMLElement>("[data-card]");
+      if (card) {
+        const r = card.getBoundingClientRect();
+        engine.setInset(phone ? 0 : s.right - r.left, phone ? s.bottom - r.top : 0);
+        return;
+      }
+      const copy = copyRef.current;
+      if (copy && !phone && phase !== "tour") {
+        const r = copy.getBoundingClientRect();
+        // only when the text sits over the left of the village, not above or below it
+        if (r.top < s.bottom && r.bottom > s.top && r.left - s.left < 80 && r.right < s.left + s.width * 0.6) {
+          engine.setInset(-(r.right - s.left) * 0.7, 0);
+          return;
+        }
+      }
       engine.setInset(0, 0);
-      return;
-    }
-    const r = el.getBoundingClientRect();
-    const phone = window.innerWidth <= 760;
-    engine.setInset(phone ? 0 : window.innerWidth - r.left, phone ? window.innerHeight - r.top : 0);
-  }, [active, panel]);
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [active, phase]);
 
   const share = async (id: PlaceId) => {
     const p = PLACE_BY_ID[id];
@@ -297,64 +323,22 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     engineRef.current?.setTime(m === null ? null : peweToday(m));
   };
 
-  const touring = phase === "tour" || phase === "intro";
+  const touring = phase === "tour";
   const place = active ? PLACE_BY_ID[active] : null;
-
-  if (phase === "fallback") {
-    return (
-      <main className={styles.root}>
-        <div className={styles.fallback}>
-          <div className={styles.fallbackInner}>
-            <p className={styles.introCoords}>17.5605° N · 73.2422° E</p>
-            <h1 className={styles.introWord}>Pewe</h1>
-            <p className={styles.brandSub}>{SOCIETY.name}</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero/hero.jpg" alt="The Community Building across the paddy in the monsoon" />
-            {CARD_ORDER.map((id) => (
-              <section key={id} className={styles.fallbackPlace}>
-                <h2>{PLACE_BY_ID[id].title}</h2>
-                <p>{PLACE_BY_ID[id].body}</p>
-              </section>
-            ))}
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const fallback = phase === "fallback";
 
   return (
-    <main className={styles.root}>
-      <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-      <div ref={labelsRef} className={styles.labels} />
-
-      <nav className={styles.srOnly} aria-label="Places in Pewe">
-        <ul>
-          {PLACES.map((p) => (
-            <li key={p.id}>
-              <button type="button" onClick={() => select(p.id)}>
-                {p.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
+    <div className={styles.site}>
       <header className={styles.bar}>
-        <button type="button" className={styles.barBrand} onClick={() => openNav("village")} aria-label="Pewe, back to the village">
+        <a className={styles.barBrand} href="#top" onClick={() => setMenuOpen(false)}>
           <span className={styles.barName}>Pewe</span>
           <span className={styles.barSub}>{SOCIETY.name}</span>
-        </button>
-        <nav className={styles.nav} aria-label="Site">
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              className={`${styles.navItem} ${(n.id === "village" ? !panel : panel === n.id) ? styles.navItemOn : ""}`}
-              onClick={() => openNav(n.id)}
-              aria-current={(n.id === "village" ? !panel : panel === n.id) ? "page" : undefined}
-            >
-              {n.label}
-            </button>
+        </a>
+        <nav className={styles.nav} aria-label="Sections">
+          {SECTIONS.map((s) => (
+            <a key={s.id} className={styles.navItem} href={`#${s.id}`}>
+              {s.label}
+            </a>
           ))}
           <a className={styles.navMembers} href="/erp">
             Members
@@ -366,11 +350,11 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       </header>
 
       {menuOpen && (
-        <nav className={styles.menu} aria-label="Site menu">
-          {NAV.map((n) => (
-            <button key={n.id} type="button" className={styles.menuItem} onClick={() => openNav(n.id)}>
-              {n.label}
-            </button>
+        <nav className={styles.menu} aria-label="Sections">
+          {SECTIONS.map((s) => (
+            <a key={s.id} className={styles.menuItem} href={`#${s.id}`} onClick={() => setMenuOpen(false)}>
+              {s.label}
+            </a>
           ))}
           <a className={styles.menuItem} href="/erp">
             Members
@@ -381,284 +365,351 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         </nav>
       )}
 
-      <button
-        type="button"
-        className={`${styles.plate} ${styles.clock}`}
-        onClick={() => setTimeOpen((o) => !o)}
-        aria-expanded={timeOpen}
-        aria-label="Pewe's time and weather. Open to see Pewe at another hour."
-      >
-        <span className={styles.clockLabel}>{clock?.live === false ? "Pewe at" : "Pewe now"}</span>
-        <span className={styles.clockTime}>{clock?.time ?? "—"}</span>
-        <span className={styles.clockLine}>
-          {[clock?.tempC != null ? `${clock.tempC}°` : null, clock?.label || null].filter(Boolean).join(" · ") || "Konkan coast"}
-        </span>
-        <span className={styles.clockHint}>Change the hour</span>
-      </button>
+      <main id="top">
+        {/* ------------------------------------------------ the village */}
+        <section ref={heroRef} className={styles.hero} aria-label="Pewe in 3D">
+          <div ref={stageRef} className={styles.stage}>
+            {fallback ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className={styles.stageFallback} src="/images/pewe/village.jpg" alt="Pewe from above: the valley, the creek and the village" />
+            ) : (
+              <>
+                <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+                <div ref={labelsRef} className={styles.labels} />
+              </>
+            )}
 
-      {timeOpen && (
-        <div className={`${styles.plate} ${styles.timePanel}`}>
-          <p className={styles.timeTitle}>See Pewe at {fmt(minutes ?? peweMinutesNow())}</p>
-          <input
-            className={styles.range}
-            type="range"
-            min={0}
-            max={1439}
-            step={5}
-            value={minutes ?? peweMinutesNow()}
-            onChange={(e) => setTime(Number(e.target.value))}
-            aria-label="Hour of the day in Pewe"
-          />
-          <div className={styles.rangeScale}>
-            <span>Midnight</span>
-            <span>Noon</span>
-            <span>Midnight</span>
-          </div>
-          <button type="button" className={`${styles.secondary} ${styles.liveButton}`} onClick={() => setTime(null)}>
-            Back to Pewe now
-          </button>
-        </div>
-      )}
-
-      <div className={`${styles.dock} ${touring || active || panel ? styles.dockHidden : ""}`}>
-        <button type="button" className={styles.primary} onClick={() => void startTour()}>
-          <span className={styles.play} aria-hidden="true" />
-          Take me through Pewe
-        </button>
-        <button
-          type="button"
-          className={`${styles.secondary} ${placesOpen ? styles.secondaryOn : ""}`}
-          onClick={() => setPlacesOpen((o) => !o)}
-          aria-expanded={placesOpen}
-        >
-          Places
-        </button>
-      </div>
-
-
-      {placesOpen && !touring && !active && (
-        <ul className={`${styles.plate} ${styles.placesList}`}>
-          {CARD_ORDER.map((id) => (
-            <li key={id}>
-              <button type="button" className={styles.placesItem} onClick={() => select(id)}>
-                <span>{PLACE_BY_ID[id].title}</span>
-                <span className={styles.placesMeta}>{PLACE_BY_ID[id].meta.split(" · ")[0]}</span>
+            {!fallback && (
+              <button
+                type="button"
+                className={`${styles.plate} ${styles.clock}`}
+                onClick={() => setTimeOpen((o) => !o)}
+                aria-expanded={timeOpen}
+                aria-label="Pewe's time and weather. Open to see Pewe at another hour."
+              >
+                <span className={styles.clockLabel}>{clock?.live === false ? "Pewe at" : "Pewe now"}</span>
+                <span className={styles.clockTime}>{clock?.time ?? "—"}</span>
+                <span className={styles.clockLine}>
+                  {[clock?.tempC != null ? `${clock.tempC}°` : null, clock?.label || null].filter(Boolean).join(" · ") ||
+                    "Konkan coast"}
+                </span>
+                <span className={styles.clockHint}>Change the hour</span>
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
+            )}
 
-      {place && (
-        <aside data-card className={`${styles.plate} ${styles.card}`} key={place.id} aria-label={place.title}>
-          <button type="button" className={styles.cardClose} onClick={close} aria-label="Close">
-            ×
-          </button>
-          <div className={styles.cardScroll}>
-            <p className={styles.coords}>{place.coords}</p>
-            <p className={styles.cardMeta}>{place.meta}</p>
-            <h2 className={styles.cardTitle}>{place.title}</h2>
-            <p className={styles.cardBody}>{place.body}</p>
-            {place.photo && (
-              <figure className={styles.cardPhoto}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={place.photo.src} alt={place.photo.alt} loading="lazy" />
-                <figcaption>{place.photo.alt}</figcaption>
-              </figure>
+            {timeOpen && (
+              <div className={`${styles.plate} ${styles.timePanel}`}>
+                <p className={styles.timeTitle}>See Pewe at {fmt(minutes ?? peweMinutesNow())}</p>
+                <input
+                  className={styles.range}
+                  type="range"
+                  min={0}
+                  max={1439}
+                  step={5}
+                  value={minutes ?? peweMinutesNow()}
+                  onChange={(e) => setTime(Number(e.target.value))}
+                  aria-label="Hour of the day in Pewe"
+                />
+                <div className={styles.rangeScale}>
+                  <span>Midnight</span>
+                  <span>Noon</span>
+                  <span>Midnight</span>
+                </div>
+                <button type="button" className={`${styles.secondary} ${styles.liveButton}`} onClick={() => setTime(null)}>
+                  Back to Pewe now
+                </button>
+              </div>
+            )}
+
+            {place && (
+              <aside data-card className={`${styles.plate} ${styles.card}`} key={place.id} aria-label={place.title}>
+                <button type="button" className={styles.cardClose} onClick={close} aria-label="Close">
+                  ×
+                </button>
+                <div className={styles.cardScroll}>
+                  <p className={styles.coords}>{place.coords}</p>
+                  <p className={styles.cardMeta}>{place.meta}</p>
+                  <h2 className={styles.cardTitle}>{place.title}</h2>
+                  <p className={styles.cardBody}>{place.body}</p>
+                  {place.photo && (
+                    <figure className={styles.cardPhoto}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={place.photo.src} alt={place.photo.alt} loading="lazy" />
+                      <figcaption>{place.photo.alt}</figcaption>
+                    </figure>
+                  )}
+                </div>
+                <div className={styles.cardActions}>
+                  <button type="button" className={styles.cardAction} onClick={() => void share(place.id)}>
+                    Share
+                  </button>
+                  <button type="button" className={`${styles.cardAction} ${styles.cardActionMain}`} onClick={next}>
+                    Next place →
+                  </button>
+                </div>
+              </aside>
+            )}
+
+            {touring && (
+              <>
+                <button type="button" className={`${styles.secondary} ${styles.skip}`} onClick={skipTour}>
+                  Skip tour
+                </button>
+                {caption && (
+                  <div className={`${styles.plate} ${styles.caption}`} role="status" aria-live="polite">
+                    <div className={styles.progress}>
+                      <div className={styles.progressFill} style={{ width: `${Math.round(tourP * 100)}%` }} />
+                    </div>
+                    <p className={styles.captionText} key={caption}>
+                      {caption}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!fallback && (
+              <div className={`${styles.intro} ${introGone ? styles.introGone : ""}`} aria-hidden={introGone}>
+                <div className={styles.introInner}>
+                  <p className={styles.introWord}>Pewe</p>
+                  <p className={styles.introCoords}>17.5605° N · 73.2422° E</p>
+                  <p className={styles.introPlace}>Guhagar · Ratnagiri · Konkan coast</p>
+                  <div className={styles.introBar}>
+                    <div className={styles.introBarFill} style={{ width: `${Math.round(progress * 100)}%` }} />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          <div className={styles.cardActions}>
-            <button type="button" className={styles.cardAction} onClick={() => void share(place.id)}>
-              Share
-            </button>
-            <button type="button" className={`${styles.cardAction} ${styles.cardActionMain}`} onClick={next}>
-              Next place →
-            </button>
-          </div>
-        </aside>
-      )}
 
-      {panel === "work" && (
-        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Our work">
-          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
-            ×
-          </button>
-          <div className={styles.cardScroll}>
-            <p className={styles.coords}>Since {SOCIETY.foundedYear}</p>
-            <p className={styles.cardMeta}>Our work</p>
-            <h2 className={styles.cardTitle}>What PSWS builds and keeps up</h2>
-            <ul className={styles.list}>
-              {WORKS.map((w) => (
-                <li key={w.title} className={styles.listItem}>
-                  <div className={styles.listHead}>
-                    <span className={styles.listTitle}>{w.title}</span>
-                    <span className={styles.listMeta}>{w.period}</span>
-                  </div>
-                  <p className={styles.listLine}>{w.line}</p>
-                  {w.place && (
-                    <button
-                      type="button"
-                      className={styles.listLink}
-                      onClick={() => {
-                        setPanel(null);
-                        select(w.place!);
-                      }}
-                    >
-                      See it in Pewe →
+          <div ref={copyRef} className={`${styles.plate} ${styles.heroCopy} ${touring || active ? styles.heroCopyAway : ""}`}>
+            <p className={styles.eyebrow}>Pewe · Guhagar · Ratnagiri</p>
+            <h1 className={styles.headline}>Pewe, cared for by its own people.</h1>
+            <p className={styles.lede}>
+              {SOCIETY.name} is the village&rsquo;s public trust: water, roads, Zakat and help for families, with
+              every rupee audited.
+            </p>
+            {!fallback && (
+              <div className={styles.heroActions}>
+                <button type="button" className={styles.primary} onClick={() => void startTour()} disabled={phase === "loading"}>
+                  <span className={styles.play} aria-hidden="true" />
+                  Take me through Pewe
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.secondary} ${placesOpen ? styles.secondaryOn : ""}`}
+                  onClick={() => setPlacesOpen((o) => !o)}
+                  aria-expanded={placesOpen}
+                >
+                  Places
+                </button>
+              </div>
+            )}
+            {!fallback && (
+              <p className={styles.hint}>
+                {coarse ? "Swipe sideways to turn the village · two fingers to zoom · tap a name" : "Drag to look around · Ctrl + scroll to zoom · click a name"}
+              </p>
+            )}
+            {placesOpen && (
+              <ul className={styles.placesList}>
+                {CARD_ORDER.map((id) => (
+                  <li key={id}>
+                    <button type="button" className={styles.placesItem} onClick={() => select(id)}>
+                      <span>{PLACE_BY_ID[id].title}</span>
+                      <span className={styles.placesMeta}>{PLACE_BY_ID[id].meta.split(" · ")[0]}</span>
                     </button>
-                  )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <a className={styles.scrollCue} href="#about">
+            Read about PSWS <span aria-hidden="true">↓</span>
+          </a>
+
+          <nav className={styles.srOnly} aria-label="Places in Pewe">
+            <ul>
+              {PLACES.map((p) => (
+                <li key={p.id}>
+                  <button type="button" onClick={() => select(p.id)}>
+                    {p.title}
+                  </button>
                 </li>
               ))}
             </ul>
-          </div>
-        </aside>
-      )}
+          </nav>
+        </section>
 
-      {panel === "zakat" && (
-        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Zakat and help">
-          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
-            ×
-          </button>
-          <div className={styles.cardScroll}>
-            <p className={styles.coords}>Every rupee audited</p>
-            <p className={styles.cardMeta}>Zakat &amp; help</p>
-            <h2 className={styles.cardTitle}>From Pewe&rsquo;s people, to the families who need it</h2>
-            <p className={styles.cardBody}>Zakat is collected from Pewe&rsquo;s people at home and abroad, and given under five heads.</p>
-            <ul className={styles.list}>
-              {ZAKAT_HEADS.map((z) => (
-                <li key={z.title} className={styles.listItem}>
-                  <span className={styles.listTitle}>{z.title}</span>
-                  <p className={styles.listLine}>{z.line}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.cardActions}>
-            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
-              Ask the office for help
-            </a>
-          </div>
-        </aside>
-      )}
-
-      {panel === "contact" && (
-        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Contact">
-          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
-            ×
-          </button>
-          <div className={styles.cardScroll}>
-            <p className={styles.coords}>17.5605° N · 73.2422° E</p>
-            <p className={styles.cardMeta}>Contact</p>
-            <h2 className={styles.cardTitle}>The PSWS office, Pewe</h2>
-            <a className={styles.bigPhone} href={SOCIETY.phoneHref}>
-              {SOCIETY.phone}
-            </a>
-            <dl className={styles.aboutRows}>
-              <div>
-                <dt>Address</dt>
-                <dd>
-                  {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}, {SOCIETY.address.state}
-                </dd>
-              </div>
-              <div>
-                <dt>Members</dt>
-                <dd>
-                  <a href="/erp">Members&rsquo; area</a>
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <div className={styles.cardActions}>
-            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
-              Call the office
-            </a>
-          </div>
-        </aside>
-      )}
-
-      {panel === "about" && (
-        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="About PSWS">
-          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
-            ×
-          </button>
-          <div className={`${styles.cardScroll} ${styles.about}`}>
-            <p className={styles.coords}>Est. {SOCIETY.foundedYear}</p>
-            <p className={styles.cardMeta}>About</p>
-            <h2 className={styles.cardTitle}>{SOCIETY.name}</h2>
-            <p className={styles.aboutNames}>
-              {SOCIETY.nameMarathi}
-              <br />
-              <span dir="rtl">{SOCIETY.nameUrdu}</span>
-            </p>
-            <p>
-              A public trust registered under the Maharashtra Public Trusts Act, 1950, of the village of Pewe, Taluka
-              Guhagar, District Ratnagiri. Established for the development of the village, the collection and
-              distribution of Zakat, and welfare projects, with transparency and an audit of every single rupee.
-            </p>
-            <dl className={styles.aboutRows}>
-              <div>
-                <dt>Trust reg.</dt>
-                <dd>{SOCIETY.registrationNo}</dd>
-              </div>
-              <div>
-                <dt>Society reg.</dt>
-                <dd>{SOCIETY.societyRegNo}</dd>
-              </div>
-              <div>
-                <dt>Address</dt>
-                <dd>
-                  {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}
-                </dd>
-              </div>
-              <div>
-                <dt>Office</dt>
-                <dd>
-                  <a href={SOCIETY.phoneHref}>{SOCIETY.phone}</a>
-                </dd>
-              </div>
-            </dl>
-            <p className={styles.credits}>
-              The land is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus Defence and Space
-              GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from Natural Earth.
-              Weather from Open-Meteo.
-            </p>
-          </div>
-          <div className={styles.cardActions}>
-            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
-              Call the office
-            </a>
-          </div>
-        </aside>
-      )}
-
-      {phase === "tour" && (
-        <>
-          <button type="button" className={`${styles.secondary} ${styles.skip}`} onClick={skipTour}>
-            Skip tour
-          </button>
-          {caption && (
-            <div className={`${styles.plate} ${styles.caption}`} role="status" aria-live="polite">
-              <div className={styles.progress}>
-                <div className={styles.progressFill} style={{ width: `${Math.round(tourP * 100)}%` }} />
-              </div>
-              <p className={styles.captionText} key={caption}>
-                {caption}
+        {/* ------------------------------------------------ who we are */}
+        <section id="about" className={styles.section}>
+          <div className={styles.split}>
+            <div>
+              <p className={styles.eyebrow}>Who we are</p>
+              <h2 className={styles.sectionTitle}>Pewe&rsquo;s families, working together.</h2>
+              <p className={styles.text}>
+                {SOCIETY.name} is a public trust, registered under the Maharashtra Public Trusts Act, 1950, of the village
+                of Pewe, Taluka Guhagar, District Ratnagiri. It was set up for the development of the village, for the
+                collection and distribution of Zakat, and for welfare projects, with transparency and an audit of every
+                single rupee.
+              </p>
+              <dl className={styles.facts}>
+                <div>
+                  <dt>Established</dt>
+                  <dd>{SOCIETY.foundedYear}</dd>
+                </div>
+                <div>
+                  <dt>Trust reg.</dt>
+                  <dd>{SOCIETY.registrationNo}</dd>
+                </div>
+                <div>
+                  <dt>Society reg.</dt>
+                  <dd>{SOCIETY.societyRegNo}</dd>
+                </div>
+                <div>
+                  <dt>Village</dt>
+                  <dd>Pewe, Guhagar, Ratnagiri</dd>
+                </div>
+              </dl>
+              <p className={styles.names}>
+                {SOCIETY.nameMarathi}
+                <br />
+                <span dir="rtl">{SOCIETY.nameUrdu}</span>
               </p>
             </div>
-          )}
-        </>
-      )}
-
-      <div className={`${styles.intro} ${introGone ? styles.introGone : ""}`} aria-hidden={introGone}>
-        <div className={styles.introInner}>
-          <p className={styles.introWord}>Pewe</p>
-          <p className={styles.introCoords}>17.5605° N · 73.2422° E</p>
-          <p className={styles.introPlace}>Guhagar · Ratnagiri · Konkan coast</p>
-          <div className={styles.introBar}>
-            <div className={styles.introBarFill} style={{ width: `${Math.round(progress * 100)}%` }} />
+            <figure className={styles.figure}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/pewe/haveli.jpg" alt="The Haveli, Pewe's oldest house, in the 3D model of the village" loading="lazy" />
+              <figcaption>The Haveli, Pewe&rsquo;s oldest house, where the families once lived together.</figcaption>
+              <button type="button" className={styles.mapLink} onClick={() => showOnMap("haveli")}>
+                See it on the map ↑
+              </button>
+            </figure>
           </div>
+        </section>
+
+        {/* ------------------------------------------------ our work */}
+        <section id="work" className={`${styles.section} ${styles.sectionAlt}`}>
+          <p className={styles.eyebrow}>Our work</p>
+          <h2 className={styles.sectionTitle}>What we build and keep up.</h2>
+          <ul className={styles.works}>
+            {WORKS.map((w) => (
+              <li key={w.title} className={styles.work}>
+                <p className={styles.workPeriod}>{w.period}</p>
+                <h3 className={styles.workTitle}>{w.title}</h3>
+                <p className={styles.workLine}>{w.line}</p>
+                {w.place && (
+                  <button type="button" className={styles.mapLink} onClick={() => showOnMap(w.place!)}>
+                    See it on the map ↑
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ------------------------------------------------ zakat */}
+        <section id="zakat" className={styles.section}>
+          <div className={styles.split}>
+            <div>
+              <p className={styles.eyebrow}>Zakat &amp; help</p>
+              <h2 className={styles.sectionTitle}>From Pewe&rsquo;s people, to the families who need it.</h2>
+              <p className={styles.text}>
+                Zakat is collected from Pewe&rsquo;s people at home and abroad, and given under five heads. Every rupee is
+                audited.
+              </p>
+              <ul className={styles.heads}>
+                {ZAKAT_HEADS.map((z) => (
+                  <li key={z.title}>
+                    <h3 className={styles.headTitle}>{z.title}</h3>
+                    <p className={styles.headLine}>{z.line}</p>
+                  </li>
+                ))}
+              </ul>
+              <a className={styles.primary} href={SOCIETY.phoneHref}>
+                Ask the office for help
+              </a>
+            </div>
+            <figure className={styles.figure}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/pewe/fields.jpg" alt="Paddy fields beside the creek in the 3D model of Pewe" loading="lazy" />
+              <figcaption>The paddy by the creek: what Pewe grows, Pewe shares.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------ pewe's people */}
+        <section id="people" className={`${styles.section} ${styles.sectionAlt}`}>
+          <div className={styles.split}>
+            <figure className={styles.figure}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/pewe/world.jpg" alt="A map from Pewe to Mumbai, Dubai, Riyadh and Kigali" loading="lazy" />
+              <figcaption>From Pewe to Mumbai, Dubai, Riyadh and Kigali.</figcaption>
+            </figure>
+            <div>
+              <p className={styles.eyebrow}>Pewe&rsquo;s people</p>
+              <h2 className={styles.sectionTitle}>From this creek to the world.</h2>
+              <p className={styles.text}>
+                Pewe&rsquo;s people live and work in Mumbai, Dubai, Riyadh, Kigali and beyond, and they still build home.
+                PSWS is how they do it together.
+              </p>
+              {!fallback && (
+                <button type="button" className={styles.secondary} onClick={() => showOnMap("world")}>
+                  See it on the map ↑
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------ contact */}
+        <section id="contact" className={styles.section}>
+          <div className={styles.split}>
+            <div>
+              <p className={styles.eyebrow}>Contact</p>
+              <h2 className={styles.sectionTitle}>Talk to the office.</h2>
+              <a className={styles.bigPhone} href={SOCIETY.phoneHref}>
+                {SOCIETY.phone}
+              </a>
+              <dl className={styles.facts}>
+                <div>
+                  <dt>Address</dt>
+                  <dd>
+                    {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}, {SOCIETY.address.state}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Members</dt>
+                  <dd>
+                    <a href="/erp">Members&rsquo; area →</a>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+            <figure className={styles.figure}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/pewe/night.jpg" alt="Pewe at night, windows lit, in the 3D model" loading="lazy" />
+              <figcaption>Pewe at night. On the map above, the light follows Pewe&rsquo;s real time.</figcaption>
+            </figure>
+          </div>
+        </section>
+      </main>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <div>
+            <p className={styles.footerName}>{SOCIETY.name}</p>
+            <p className={styles.footerSmall}>
+              Public trust · Reg. {SOCIETY.registrationNo} · {SOCIETY.societyRegNo} · Est. {SOCIETY.foundedYear}
+            </p>
+          </div>
+          <p className={styles.footerSmall}>
+            The land in the 3D village is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus Defence
+            and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from Natural Earth.
+            Weather from Open-Meteo.
+          </p>
         </div>
-      </div>
-    </main>
+      </footer>
+    </div>
   );
 }

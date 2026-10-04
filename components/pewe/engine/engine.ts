@@ -41,14 +41,17 @@ export interface EngineOptions {
 export type TourLine = (line: string | null, progress: number) => void;
 
 export interface PeweEngine {
-  playIntro(kind: "full" | "short" | "none"): Promise<void>;
+  /** resolves true when the intro ran to its end, false when a tour or a place cut it short */
+  playIntro(kind: "full" | "short" | "none"): Promise<boolean>;
   flyTo(id: PlaceId | "home", opts?: { fast?: boolean }): Promise<void>;
   focus(id: PlaceId | null): void;
   tour(onLine: TourLine): Promise<"done" | "cancelled">;
   cancelTour(): void;
   setTime(date: Date | null): void;
-  /** keep the focus clear of an open card: pixels covered on the right and bottom */
+  /** keep the focus clear of an open card: pixels covered on the right (negative: on the left) and bottom */
   setInset(right: number, bottom: number): void;
+  /** stop drawing while the map is scrolled out of view */
+  setPaused(paused: boolean): void;
   resize(): void;
   dispose(): void;
 }
@@ -397,7 +400,7 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
   let height = 1;
   const inset = { right: 0, bottom: 0, wantRight: 0, wantBottom: 0 };
   function applyInset() {
-    if (inset.right < 0.5 && inset.bottom < 0.5) camera.clearViewOffset();
+    if (Math.abs(inset.right) < 0.5 && inset.bottom < 0.5) camera.clearViewOffset();
     else camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
   }
   function resize() {
@@ -430,7 +433,12 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
   let elapsed = 0;
   let slowFor = 0;
   const shadowCam = sunLight.shadow.camera;
+  let paused = false;
   function frame(now: number) {
+    if (paused) {
+      raf = 0;
+      return;
+    }
     raf = requestAnimationFrame(frame);
     const dt = Math.min((now - last) / 1000, 0.1);
     last = now;
@@ -532,24 +540,43 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
     U.uGrow.value = 1;
     U.uReveal.value = 1e6;
   }
+  let introToken: { cut: boolean } | null = null;
   async function playIntro(kind: "full" | "short" | "none") {
     const home = poseFor(HOME_VIEW, HOME_VIEW.target!);
     if (kind === "none" || opts.reducedMotion) {
       setFinal();
       rig.set(home.pos, home.target);
-      return;
+      return true;
     }
+    const tk = { cut: false };
+    introToken = tk;
+    // every step stands down once the intro is cut short
+    const step = (dur: number, fn: (e: number) => void, ease?: (t: number) => number) =>
+      tk.cut ? Promise.resolve() : tween(dur, (e) => !tk.cut && fn(e), ease);
+    const after = (s: number, f: () => Promise<void>) => wait(s).then(() => (tk.cut ? undefined : f()));
     const k = kind === "full" ? 1 : 0.55;
-    await tween(1.9 * k, (e) => (U.uReveal.value = e * 4200), (t) => t);
-    const fly = rig.fly(home.pos, home.target, 4.4 * k, { lift: 0, ease: easeInOutSine });
-    const rise = tween(3.4 * k, (e) => (U.uRise.value = e), easeInOutSine);
-    const colour = wait(0.5 * k).then(() => tween(2.6 * k, (e) => (U.uSurvey.value = 1 - e)));
-    const grow = wait(2.2 * k).then(() => tween(2.8 * k, (e) => (U.uGrow.value = e), (t) => t));
-    await Promise.all([fly, rise, colour, grow]);
+    await step(1.9 * k, (e) => (U.uReveal.value = e * 4200), (t) => t);
+    if (!tk.cut) {
+      const fly = rig.fly(home.pos, home.target, 4.4 * k, { lift: 0, ease: easeInOutSine });
+      const rise = step(3.4 * k, (e) => (U.uRise.value = e), easeInOutSine);
+      const colour = after(0.5 * k, () => step(2.6 * k, (e) => (U.uSurvey.value = 1 - e)));
+      const grow = after(2.2 * k, () => step(2.8 * k, (e) => (U.uGrow.value = e), (t) => t));
+      await Promise.all([fly, rise, colour, grow]);
+    }
+    if (introToken === tk) introToken = null;
+    if (!tk.cut) setFinal();
+    return !tk.cut;
+  }
+  /** a tour or a place asked for before the intro is over: show the finished village at once */
+  function cutIntro() {
+    if (!introToken) return;
+    introToken.cut = true;
+    introToken = null;
     setFinal();
   }
 
   async function flyTo(id: PlaceId | "home", o: { fast?: boolean } = {}) {
+    cutIntro();
     const pose = id === "home" ? poseFor(HOME_VIEW, HOME_VIEW.target!) : poseFor(PLACE_BY_ID[id].view, PLACE_BY_ID[id].anchor);
     if (worldMode && id !== "world") {
       await worldIn(o.fast || opts.reducedMotion ? 0.01 : 3.6, pose);
@@ -576,6 +603,7 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
       check();
     };
     try {
+      cutIntro();
       focus(null);
       if (worldMode) await worldIn(2);
       setFinal();
@@ -711,8 +739,16 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
       timeOverride = date;
       updateSky();
     },
+    setPaused(p) {
+      if (p === paused) return;
+      paused = p;
+      if (!p && !raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(frame);
+      }
+    },
     setInset(right, bottom) {
-      inset.wantRight = Math.max(0, right);
+      inset.wantRight = right;
       inset.wantBottom = Math.max(0, bottom);
     },
     resize,

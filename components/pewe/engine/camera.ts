@@ -76,7 +76,18 @@ export class CameraRig {
     c.minPolarAngle = 0.12;
     c.maxPolarAngle = 1.36;
     c.zoomToCursor = true;
-    c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+    // On a page that scrolls, the map must not trap the scroll: a sideways
+    // swipe turns it, an up-down swipe scrolls the page, two fingers zoom.
+    c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
+    canvas.style.touchAction = "pan-y";
+    // The mouse wheel scrolls the page; Ctrl/⌘ + wheel zooms the map.
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        if (!e.ctrlKey && !e.metaKey) e.stopImmediatePropagation();
+      },
+      { capture: true },
+    );
   }
 
   get busy() {

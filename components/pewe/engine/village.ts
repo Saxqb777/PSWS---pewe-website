@@ -56,7 +56,7 @@ function ribbon(ground: Ground, line: XY[], width: number, lift: number, out: Ri
     }
     if (i > 0) {
       const k = base + i * 2;
-      out.idx.push(k - 2, k - 1, k, k - 1, k + 1, k);
+      out.idx.push(k - 2, k, k - 1, k - 1, k, k + 1);
     }
   }
 }
@@ -75,7 +75,6 @@ function roadMaterial(color: string, U: SharedUniforms) {
   const m = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.96,
-    side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -6,
