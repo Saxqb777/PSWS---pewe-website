@@ -17,7 +17,7 @@ The front page draws the real village from these files in `public/map/`.
 ## The village
 
 - **The map.** The committee's Google Maps screenshot was matched to the land by the shape of the creek, and checked against the "Peve Guhagar" pin (17.5605, 73.2422) to about 10 m.
-- **What came from the marks.** Roads were traced by hand. The haveli, the bus stop, the masjid's position and the school came from the committee's own marks on that screenshot. The screenshot itself is not stored here.
+- **What came from the marks.** Roads were traced by hand. The haveli, the bus stop, the Community Building's position and the school came from the committee's own marks on that screenshot. The screenshot itself is not stored here.
 - **Houses.** These are placed procedurally along the lanes of each hamlet: Amshet Bhoiwadi, Rab Bhoiwadi, Pere and Pardalewadi. They are **not** individual real homes, and every house is drawn the same way on purpose.
 
 ## Credits shown on the site

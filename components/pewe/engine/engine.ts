@@ -482,6 +482,8 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
       rain.uniforms.uOpacity.value = 0.32 - nightNow * 0.12;
     }
 
+    // no tags on the survey sheet; they arrive once the land has risen
+    labels.enabled = worldMode || (U.uRise.value > 0.95 && U.uSurvey.value < 0.25);
     labels.update(camera, width, height, dt, dist, focused);
     renderer.render(scene, camera);
 
