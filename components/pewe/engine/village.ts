@@ -75,6 +75,7 @@ function roadMaterial(color: string, U: SharedUniforms) {
   const m = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.96,
+    side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -6,
@@ -101,6 +102,7 @@ function drawMaterial(U: SharedUniforms) {
     uniforms,
     transparent: true,
     depthWrite: false,
+    side: THREE.DoubleSide,
     polygonOffset: true,
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -10,
@@ -310,7 +312,7 @@ export function buildVillage(ground: Ground, data: MapData, U: SharedUniforms, o
     ribbon(ground, line, main ? 5.6 : 3.8, 0.35, main ? mainR : laneR);
     ribbon(ground, line, main ? 2.6 : 1.8, 0.55, drawR);
   }
-  const roadMats = [keep(roadMaterial("#53504b", U)), keep(roadMaterial("#8c5f45", U))];
+  const roadMats = [keep(roadMaterial("#8a8378", U)), keep(roadMaterial("#a8785a", U))];
   [mainR, laneR].forEach((r, i) => {
     const g = keep(ribbonGeometry(r));
     const m = new THREE.Mesh(g, roadMats[i]);
@@ -616,8 +618,8 @@ export function buildVillage(ground: Ground, data: MapData, U: SharedUniforms, o
   const poleMat = keep(withGrow(new THREE.MeshStandardMaterial({ color: "#8e8b84", roughness: 0.9 }), U));
   poleMat.customProgramCacheKey = () => "pewe-pole";
   const poles = new THREE.InstancedMesh(poleGeo, poleMat, poleSpots.length);
-  const lampGeo = keep(new THREE.SphereGeometry(0.32, 8, 6));
-  const lampMat = keep(new THREE.MeshBasicMaterial({ color: "#3a3a36", toneMapped: false }));
+  const lampGeo = keep(new THREE.SphereGeometry(0.24, 8, 6));
+  const lampMat = keep(new THREE.MeshBasicMaterial({ color: "#a9a69c", toneMapped: false }));
   const lamps = new THREE.InstancedMesh(lampGeo, lampMat, poleSpots.length);
   const poolTex = (() => {
     const c = document.createElement("canvas");
@@ -804,7 +806,7 @@ export function buildVillage(ground: Ground, data: MapData, U: SharedUniforms, o
     group.add(flow);
   });
 
-  const lampDay = new THREE.Color("#3a3a36");
+  const lampDay = new THREE.Color("#a9a69c");
   const lampNight = new THREE.Color("#ffd7a0").multiplyScalar(2.2);
 
   return {

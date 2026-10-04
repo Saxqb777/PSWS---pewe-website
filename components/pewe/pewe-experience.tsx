@@ -4,9 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SOCIETY } from "@/lib/site";
 import type { PeweEngine, ClockInfo } from "./engine/engine";
 import { CARD_ORDER, PLACES, PLACE_BY_ID, type PlaceId } from "./places";
+import { WORKS, ZAKAT_HEADS } from "./content";
 import styles from "./pewe.module.css";
 
 type Phase = "loading" | "intro" | "explore" | "tour" | "fallback";
+type Panel = "work" | "zakat" | "about" | "contact" | null;
+
+const NAV: { id: Exclude<Panel, null> | "village"; label: string }[] = [
+  { id: "village", label: "The village" },
+  { id: "work", label: "Our work" },
+  { id: "zakat", label: "Zakat & help" },
+  { id: "about", label: "About" },
+  { id: "contact", label: "Contact" },
+];
 
 const isPlace = (s: string | null | undefined): s is PlaceId => !!s && s in PLACE_BY_ID;
 
@@ -64,7 +74,8 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
   const [progress, setProgress] = useState(0.05);
   const [introGone, setIntroGone] = useState(false);
   const [active, setActive] = useState<PlaceId | null>(null);
-  const [about, setAbout] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [placesOpen, setPlacesOpen] = useState(false);
   const [caption, setCaption] = useState<string | null>(null);
   const [tourP, setTourP] = useState(0);
@@ -84,7 +95,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     if (!engine) return;
     activeRef.current = null;
     setActive(null);
-    setAbout(false);
+    setPanel(null);
     setPlacesOpen(false);
     setTimeOpen(false);
     setHash(null);
@@ -110,7 +121,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       if (phase === "tour") engine.cancelTour();
       activeRef.current = id;
       setActive(id);
-      setAbout(false);
+      setPanel(null);
       setPlacesOpen(false);
       setCaption(null);
       setPhase("explore");
@@ -223,7 +234,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       if (engineRef.current && activeRef.current) close();
       else skipTour();
       setPlacesOpen(false);
-      setAbout(false);
+      setPanel(null);
       setTimeOpen(false);
     };
     window.addEventListener("resize", onResize);
@@ -237,6 +248,34 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const openNav = (id: Exclude<Panel, null> | "village") => {
+    setMenuOpen(false);
+    setPlacesOpen(false);
+    setTimeOpen(false);
+    if (phase === "tour") skipTour();
+    if (activeRef.current) close();
+    if (id === "village") {
+      setPanel(null);
+      void engineRef.current?.flyTo("home");
+      return;
+    }
+    setPanel(id);
+  };
+
+  // keep the place in view beside (or above) whatever card is open
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const el = document.querySelector<HTMLElement>("[data-card]");
+    if (!el) {
+      engine.setInset(0, 0);
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    const phone = window.innerWidth <= 760;
+    engine.setInset(phone ? 0 : window.innerWidth - r.left, phone ? window.innerHeight - r.top : 0);
+  }, [active, panel]);
 
   const share = async (id: PlaceId) => {
     const p = PLACE_BY_ID[id];
@@ -300,10 +339,47 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         </ul>
       </nav>
 
-      <header className={`${styles.plate} ${styles.brand}`}>
-        <h1 className={styles.brandName}>Pewe</h1>
-        <p className={styles.brandSub}>{SOCIETY.name}</p>
+      <header className={styles.bar}>
+        <button type="button" className={styles.barBrand} onClick={() => openNav("village")} aria-label="Pewe, back to the village">
+          <span className={styles.barName}>Pewe</span>
+          <span className={styles.barSub}>{SOCIETY.name}</span>
+        </button>
+        <nav className={styles.nav} aria-label="Site">
+          {NAV.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              className={`${styles.navItem} ${(n.id === "village" ? !panel : panel === n.id) ? styles.navItemOn : ""}`}
+              onClick={() => openNav(n.id)}
+              aria-current={(n.id === "village" ? !panel : panel === n.id) ? "page" : undefined}
+            >
+              {n.label}
+            </button>
+          ))}
+          <a className={styles.navMembers} href="/erp">
+            Members
+          </a>
+        </nav>
+        <button type="button" className={styles.menuButton} onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen}>
+          {menuOpen ? "Close" : "Menu"}
+        </button>
       </header>
+
+      {menuOpen && (
+        <nav className={styles.menu} aria-label="Site menu">
+          {NAV.map((n) => (
+            <button key={n.id} type="button" className={styles.menuItem} onClick={() => openNav(n.id)}>
+              {n.label}
+            </button>
+          ))}
+          <a className={styles.menuItem} href="/erp">
+            Members
+          </a>
+          <a className={`${styles.menuItem} ${styles.menuCall}`} href={SOCIETY.phoneHref}>
+            Call the office · {SOCIETY.phone}
+          </a>
+        </nav>
+      )}
 
       <button
         type="button"
@@ -344,7 +420,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         </div>
       )}
 
-      <div className={`${styles.dock} ${touring || active || about ? styles.dockHidden : ""}`}>
+      <div className={`${styles.dock} ${touring || active || panel ? styles.dockHidden : ""}`}>
         <button type="button" className={styles.primary} onClick={() => void startTour()}>
           <span className={styles.play} aria-hidden="true" />
           Take me through Pewe
@@ -357,21 +433,8 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         >
           Places
         </button>
-        <button type="button" className={styles.secondary} onClick={() => setAbout(true)}>
-          About
-        </button>
       </div>
 
-      {!touring && !active && !about && (
-        <div className={styles.corner}>
-          <a className={styles.cornerLink} href={SOCIETY.phoneHref}>
-            Call the office
-          </a>
-          <a className={styles.cornerLink} href="/erp">
-            Members
-          </a>
-        </div>
-      )}
 
       {placesOpen && !touring && !active && (
         <ul className={`${styles.plate} ${styles.placesList}`}>
@@ -387,7 +450,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       )}
 
       {place && (
-        <aside className={`${styles.plate} ${styles.card}`} key={place.id} aria-label={place.title}>
+        <aside data-card className={`${styles.plate} ${styles.card}`} key={place.id} aria-label={place.title}>
           <button type="button" className={styles.cardClose} onClick={close} aria-label="Close">
             ×
           </button>
@@ -415,9 +478,107 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         </aside>
       )}
 
-      {about && (
-        <aside className={`${styles.plate} ${styles.card}`} aria-label="About PSWS">
-          <button type="button" className={styles.cardClose} onClick={() => setAbout(false)} aria-label="Close">
+      {panel === "work" && (
+        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Our work">
+          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
+            ×
+          </button>
+          <div className={styles.cardScroll}>
+            <p className={styles.coords}>Since {SOCIETY.foundedYear}</p>
+            <p className={styles.cardMeta}>Our work</p>
+            <h2 className={styles.cardTitle}>What PSWS builds and keeps up</h2>
+            <ul className={styles.list}>
+              {WORKS.map((w) => (
+                <li key={w.title} className={styles.listItem}>
+                  <div className={styles.listHead}>
+                    <span className={styles.listTitle}>{w.title}</span>
+                    <span className={styles.listMeta}>{w.period}</span>
+                  </div>
+                  <p className={styles.listLine}>{w.line}</p>
+                  {w.place && (
+                    <button
+                      type="button"
+                      className={styles.listLink}
+                      onClick={() => {
+                        setPanel(null);
+                        select(w.place!);
+                      }}
+                    >
+                      See it in Pewe →
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      )}
+
+      {panel === "zakat" && (
+        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Zakat and help">
+          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
+            ×
+          </button>
+          <div className={styles.cardScroll}>
+            <p className={styles.coords}>Every rupee audited</p>
+            <p className={styles.cardMeta}>Zakat &amp; help</p>
+            <h2 className={styles.cardTitle}>From Pewe&rsquo;s people, to the families who need it</h2>
+            <p className={styles.cardBody}>Zakat is collected from Pewe&rsquo;s people at home and abroad, and given under five heads.</p>
+            <ul className={styles.list}>
+              {ZAKAT_HEADS.map((z) => (
+                <li key={z.title} className={styles.listItem}>
+                  <span className={styles.listTitle}>{z.title}</span>
+                  <p className={styles.listLine}>{z.line}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={styles.cardActions}>
+            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
+              Ask the office for help
+            </a>
+          </div>
+        </aside>
+      )}
+
+      {panel === "contact" && (
+        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="Contact">
+          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
+            ×
+          </button>
+          <div className={styles.cardScroll}>
+            <p className={styles.coords}>17.5605° N · 73.2422° E</p>
+            <p className={styles.cardMeta}>Contact</p>
+            <h2 className={styles.cardTitle}>The PSWS office, Pewe</h2>
+            <a className={styles.bigPhone} href={SOCIETY.phoneHref}>
+              {SOCIETY.phone}
+            </a>
+            <dl className={styles.aboutRows}>
+              <div>
+                <dt>Address</dt>
+                <dd>
+                  {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}, {SOCIETY.address.state}
+                </dd>
+              </div>
+              <div>
+                <dt>Members</dt>
+                <dd>
+                  <a href="/erp">Members&rsquo; area</a>
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div className={styles.cardActions}>
+            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
+              Call the office
+            </a>
+          </div>
+        </aside>
+      )}
+
+      {panel === "about" && (
+        <aside data-card className={`${styles.plate} ${styles.card}`} aria-label="About PSWS">
+          <button type="button" className={styles.cardClose} onClick={() => setPanel(null)} aria-label="Close">
             ×
           </button>
           <div className={`${styles.cardScroll} ${styles.about}`}>
@@ -463,7 +624,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
             </p>
           </div>
           <div className={styles.cardActions}>
-            <a className={`${styles.cardAction} ${styles.cardActionMain}`} href={SOCIETY.phoneHref} style={{ display: "grid", placeItems: "center", textDecoration: "none" }}>
+            <a className={`${styles.cardAction} ${styles.cardActionMain} ${styles.cardActionLink}`} href={SOCIETY.phoneHref}>
               Call the office
             </a>
           </div>

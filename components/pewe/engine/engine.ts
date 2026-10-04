@@ -47,6 +47,8 @@ export interface PeweEngine {
   tour(onLine: TourLine): Promise<"done" | "cancelled">;
   cancelTour(): void;
   setTime(date: Date | null): void;
+  /** keep the focus clear of an open card: pixels covered on the right and bottom */
+  setInset(right: number, bottom: number): void;
   resize(): void;
   dispose(): void;
 }
@@ -224,7 +226,7 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
     nightNow = s.night;
     village.setNight(s.night);
     landmarks?.setNight(s.night);
-    renderer.toneMappingExposure = 1.12 + s.night * 0.45;
+    renderer.toneMappingExposure = 1.12 + s.night * 0.7;
     const key = `${Math.round(elevation / 3)}|${weather.cloud.toFixed(1)}|${weather.rain}`;
     if (key !== lastEnvKey) {
       lastEnvKey = key;
@@ -390,15 +392,21 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
   canvas.addEventListener("pointerdown", onDown);
   canvas.addEventListener("pointerup", onUp);
 
-  /* size */
+  /* size, and the part of the screen a card covers */
   let width = 1;
   let height = 1;
+  const inset = { right: 0, bottom: 0, wantRight: 0, wantBottom: 0 };
+  function applyInset() {
+    if (inset.right < 0.5 && inset.bottom < 0.5) camera.clearViewOffset();
+    else camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
+  }
   function resize() {
     width = canvas.clientWidth || window.innerWidth;
     height = canvas.clientHeight || window.innerHeight;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     rig.setPortrait(height > width);
+    applyInset();
     camera.updateProjectionMatrix();
     world?.setResolution(width, height);
   }
@@ -437,6 +445,12 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
         tweens.splice(i, 1);
         tw.resolve();
       }
+    }
+    if (Math.abs(inset.wantRight - inset.right) > 0.5 || Math.abs(inset.wantBottom - inset.bottom) > 0.5) {
+      const a = Math.min(1, dt * 4);
+      inset.right += (inset.wantRight - inset.right) * a;
+      inset.bottom += (inset.wantBottom - inset.bottom) * a;
+      applyInset();
     }
     rig.update(dt);
 
@@ -696,6 +710,10 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
     setTime(date) {
       timeOverride = date;
       updateSky();
+    },
+    setInset(right, bottom) {
+      inset.wantRight = Math.max(0, right);
+      inset.wantBottom = Math.max(0, bottom);
     },
     resize,
     dispose() {

@@ -16,6 +16,7 @@
   --sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
   --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
   --edge: 20px;
+  --bar: 64px;
 
   position: fixed;
   inset: 0;
@@ -53,24 +54,6 @@
   border: 1px solid var(--ink);
 }
 
-.brand {
-  position: absolute;
-  top: var(--edge);
-  left: var(--edge);
-  padding: 12px 18px 13px;
-  z-index: 5;
-  transition: opacity 0.6s ease;
-}
-
-.brandName {
-  margin: 0;
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 38px;
-  line-height: 1;
-  letter-spacing: -0.01em;
-}
-
 .brandSub {
   margin: 7px 0 0;
   font-family: var(--mono);
@@ -80,9 +63,141 @@
   color: var(--ink-2);
 }
 
+/* ------------------------------------------------------------ site bar */
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  height: var(--bar);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+}
+
+.barBrand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 0 22px;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--ink);
+  cursor: pointer;
+  align-self: stretch;
+  align-items: center;
+}
+
+.barName {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.barSub {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.nav {
+  display: flex;
+  align-items: stretch;
+}
+
+.navItem,
+.navMembers {
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-left: 1px solid rgba(24, 32, 29, 0.18);
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+
+.navItem:hover {
+  background: var(--paper-2);
+}
+
+.navItemOn::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  height: 2px;
+  background: var(--laterite);
+}
+
+.navMembers {
+  border-left: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 22px;
+}
+
+.navMembers:hover {
+  background: var(--laterite);
+}
+
+.menuButton {
+  display: none;
+}
+
+.menu {
+  position: absolute;
+  top: var(--bar);
+  left: 0;
+  right: 0;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+}
+
+.menuItem {
+  display: block;
+  padding: 16px 18px;
+  font-family: var(--serif);
+  font-size: 24px;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-top: 1px solid rgba(24, 32, 29, 0.15);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menuCall {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--laterite);
+}
+
+/* ---------------------------------------------------------------- clock */
+
 .clock {
   position: absolute;
-  top: var(--edge);
+  top: calc(var(--bar) + var(--edge));
   right: var(--edge);
   z-index: 5;
   padding: 11px 16px 12px;
@@ -134,7 +249,7 @@
 
 .timePanel {
   position: absolute;
-  top: calc(var(--edge) + 128px);
+  top: calc(var(--bar) + var(--edge) + 128px);
   right: var(--edge);
   z-index: 6;
   width: 300px;
@@ -260,35 +375,6 @@
   border-left: 11px solid currentColor;
 }
 
-.corner {
-  position: absolute;
-  right: var(--edge);
-  bottom: var(--edge);
-  z-index: 5;
-  display: flex;
-  gap: 8px;
-}
-
-.cornerLink {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 0 14px;
-  font-family: var(--mono);
-  font-size: 12.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink);
-  text-decoration: none;
-  background: var(--paper);
-  border: 1px solid var(--ink);
-}
-
-.cornerLink:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
 button:focus-visible,
 a:focus-visible,
 input:focus-visible {
@@ -342,7 +428,7 @@ input:focus-visible {
 
 .card {
   position: absolute;
-  top: var(--edge);
+  top: calc(var(--bar) + var(--edge));
   right: var(--edge);
   bottom: var(--edge);
   z-index: 7;
@@ -530,6 +616,81 @@ input:focus-visible {
   color: var(--ink-3) !important;
 }
 
+.list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+
+.listItem {
+  padding: 14px 0 15px;
+  border-bottom: 1px solid rgba(24, 32, 29, 0.2);
+}
+
+.listHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.listTitle {
+  font-family: var(--serif);
+  font-size: 23px;
+  line-height: 1.2;
+}
+
+.listMeta {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--laterite);
+  white-space: nowrap;
+}
+
+.listLine {
+  margin: 5px 0 0;
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.listLink {
+  margin-top: 8px;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  cursor: pointer;
+}
+
+.listLink:hover {
+  color: var(--laterite);
+  border-color: var(--laterite);
+}
+
+.bigPhone {
+  display: inline-block;
+  margin-top: 18px;
+  font-family: var(--serif);
+  font-size: 34px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 2px solid var(--laterite);
+}
+
+.cardActionLink {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
 /* ----------------------------------------------------------------- tour */
 
 .caption {
@@ -575,7 +736,7 @@ input:focus-visible {
 
 .skip {
   position: absolute;
-  top: calc(var(--edge) + 128px);
+  top: calc(var(--bar) + var(--edge) + 128px);
   right: var(--edge);
   z-index: 6;
 }
@@ -805,24 +966,54 @@ input:focus-visible {
   color: var(--ink-2);
 }
 
+@media (max-width: 1180px) {
+  .barSub {
+    display: none;
+  }
+
+  .navItem {
+    padding: 0 13px;
+    font-size: 15px;
+  }
+}
+
 /* --------------------------------------------------------------- phone */
 
 @media (max-width: 760px) {
   .root {
     --edge: 12px;
+    --bar: 56px;
   }
 
-  .brand {
-    padding: 9px 12px 10px;
+  .barBrand {
+    padding: 0 14px;
+    border-right: 0;
   }
 
-  .brandName {
-    font-size: 30px;
+  .barName {
+    font-size: 28px;
   }
 
-  .brandSub {
-    font-size: 11px;
-    max-width: 150px;
+  .barSub {
+    display: none;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .menuButton {
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--ink);
+    border: 0;
+    cursor: pointer;
   }
 
   .clock {
@@ -842,41 +1033,35 @@ input:focus-visible {
   }
 
   .timePanel {
-    top: calc(var(--edge) + 92px);
+    top: calc(var(--bar) + var(--edge) + 92px);
     width: calc(100vw - 2 * var(--edge));
   }
 
   .dock {
     left: var(--edge);
     right: var(--edge);
-    bottom: calc(var(--edge) + 50px);
-    flex-wrap: wrap;
+    bottom: var(--edge);
   }
 
   .primary {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     justify-content: center;
     min-height: 54px;
+    padding: 0 14px;
   }
 
   .secondary {
-    flex: 1;
     justify-content: center;
-    min-height: 48px;
+    min-height: 54px;
+    padding: 0 16px;
     font-size: 16px;
-  }
-
-  .corner {
-    left: var(--edge);
-    right: var(--edge);
-    justify-content: space-between;
   }
 
   .placesList {
     left: var(--edge);
     right: var(--edge);
     width: auto;
-    bottom: calc(var(--edge) + 172px);
+    bottom: calc(var(--edge) + 66px);
   }
 
   .card {
@@ -925,7 +1110,7 @@ input:focus-visible {
   }
 
   .skip {
-    top: calc(var(--edge) + 92px);
+    top: calc(var(--bar) + var(--edge) + 92px);
   }
 
   .tag {

@@ -8,9 +8,9 @@ export function buildWater(U: SharedUniforms) {
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.MeshStandardMaterial({
     color: "#556659",
-    roughness: 0.16,
+    roughness: 0.34,
     metalness: 0.0,
-    envMapIntensity: 1.0,
+    envMapIntensity: 0.5,
   });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = U.uTime;
@@ -37,7 +37,7 @@ export function buildWater(U: SharedUniforms) {
             cos(p.y * 0.12 + p.x * 0.08 - t * 1.4) * 0.25 + cos(p.y * 0.29 - p.x * 0.21 + t * 2.1) * 0.1
           );
           float dist = length(cameraPosition - vWPos);
-          float k = 0.055 * (1.0 - smoothstep(600.0, 3500.0, dist));
+          float k = 0.035 * (1.0 - smoothstep(400.0, 2200.0, dist));
           normal = normalize(normal + (viewMatrix * vec4(g.x * k, 0.0, g.y * k, 0.0)).xyz);
         }`,
       )
