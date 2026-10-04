@@ -214,10 +214,10 @@
 }
 
 .headline {
-  margin: 10px 0 0;
+  margin: 14px 0 0;
   font-family: var(--serif);
   font-weight: 500;
-  font-size: clamp(36px, 4vw, 54px);
+  font-size: clamp(34px, 3.4vw, 48px);
   line-height: 1.02;
   letter-spacing: -0.015em;
 }
@@ -552,6 +552,35 @@
   font-size: 44px;
   line-height: 1.02;
   letter-spacing: -0.01em;
+}
+
+.cardFigure {
+  margin: 20px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--ink);
+}
+
+.cardFigureValue {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--laterite);
+  font-variant-numeric: lining-nums;
+}
+
+.cardFigureLabel {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.cardFigureLabel span {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
 }
 
 .cardBody {
@@ -1072,6 +1101,536 @@
   color: rgba(238, 241, 239, 0.72);
 }
 
+/* ----------------------------------------------------- hero identity */
+
+.heroSeal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.heroSeal .eyebrow {
+  line-height: 1.6;
+}
+
+.heroAlt {
+  margin: 6px 0 0;
+  font-size: 19px;
+  color: var(--ink-2);
+}
+
+.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 16px 0 0;
+}
+
+.heroLinks a {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink);
+}
+
+.heroLinks a:hover {
+  color: var(--laterite);
+  border-color: var(--laterite);
+}
+
+.navGive {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--paper);
+  text-decoration: none;
+  background: var(--laterite);
+  border-left: 1px solid var(--ink);
+}
+
+.navGive:hover {
+  background: #8a3a22;
+}
+
+.inlineLink {
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  cursor: pointer;
+}
+
+.inlineLink:hover {
+  color: var(--laterite);
+  border-color: var(--laterite);
+}
+
+/* ------------------------------------------------------------ register */
+
+.register {
+  padding: 26px 28px 10px;
+}
+
+.registerHead {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.registerName {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.registerAlt {
+  margin: 4px 0 0;
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------ accounts */
+
+.accounts {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 56px;
+  align-items: end;
+  margin-top: 44px;
+}
+
+.chart {
+  margin: 0;
+}
+
+.chartReadout {
+  min-height: 112px;
+}
+
+.chartYear {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--laterite);
+}
+
+.chartValue {
+  margin: 6px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(38px, 4.4vw, 58px);
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.chartNote {
+  margin: 10px 0 0;
+  font-size: 16px;
+  color: var(--ink-2);
+}
+
+.chartBars {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  height: 260px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 2px solid var(--ink);
+}
+
+.chartBars li {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.chartBar {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.chartFill {
+  display: block;
+  width: 100%;
+  height: var(--h);
+  background: #9aa59f;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i) * 70ms), background-color 0.2s ease;
+}
+
+.chartShown .chartFill {
+  transform: scaleY(1);
+}
+
+.chartBar:hover .chartFill {
+  background: var(--ink-2);
+}
+
+.chartBarOn .chartFill,
+.chartBarOn:hover .chartFill {
+  background: var(--laterite);
+}
+
+.chartTick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -26px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.chartCaption {
+  margin-top: 40px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.stats {
+  margin: 0;
+  border-top: 1px solid var(--ink);
+}
+
+.stats div {
+  padding: 18px 0 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.stats dt {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.stats dd {
+  margin: 6px 0 0;
+  font-family: var(--serif);
+  font-size: 34px;
+  line-height: 1.05;
+  font-variant-numeric: lining-nums;
+}
+
+.stats p {
+  margin: 6px 0 0;
+  font-size: 15.5px;
+  color: var(--ink-2);
+}
+
+.provisional {
+  margin-top: 36px;
+  padding: 14px 18px;
+  max-width: 62em;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  border-left: 3px solid var(--laterite);
+  background: var(--paper);
+}
+
+/* ----------------------------------------------------- bank statement */
+
+.subTitle {
+  margin: 88px 0 0;
+  padding-top: 28px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.1;
+  border-top: 1px solid var(--ink);
+}
+
+.statement {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 18px 56px;
+  margin-top: 40px;
+  padding: 28px 30px 24px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+.statementHead {
+  grid-column: 1;
+}
+
+.statementBar {
+  grid-column: 1;
+  display: flex;
+  gap: 2px;
+  height: 44px;
+  margin-top: 8px;
+}
+
+.statementPart {
+  flex-basis: 0;
+  min-width: 3px;
+  transition: opacity 0.2s ease;
+}
+
+.statementDim {
+  opacity: 0.25;
+}
+
+.statementRows {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+
+.statementRows li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.statementRow {
+  display: grid;
+  grid-template-columns: 14px 1fr auto 44px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.statementRowOn .statementLabel {
+  color: var(--laterite);
+}
+
+.statementSwatch {
+  width: 14px;
+  height: 14px;
+}
+
+.statementLabel {
+  font-size: 17px;
+}
+
+.statementAmount {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.statementShare {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.statementNote {
+  margin: -4px 0 12px 26px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.statementSmall {
+  grid-column: 1;
+  align-self: end;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ---------------------------------------------------------- spend bars */
+
+.spend {
+  margin-top: 40px;
+  border-top: 1px solid var(--ink);
+}
+
+.spendRow {
+  display: grid;
+  grid-template-columns: 220px 1fr 130px 120px;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.spendName {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+}
+
+.spendTrack {
+  height: 14px;
+  background: var(--paper-2);
+}
+
+.spendFill {
+  height: 100%;
+  background: var(--laterite);
+}
+
+.spendValue {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  text-align: right;
+  font-variant-numeric: lining-nums;
+}
+
+.spendRow .mapLink {
+  margin-top: 0;
+  justify-self: end;
+}
+
+.workOngoing {
+  margin-left: 10px;
+  padding: 2px 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.workHinglish {
+  margin: 4px 0 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--laterite);
+}
+
+.headTitle span {
+  margin-left: 6px;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--laterite);
+}
+
+/* ------------------------------------------------------------ give */
+
+.sectionInk {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.sectionInk .eyebrow {
+  color: #e4a487;
+}
+
+.sectionInk .text {
+  color: rgba(238, 241, 239, 0.78);
+}
+
+.primaryOnInk {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 28px;
+  padding: 0 22px;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: 1px solid var(--paper);
+}
+
+.primaryOnInk:hover {
+  color: var(--paper);
+  background: var(--laterite);
+  border-color: var(--laterite);
+}
+
+.ways {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(238, 241, 239, 0.5);
+}
+
+.ways li {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(238, 241, 239, 0.18);
+}
+
+.wayHead {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 24px;
+}
+
+.wayHead span {
+  margin-left: 6px;
+  font-style: italic;
+  font-size: 18px;
+  color: #e4a487;
+}
+
+.wayLine {
+  margin: 4px 0 0;
+  font-size: 16.5px;
+  color: rgba(238, 241, 239, 0.75);
+}
+
+.fcra {
+  margin-top: 24px;
+  padding: 16px 18px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(238, 241, 239, 0.85);
+  border: 1px solid rgba(238, 241, 239, 0.4);
+}
+
+.fcra p {
+  margin: 0;
+}
+
+.fcra .fcraHead {
+  margin-bottom: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e4a487;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chartFill {
+    transition: background-color 0.2s ease;
+    transform: none;
+  }
+}
+
 /* ------------------------------------------------------- middle widths */
 
 @media (max-width: 1180px) {
@@ -1085,9 +1644,94 @@
   }
 }
 
+@media (max-width: 1040px) {
+  .navGive {
+    display: none;
+  }
+
+  .accounts {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .statement {
+    grid-template-columns: 1fr;
+  }
+
+  .statementHead,
+  .statementBar,
+  .statementRows,
+  .statementSmall {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .spendRow {
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 16px;
+  }
+
+  .spendTrack {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
 /* --------------------------------------------------------------- phone */
 
 @media (max-width: 760px) {
+  /* on a phone the village itself should show above the fold: keep the welcome short */
+  .heroCopy .lede {
+    display: none;
+  }
+
+  .heroAlt {
+    font-size: 16px;
+  }
+
+  .heroLinks {
+    margin-top: 14px;
+  }
+
+  .register {
+    padding: 20px 16px 6px;
+  }
+
+  .statement {
+    padding: 20px 16px 18px;
+  }
+
+  .subTitle {
+    margin-top: 64px;
+  }
+
+  .registerName {
+    font-size: 21px;
+  }
+
+  .chartBars {
+    height: 200px;
+    gap: 3px;
+  }
+
+  .chartTick {
+    font-size: 10.5px;
+  }
+
+  .stats dd {
+    font-size: 29px;
+  }
+
+  .spendName,
+  .spendValue {
+    font-size: 19px;
+  }
+
+  .spendRow .mapLink {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
   :global(html) {
     scroll-padding-top: 56px;
   }

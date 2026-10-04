@@ -3,17 +3,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SOCIETY } from "@/lib/site";
 import type { PeweEngine, ClockInfo } from "./engine/engine";
-import { CARD_ORDER, PLACES, PLACE_BY_ID, type PlaceId } from "./places";
-import { WORKS, ZAKAT_HEADS } from "./content";
+import { CARD_ORDER, PLACES, PLACE_BY_ID, crore, lakh, type PlaceId } from "./places";
+import { COSTED_WORKS, ELEVEN_YEARS, GIVE_WAYS, WORKS, ZAKAT_HEADS } from "./content";
+import { YearsChart } from "./years-chart";
+import { Statement } from "./statement";
+import { STATEMENT } from "@/lib/record";
+import { Seal } from "@/components/seal";
+import { rupees } from "@/lib/format";
 import styles from "./pewe.module.css";
 
-type Phase = "loading" | "intro" | "explore" | "tour" | "fallback";
+type Phase = "loading" | "lite" | "intro" | "explore" | "tour" | "fallback";
+
+/** Data Saver on, or a 2G connection: show the picture first and let the visitor ask for the 3D. */
+function onSlowData() {
+  const c = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }
+  ).connection;
+  return !!c && (!!c.saveData || /(^|-)2g$/.test(c.effectiveType ?? ""));
+}
 
 const SECTIONS = [
   { id: "about", label: "Who we are" },
+  { id: "accounts", label: "Accounts" },
   { id: "work", label: "Our work" },
   { id: "zakat", label: "Zakat & help" },
-  { id: "people", label: "Pewe's people" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -173,15 +188,22 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
   const selectRef = useRef(select);
   selectRef.current = select;
 
+  // 0 until the 3D is wanted: straight away, unless the visitor is on slow or metered data
+  const [go, setGo] = useState(0);
+
   useEffect(() => {
     setCoarse(window.matchMedia("(pointer: coarse)").matches);
     if (!webglAvailable()) {
       setPhase("fallback");
       return;
     }
+    const q = new URLSearchParams(window.location.search);
+    if (go === 0 && (q.get("lite") === "1" || onSlowData())) {
+      setPhase("lite");
+      return;
+    }
     let disposed = false;
     let engine: PeweEngine | null = null;
-    const q = new URLSearchParams(window.location.search);
     const lowPower =
       q.get("low") === "1" ||
       window.matchMedia("(pointer: coarse)").matches ||
@@ -271,7 +293,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
       engineRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [go]);
 
   // keep the open place in view beside (or above) its card, and the village clear of the welcome text
   useEffect(() => {
@@ -325,7 +347,9 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
 
   const touring = phase === "tour";
   const place = active ? PLACE_BY_ID[active] : null;
-  const fallback = phase === "fallback";
+  const lite = phase === "lite";
+  // the still picture stands in for the 3D: no WebGL, or the visitor has not asked for it yet
+  const fallback = phase === "fallback" || lite;
 
   return (
     <div className={styles.site}>
@@ -340,11 +364,19 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
               {s.label}
             </a>
           ))}
+          <a className={styles.navGive} href="#give">
+            Zakat &amp; Donation
+          </a>
           <a className={styles.navMembers} href="/erp">
             Members
           </a>
         </nav>
-        <button type="button" className={styles.menuButton} onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen}>
+        <button
+          type="button"
+          className={styles.menuButton}
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+        >
           {menuOpen ? "Close" : "Menu"}
         </button>
       </header>
@@ -356,6 +388,9 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
               {s.label}
             </a>
           ))}
+          <a className={styles.menuItem} href="#give" onClick={() => setMenuOpen(false)}>
+            Zakat &amp; Donation
+          </a>
           <a className={styles.menuItem} href="/erp">
             Members
           </a>
@@ -371,7 +406,11 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
           <div ref={stageRef} className={styles.stage}>
             {fallback ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.stageFallback} src="/images/pewe/village.jpg" alt="Pewe from above: the valley, the creek and the village" />
+              <img
+                className={styles.stageFallback}
+                src="/images/pewe/village.jpg"
+                alt="Pewe from above: the valley, the creek and the village"
+              />
             ) : (
               <>
                 <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
@@ -390,8 +429,9 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                 <span className={styles.clockLabel}>{clock?.live === false ? "Pewe at" : "Pewe now"}</span>
                 <span className={styles.clockTime}>{clock?.time ?? "—"}</span>
                 <span className={styles.clockLine}>
-                  {[clock?.tempC != null ? `${clock.tempC}°` : null, clock?.label || null].filter(Boolean).join(" · ") ||
-                    "Konkan coast"}
+                  {[clock?.tempC != null ? `${clock.tempC}°` : null, clock?.label || null]
+                    .filter(Boolean)
+                    .join(" · ") || "Konkan coast"}
                 </span>
                 <span className={styles.clockHint}>Change the hour</span>
               </button>
@@ -415,7 +455,11 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   <span>Noon</span>
                   <span>Midnight</span>
                 </div>
-                <button type="button" className={`${styles.secondary} ${styles.liveButton}`} onClick={() => setTime(null)}>
+                <button
+                  type="button"
+                  className={`${styles.secondary} ${styles.liveButton}`}
+                  onClick={() => setTime(null)}
+                >
                   Back to Pewe now
                 </button>
               </div>
@@ -431,6 +475,14 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                   <p className={styles.cardMeta}>{place.meta}</p>
                   <h2 className={styles.cardTitle}>{place.title}</h2>
                   <p className={styles.cardBody}>{place.body}</p>
+                  {place.figure && (
+                    <div className={styles.cardFigure}>
+                      <p className={styles.cardFigureValue}>{place.figure.value}</p>
+                      <p className={styles.cardFigureLabel}>
+                        {place.figure.label} <span>· approx., pending audit</span>
+                      </p>
+                    </div>
+                  )}
                   {place.photo && (
                     <figure className={styles.cardPhoto}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -482,16 +534,52 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
             )}
           </div>
 
-          <div ref={copyRef} className={`${styles.plate} ${styles.heroCopy} ${touring || active ? styles.heroCopyAway : ""}`}>
-            <p className={styles.eyebrow}>Pewe · Guhagar · Ratnagiri</p>
-            <h1 className={styles.headline}>Pewe, cared for by its own people.</h1>
+          <div
+            ref={copyRef}
+            className={`${styles.plate} ${styles.heroCopy} ${touring || active ? styles.heroCopyAway : ""}`}
+          >
+            <div className={styles.heroSeal}>
+              <Seal size={46} />
+              <p className={styles.eyebrow}>
+                Reg. {SOCIETY.registrationNo} · Est. {SOCIETY.foundedYear}
+                <br />
+                Pewe · Guhagar · Ratnagiri
+              </p>
+            </div>
+            <h1 className={styles.headline}>{SOCIETY.name}</h1>
+            <p className={styles.heroAlt}>{SOCIETY.nameMarathi}</p>
             <p className={styles.lede}>
-              {SOCIETY.name} is the village&rsquo;s public trust: water, roads, Zakat and help for families, with
-              every rupee audited.
+              Pewe gaon ki apni welfare society. Water, roads, the building repairs, and help for any household that
+              needs it in a hurry, with every rupee accounted for and audited.
             </p>
+            {lite && (
+              <div className={styles.heroActions}>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={() => {
+                    setPhase("loading");
+                    setGo(1);
+                  }}
+                >
+                  <span className={styles.play} aria-hidden="true" />
+                  Show the 3D village
+                </button>
+              </div>
+            )}
+            {lite && (
+              <p className={styles.hint}>
+                You seem to be on slow or saved data, so the 3D waits until you ask. It is about 1 MB.
+              </p>
+            )}
             {!fallback && (
               <div className={styles.heroActions}>
-                <button type="button" className={styles.primary} onClick={() => void startTour()} disabled={phase === "loading"}>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={() => void startTour()}
+                  disabled={phase === "loading"}
+                >
                   <span className={styles.play} aria-hidden="true" />
                   Take me through Pewe
                 </button>
@@ -505,9 +593,15 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
                 </button>
               </div>
             )}
+            <p className={styles.heroLinks}>
+              <a href="#accounts">Where the money went ↓</a>
+              <a href="#give">Zakat &amp; Donation ↓</a>
+            </p>
             {!fallback && (
               <p className={styles.hint}>
-                {coarse ? "Swipe sideways to turn the village · two fingers to zoom · tap a name" : "Drag to look around · Ctrl + scroll to zoom · click a name"}
+                {coarse
+                  ? "Swipe sideways to turn the village · two fingers to zoom · tap a name"
+                  : "Drag to look around · Ctrl + scroll to zoom · click a name"}
               </p>
             )}
             {placesOpen && (
@@ -545,119 +639,226 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         <section id="about" className={styles.section}>
           <div className={styles.split}>
             <div>
-              <p className={styles.eyebrow}>Who we are</p>
-              <h2 className={styles.sectionTitle}>Pewe&rsquo;s families, working together.</h2>
+              <p className={styles.eyebrow}>Who we are · Society ke baare mein</p>
+              <h2 className={styles.sectionTitle}>Pewe gaon ki apni welfare society.</h2>
               <p className={styles.text}>
-                {SOCIETY.name} is a public trust, registered under the Maharashtra Public Trusts Act, 1950, of the village
-                of Pewe, Taluka Guhagar, District Ratnagiri. It was set up for the development of the village, for the
-                collection and distribution of Zakat, and for welfare projects, with transparency and an audit of every
-                single rupee.
+                A public trust of Village Pewe, Taluka Guhagar, District Ratnagiri, registered under the Maharashtra
+                Public Trusts Act, 1950. It was established to develop the village, to collect and distribute Zakat, and
+                to carry out welfare projects, with every single rupee accounted for and audited.
               </p>
+              <p className={styles.text}>
+                We run the water scheme, the school works and the building repairs, and we stand behind any household in
+                the village that needs help in a hurry.
+              </p>
+              <p className={styles.text}>
+                Pewe&rsquo;s people work in Mumbai, Dubai, Riyadh, Kigali and beyond, and they still give at home.
+                {!fallback && (
+                  <>
+                    {" "}
+                    <button type="button" className={styles.inlineLink} onClick={() => showOnMap("world")}>
+                      See it on the map ↑
+                    </button>
+                  </>
+                )}
+              </p>
+            </div>
+            <div className={`${styles.plate} ${styles.register}`}>
+              <div className={styles.registerHead}>
+                <Seal size={58} />
+                <div>
+                  <p className={styles.registerName}>{SOCIETY.name}</p>
+                  <p className={styles.registerAlt}>{SOCIETY.nameMarathi}</p>
+                  <p className={styles.registerAlt} dir="rtl" lang="ur">
+                    {SOCIETY.nameUrdu}
+                  </p>
+                </div>
+              </div>
               <dl className={styles.facts}>
+                <div>
+                  <dt>Public Trust Reg.</dt>
+                  <dd>{SOCIETY.registrationNo}</dd>
+                </div>
+                <div>
+                  <dt>Society Reg.</dt>
+                  <dd>{SOCIETY.societyRegNo}</dd>
+                </div>
                 <div>
                   <dt>Established</dt>
                   <dd>{SOCIETY.foundedYear}</dd>
                 </div>
                 <div>
-                  <dt>Trust reg.</dt>
-                  <dd>{SOCIETY.registrationNo}</dd>
+                  <dt>Registered office</dt>
+                  <dd>
+                    {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}
+                  </dd>
                 </div>
                 <div>
-                  <dt>Society reg.</dt>
-                  <dd>{SOCIETY.societyRegNo}</dd>
-                </div>
-                <div>
-                  <dt>Village</dt>
-                  <dd>Pewe, Guhagar, Ratnagiri</dd>
+                  <dt>Contributions</dt>
+                  <dd>Domestic only</dd>
                 </div>
               </dl>
-              <p className={styles.names}>
-                {SOCIETY.nameMarathi}
-                <br />
-                <span dir="rtl">{SOCIETY.nameUrdu}</span>
-              </p>
             </div>
-            <figure className={styles.figure}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/pewe/haveli.jpg" alt="The Haveli, Pewe's oldest house, in the 3D model of the village" loading="lazy" />
-              <figcaption>The Haveli, Pewe&rsquo;s oldest house, where the families once lived together.</figcaption>
-              <button type="button" className={styles.mapLink} onClick={() => showOnMap("haveli")}>
-                See it on the map ↑
-              </button>
-            </figure>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------ the accounts */}
+        <section id="accounts" className={`${styles.section} ${styles.sectionAlt}`}>
+          <div>
+            <p className={styles.eyebrow}>Accounts · Paisa kahan gaya</p>
+            <h2 className={styles.sectionTitle}>Where the money goes.</h2>
+            <p className={styles.text}>
+              First, the last two months straight from the Society&rsquo;s bank statement. Then the eleven years before,
+              from the office&rsquo;s own record.
+            </p>
+            <Statement />
+            <h3 className={styles.subTitle}>Eleven years, year by year.</h3>
+            <p className={styles.text}>
+              What the village put in, each year since the Society was registered. Everything collected in a year was
+              spent inside that year. Nothing is carried forward.
+            </p>
+            <div className={styles.accounts}>
+              <YearsChart />
+              <dl className={styles.stats}>
+                <div>
+                  <dt>Collected, eleven years</dt>
+                  <dd>{rupees(ELEVEN_YEARS.collected)}</dd>
+                  <p>The sum of the years shown</p>
+                </div>
+                <div>
+                  <dt>Direct family support</dt>
+                  <dd>{rupees(ELEVEN_YEARS.familySupportTenYears)}</dd>
+                  <p>Housing, livelihood, medical and education, over ten years</p>
+                </div>
+                <div>
+                  <dt>Carried forward</dt>
+                  <dd>Nil</dd>
+                  <p>Each year&rsquo;s collection is spent that year</p>
+                </div>
+              </dl>
+            </div>
+            <p className={styles.provisional}>
+              All figures are the office&rsquo;s own, approximate, and pending audit. The office has also put the
+              eleven-year total nearer ₹3 crore; that does not yet match the yearly figures, so this page shows only the
+              years until the audited statements settle it.
+            </p>
           </div>
         </section>
 
         {/* ------------------------------------------------ our work */}
-        <section id="work" className={`${styles.section} ${styles.sectionAlt}`}>
-          <p className={styles.eyebrow}>Our work</p>
-          <h2 className={styles.sectionTitle}>What we build and keep up.</h2>
-          <ul className={styles.works}>
-            {WORKS.map((w) => (
-              <li key={w.title} className={styles.work}>
-                <p className={styles.workPeriod}>{w.period}</p>
-                <h3 className={styles.workTitle}>{w.title}</h3>
-                <p className={styles.workLine}>{w.line}</p>
-                {w.place && (
-                  <button type="button" className={styles.mapLink} onClick={() => showOnMap(w.place!)}>
-                    See it on the map ↑
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+        <section id="work" className={styles.section}>
+          <div>
+            <p className={styles.eyebrow}>Our work · Gaon ke kaam</p>
+            <h2 className={styles.sectionTitle}>What eleven years has built.</h2>
+            <p className={styles.text}>
+              Works finished or still running since 2015. Where the office has put a cost to a work, it is shown,
+              approximate until the audited statements are in.
+            </p>
+            <div className={styles.spend}>
+              {COSTED_WORKS.map((w) => (
+                <div key={w.id} className={styles.spendRow}>
+                  <p className={styles.spendName}>{w.title.split(" — ")[0]}</p>
+                  <div className={styles.spendTrack}>
+                    <div
+                      className={styles.spendFill}
+                      style={{
+                        width: `${(w.approxCost! / COSTED_WORKS[0].approxCost!) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <p className={styles.spendValue}>≈ {lakh(w.approxCost!)}</p>
+                  {w.place && !fallback && (
+                    <button type="button" className={styles.mapLink} onClick={() => showOnMap(w.place!)}>
+                      On the map ↑
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <ul className={styles.works}>
+              {WORKS.map((w) => (
+                <li key={w.id} className={styles.work}>
+                  <p className={styles.workPeriod}>
+                    {w.period}
+                    {w.ongoing && <span className={styles.workOngoing}>Ongoing</span>}
+                  </p>
+                  <h3 className={styles.workTitle}>{w.title.split(" — ")[0]}</h3>
+                  <p className={styles.workHinglish}>{w.hinglish}</p>
+                  <p className={styles.workLine}>{w.line}</p>
+                  {w.place && !fallback && (
+                    <button type="button" className={styles.mapLink} onClick={() => showOnMap(w.place!)}>
+                      See it on the map ↑
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         {/* ------------------------------------------------ zakat */}
-        <section id="zakat" className={styles.section}>
+        <section id="zakat" className={`${styles.section} ${styles.sectionAlt}`}>
           <div className={styles.split}>
             <div>
-              <p className={styles.eyebrow}>Zakat &amp; help</p>
-              <h2 className={styles.sectionTitle}>From Pewe&rsquo;s people, to the families who need it.</h2>
+              <p className={styles.eyebrow}>Zakat &amp; help · Zakat aur madad</p>
+              <h2 className={styles.sectionTitle}>Help for any household that needs it.</h2>
               <p className={styles.text}>
-                Zakat is collected from Pewe&rsquo;s people at home and abroad, and given under five heads. Every rupee is
-                audited.
+                Zakat is collected from Pewe&rsquo;s people at home and abroad, and given out under five heads. In ten
+                years, about {crore(ELEVEN_YEARS.familySupportTenYears)} has gone straight to families.
               </p>
-              <ul className={styles.heads}>
-                {ZAKAT_HEADS.map((z) => (
-                  <li key={z.title}>
-                    <h3 className={styles.headTitle}>{z.title}</h3>
-                    <p className={styles.headLine}>{z.line}</p>
-                  </li>
-                ))}
-              </ul>
+              <p className={styles.text}>
+                In August and September 2026, {STATEMENT.stipendHouseholds} households received a monthly stipend, paid
+                by NEFT into their own bank account, and the Society paid fees directly to 11 schools, colleges and
+                institutes.
+              </p>
               <a className={styles.primary} href={SOCIETY.phoneHref}>
                 Ask the office for help
               </a>
             </div>
-            <figure className={styles.figure}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/pewe/fields.jpg" alt="Paddy fields beside the creek in the 3D model of Pewe" loading="lazy" />
-              <figcaption>The paddy by the creek: what Pewe grows, Pewe shares.</figcaption>
-            </figure>
+            <ul className={styles.heads}>
+              {ZAKAT_HEADS.map((z) => (
+                <li key={z.title}>
+                  <h3 className={styles.headTitle}>
+                    {z.title} <span>{z.hinglish}</span>
+                  </h3>
+                  <p className={styles.headLine}>{z.line}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        {/* ------------------------------------------------ pewe's people */}
-        <section id="people" className={`${styles.section} ${styles.sectionAlt}`}>
+        {/* ------------------------------------------------ give */}
+        <section id="give" className={`${styles.section} ${styles.sectionInk}`}>
           <div className={styles.split}>
-            <figure className={styles.figure}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/pewe/world.jpg" alt="A map from Pewe to Mumbai, Dubai, Riyadh and Kigali" loading="lazy" />
-              <figcaption>From Pewe to Mumbai, Dubai, Riyadh and Kigali.</figcaption>
-            </figure>
             <div>
-              <p className={styles.eyebrow}>Pewe&rsquo;s people</p>
-              <h2 className={styles.sectionTitle}>From this creek to the world.</h2>
+              <p className={styles.eyebrow}>Zakat &amp; Donation · Dene ke tareeke</p>
+              <h2 className={styles.sectionTitle}>Four ways to give, one account book.</h2>
               <p className={styles.text}>
-                Pewe&rsquo;s people live and work in Mumbai, Dubai, Riyadh, Kigali and beyond, and they still build home.
-                PSWS is how they do it together.
+                However it arrives, every rupee is entered against its head and audited with the rest. Call the office
+                and they will give you the details.
               </p>
-              {!fallback && (
-                <button type="button" className={styles.secondary} onClick={() => showOnMap("world")}>
-                  See it on the map ↑
-                </button>
-              )}
+              <a className={styles.primaryOnInk} href={SOCIETY.phoneHref}>
+                Call the office · {SOCIETY.phone}
+              </a>
+            </div>
+            <div>
+              <ul className={styles.ways}>
+                {GIVE_WAYS.map((g) => (
+                  <li key={g.head}>
+                    <p className={styles.wayHead}>
+                      {g.head} <span>{g.hinglish}</span>
+                    </p>
+                    <p className={styles.wayLine}>{g.line}</p>
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.fcra}>
+                <p className={styles.fcraHead}>Members working outside India</p>
+                <p>
+                  The Society takes domestic contributions only. Please give through your own Indian bank account, or
+                  through family at home.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -666,7 +867,7 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
         <section id="contact" className={styles.section}>
           <div className={styles.split}>
             <div>
-              <p className={styles.eyebrow}>Contact</p>
+              <p className={styles.eyebrow}>Contact · Sampark</p>
               <h2 className={styles.sectionTitle}>Talk to the office.</h2>
               <a className={styles.bigPhone} href={SOCIETY.phoneHref}>
                 {SOCIETY.phone}
@@ -704,9 +905,9 @@ export function PeweExperience({ initialPlace = null }: { initialPlace?: PlaceId
             </p>
           </div>
           <p className={styles.footerSmall}>
-            The land in the 3D village is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus Defence
-            and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from Natural Earth.
-            Weather from Open-Meteo.
+            The land in the 3D village is drawn from the Copernicus DEM GLO-30, © DLR e.V. 2010–2014 and © Airbus
+            Defence and Space GmbH 2014–2018, provided under COPERNICUS by the European Union and ESA. Coastlines from
+            Natural Earth. Weather from Open-Meteo.
           </p>
         </div>
       </footer>

@@ -112,6 +112,7 @@ export async function createEngine(canvas: HTMLCanvasElement, opts: EngineOption
     data,
     U,
     houseIndex([...data.village.houses, ...(["building", "haveli", "school", "busstop"] as const).map((k) => [P[k][0], P[k][1], 0] as [number, number, number])]),
+    !!opts.lowPower,
   );
   scene.add(terrain.inner, terrain.outer);
   const water = buildWater(U);

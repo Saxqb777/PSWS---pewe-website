@@ -2,8 +2,8 @@
  * Pewe's land, loaded once.
  *
  * terrain.bin holds two height grids (decimetres, Int16) and two water grids
- * (0–100, Uint8): a 10 m grid over the village and a 100 m grid out to the
- * sea. Heights come from the Copernicus GLO-30 elevation model; roads,
+ * (0–100, Uint8): a 10 m grid over the village and a 50 m grid out to the
+ * sea. It is fetched gzipped (terrain.bin.gz) where the browser can unpack it. Heights come from the Copernicus GLO-30 elevation model; roads,
  * houses and places in village.json were traced against the owner's map.
  * All positions in the files are (x east, y north) in metres from the
  * Community Building.
@@ -47,16 +47,34 @@ export interface MapData {
   outer: Grid;
 }
 
+/** The heights, gzipped where the browser can unpack them (a third of the size), plain otherwise. */
+async function loadTerrain(base: string): Promise<ArrayBuffer> {
+  if (typeof DecompressionStream !== "undefined") {
+    try {
+      const r = await fetch(`${base}/terrain.bin.gz`);
+      if (r.ok) {
+        const raw = new Uint8Array(await r.arrayBuffer());
+        // a server may already have unpacked it on the way
+        if (raw[0] !== 0x1f || raw[1] !== 0x8b) return raw.buffer;
+        const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream("gzip"));
+        return await new Response(stream).arrayBuffer();
+      }
+    } catch {
+      // fall through to the plain file
+    }
+  }
+  const r = await fetch(`${base}/terrain.bin`);
+  if (!r.ok) throw new Error(`terrain.bin ${r.status}`);
+  return r.arrayBuffer();
+}
+
 export async function loadMapData(base = "/map"): Promise<MapData> {
   const [village, buf] = await Promise.all([
     fetch(`${base}/village.json`).then((r) => {
       if (!r.ok) throw new Error(`village.json ${r.status}`);
       return r.json() as Promise<VillageData>;
     }),
-    fetch(`${base}/terrain.bin`).then((r) => {
-      if (!r.ok) throw new Error(`terrain.bin ${r.status}`);
-      return r.arrayBuffer();
-    }),
+    loadTerrain(base),
   ]);
   const ni = village.inner.nx * village.inner.ny;
   const no = village.outer.nx * village.outer.ny;

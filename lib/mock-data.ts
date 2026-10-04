@@ -58,41 +58,11 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const PROVISIONAL_NOTE = "Approximate · pending audit";
 
 /* ---------------------------------------------------------- */
-/*  ELEVEN YEARS  — PROVISIONAL, from the office               */
+/*  ELEVEN YEARS and WORKS ALREADY DONE — PROVISIONAL, from    */
+/*  the office. Kept in record.ts, shared with the public site. */
 /* ---------------------------------------------------------- */
 
-export const YEARLY_COLLECTION: { year: string; amount: number }[] = [
-  { year: "2015–16", amount: 1350000 },
-  { year: "2016–17", amount: 1400000 },
-  { year: "2017–18", amount: 1600000 },
-  { year: "2018–19", amount: 1800000 },
-  { year: "2019–20", amount: 1900000 },
-  { year: "2020–21", amount: 2000000 },
-  { year: "2021–22", amount: 2100000 },
-  { year: "2022–23", amount: 2150000 },
-  { year: "2023–24", amount: 2300000 },
-  { year: "2024–25", amount: 2500000 },
-  { year: "2025–26", amount: 2750000 },
-];
-
-export const ELEVEN_YEARS = {
-  provisional: true,
-  /** Sum of the yearly series above. */
-  get collected() {
-    return YEARLY_COLLECTION.reduce((s, y) => s + y.amount, 0);
-  },
-  /**
-   * The office also stated a total nearer ₹3 crore for the same period.
-   * That does not reconcile with the yearly figures above, which come to
-   * about ₹2.2 crore. Both are recorded until the audited statements
-   * settle it — the site shows the series, never a single unsourced total.
-   */
-  officeStatedTotal: 30000000,
-  /** Everything collected in a year is disbursed inside that year. */
-  carriedForward: 0,
-  years: 11,
-  familySupportTenYears: 20000000,
-};
+export { YEARLY_COLLECTION, ELEVEN_YEARS, COMPLETED_WORKS, type CompletedWork } from "./record";
 
 /* ---------------------------------------------------------- */
 /*  MEMBERS  — INVENTED                                        */
@@ -372,90 +342,6 @@ export const DONATION_ROLL = {
   shownInPrototype: DONATIONS.length,
   backdatedPending: 2,
 };
-
-/* ---------------------------------------------------------- */
-/*  WORKS ALREADY DONE  — PROVISIONAL costs from the office    */
-/*  The real eleven-year record. Costs are approximate and     */
-/*  carry the "pending audit" rule wherever they are shown.    */
-/* ---------------------------------------------------------- */
-
-export interface CompletedWork {
-  id: string;
-  title: string;
-  hinglish: string;
-  detail: string;
-  approxCost?: number;
-  period: string;
-  ongoing?: boolean;
-}
-
-export const COMPLETED_WORKS: CompletedWork[] = [
-  {
-    id: "w1",
-    title: "Water Supply Works",
-    hinglish: "Paani ka kaam",
-    detail:
-      "Multiple storage tanks at mountain level, pipelines down to the village, borewells, and the reconstruction and safeguarding of tanks already standing. The single largest head of development spending.",
-    approxCost: 2000000,
-    period: "2016 – present",
-    ongoing: true,
-  },
-  {
-    id: "w2",
-    title: "Community Building — Repair & Maintenance",
-    hinglish: "Imarat ki marammat",
-    detail:
-      "Structural repair, plastering, boundary walls and ongoing maintenance of the village's community structure.",
-    approxCost: 2750000,
-    period: "2017 – present",
-    ongoing: true,
-  },
-  {
-    id: "w3",
-    title: "Village Road Works",
-    hinglish: "Sadak ka kaam",
-    detail:
-      "Internal village roads and the approach stretches, laid and repaired in phases.",
-    approxCost: 2250000,
-    period: "2018 – 2024",
-  },
-  {
-    id: "w4",
-    title: "Electrical Street Lighting",
-    hinglish: "Street light",
-    detail:
-      "Street lights along the village lanes and the approach road, put up and maintained by the Society.",
-    period: "2019 – present",
-    ongoing: true,
-  },
-  {
-    id: "w5",
-    title: "Boundary Walls",
-    hinglish: "Compound wall",
-    detail:
-      "Boundary walls at several village sites, including the burial ground on the north and west faces.",
-    period: "2020 – present",
-    ongoing: true,
-  },
-  {
-    id: "w6",
-    title: "Wells — Reviving & Cleaning",
-    hinglish: "Kuan safai",
-    detail:
-      "Reviving old wells that had gone out of use, and periodic cleaning of those still drawn from.",
-    period: "2017 – present",
-    ongoing: true,
-  },
-  {
-    id: "w7",
-    title: "Village Upkeep",
-    hinglish: "Gaon ki safai",
-    detail:
-      "Grass clearing, walkway upkeep and general cleaning through the year — the unglamorous work that keeps the village usable in the monsoon.",
-    period: "2015 – present",
-    ongoing: true,
-  },
-];
 
 /* ---------------------------------------------------------- */
 /*  CURRENT PROJECTS  — INVENTED procurement detail            */

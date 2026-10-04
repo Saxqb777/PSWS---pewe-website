@@ -438,7 +438,8 @@ export function buildVillage(ground: Ground, data: MapData, U: SharedUniforms, o
         if (houseNear(px, py, 45)) p += 0.22;
       } else if (roadDist(px, py) < 6) continue;
       if (rand() > p) continue;
-      const r = (hill ? 2.6 : 3.3) + rand() * (hill ? 2.2 : 3.0);
+      // hill crowns overlap, so the slopes read as closed forest rather than a park
+      const r = (hill ? 3.5 : 3.3) + rand() * (hill ? 2.8 : 3.0);
       const m = new THREE.Matrix4();
       const h = ground.height(px, py);
       const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rand() * Math.PI * 2);

@@ -24,8 +24,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except Next's own assets, the image and map-data folders and the site icons.
+  // Everything except Next's own assets, the image and map-data folders, the site icons and the share pictures.
   matcher: [
-    "/((?!_next/static|_next/image|images/|map/|favicon|icon|apple-icon|og.jpg|robots.txt|sitemap.xml).*)",
+    "/((?!_next/static|_next/image|images/|map/|favicon|icon|apple-icon|og.jpg|og-pewe.jpg|robots.txt|sitemap.xml).*)",
   ],
 };

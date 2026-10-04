@@ -7,10 +7,11 @@ export function buildWater(U: SharedUniforms) {
   const geo = new THREE.PlaneGeometry(26000, 26000, 1, 1);
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.MeshStandardMaterial({
-    color: "#556659",
-    roughness: 0.34,
+    color: "#4f6156",
+    roughness: 0.4,
     metalness: 0.0,
-    envMapIntensity: 0.5,
+    // the creek is brackish and brown-green; it should not glare white at a low angle
+    envMapIntensity: 0.3,
   });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = U.uTime;

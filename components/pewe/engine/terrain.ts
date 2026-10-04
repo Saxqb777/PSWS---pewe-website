@@ -16,9 +16,10 @@ const hex = (h: string): RGB => [
   parseInt(h.slice(5, 7), 16) / 255,
 ];
 const C = {
-  forestA: hex("#3a5232"),
-  forestB: hex("#48623d"),
-  forestC: hex("#5a7347"),
+  // darker than a lawn: from above, the Konkan hills are one closed canopy
+  forestA: hex("#2c4327"),
+  forestB: hex("#385233"),
+  forestC: hex("#48613c"),
   deciduous: hex("#7a8549"),
   laterite: hex("#8d5b3a"),
   dryGrass: hex("#a39058"),
@@ -298,7 +299,7 @@ function buildGrid(
   return { geometry: g };
 }
 
-export function buildTerrain(ground: Ground, data: MapData, U: SharedUniforms, houses: HouseIndex) {
+export function buildTerrain(ground: Ground, data: MapData, U: SharedUniforms, houses: HouseIndex, coarse = false) {
   const v = data.village;
   const mat = makeMaterial(U);
   const paddy = v.paddy;
@@ -319,13 +320,15 @@ export function buildTerrain(ground: Ground, data: MapData, U: SharedUniforms, h
   innerMesh.castShadow = true;
   innerMesh.name = "land-inner";
 
+  // weaker devices draw the far land at half the detail
+  const k = coarse ? 2 : 1;
   const outer = buildGrid(
     ground,
     v.outer.x0,
     v.outer.y0,
-    v.outer.step,
-    v.outer.nx,
-    v.outer.ny,
+    v.outer.step * k,
+    Math.floor((v.outer.nx - 1) / k) + 1,
+    Math.floor((v.outer.ny - 1) / k) + 1,
     (x, y) => landAt(ground, x, y, null, null),
     (x, y) => (ground.insideInner(x, y, 15) ? 14 : 0),
     0,
