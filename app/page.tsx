@@ -20,13 +20,29 @@ const DESCRIPTION =
   "Pewe Social Welfare Society, the public trust of Village Pewe, Taluka Guhagar, District Ratnagiri: water, roads, Zakat and help for families, shown on a living 3D model of the village.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  // what a link shows when it is shared on WhatsApp: a picture of the village, well under 300 KB
-  const image = { url: "/og-pewe.jpg", width: 1200, height: 630, alt: "Pewe on the Vashishti creek, in 3D" };
+  // what a link shows when it is shared on WhatsApp: the Society's own photograph card, well under 300 KB
+  const image = {
+    url: "/og.jpg",
+    width: 1200,
+    height: 630,
+    alt: `${SOCIETY.name}, Pewe, Taluka Guhagar, District Ratnagiri`,
+  };
   return {
     title: { absolute: `Pewe · ${SOCIETY.name}` },
     description: DESCRIPTION,
-    openGraph: { type: "website", siteName: SOCIETY.name, title: `Pewe · ${SOCIETY.name}`, description: DESCRIPTION, images: [image] },
-    twitter: { card: "summary_large_image", title: `Pewe · ${SOCIETY.name}`, description: DESCRIPTION, images: [image.url] },
+    openGraph: {
+      type: "website",
+      siteName: SOCIETY.name,
+      title: `Pewe · ${SOCIETY.name}`,
+      description: DESCRIPTION,
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `Pewe · ${SOCIETY.name}`,
+      description: DESCRIPTION,
+      images: [image.url],
+    },
     // stays out of search engines until the committee opens it
     robots: isPublicLaunch() ? undefined : { index: false, follow: false },
   };

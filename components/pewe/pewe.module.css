@@ -2374,3 +2374,8 @@
 .names [dir="rtl"] {
   text-align: left;
 }
+
+/* the village photograph above the register in "Who we are" */
+.aboutPhoto {
+  margin-bottom: 22px;
+}

@@ -6,7 +6,7 @@ One photograph:
 Layered, with parallax:
   sky.png     distant sky and cloud
   ridge.png   the Sahyadri hills behind
-  masjid.png  the masjid itself
+  building.png the Community Building itself
   fore.png    palms and boundary wall in front
                             →  set heroMode: "photo" in lib/site.ts
 

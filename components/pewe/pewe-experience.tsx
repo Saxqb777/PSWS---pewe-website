@@ -421,8 +421,8 @@ export function PeweExperience({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 className={styles.stageFallback}
-                src="/images/pewe/village.jpg"
-                alt="Pewe from above: the valley, the creek and the village"
+                src="/images/hero/hero.jpg"
+                alt="Pewe in the monsoon: the Community Building across the paddy"
               />
             ) : (
               <>
@@ -710,47 +710,58 @@ export function PeweExperience({
                 />
               )}
             </div>
-            <div className={`${styles.plate} ${styles.register}`}>
-              <div className={styles.registerHead}>
-                <Seal size={58} />
-                <div>
-                  <p className={styles.registerName}>{SOCIETY.name}</p>
-                  <p className={styles.registerAlt}>{SOCIETY.nameMarathi}</p>
-                  <p className={styles.registerAlt} dir="rtl" lang="ur">
-                    {SOCIETY.nameUrdu}
-                  </p>
+            <div>
+              <figure className={`${styles.figure} ${styles.aboutPhoto}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/hero/hero.jpg"
+                  alt="The Community Building across the paddy, with the forested hill behind, in the monsoon"
+                  loading="lazy"
+                />
+                <figcaption>Pewe in the monsoon: the Community Building across the paddy.</figcaption>
+              </figure>
+              <div className={`${styles.plate} ${styles.register}`}>
+                <div className={styles.registerHead}>
+                  <Seal size={58} />
+                  <div>
+                    <p className={styles.registerName}>{SOCIETY.name}</p>
+                    <p className={styles.registerAlt}>{SOCIETY.nameMarathi}</p>
+                    <p className={styles.registerAlt} dir="rtl" lang="ur">
+                      {SOCIETY.nameUrdu}
+                    </p>
+                  </div>
                 </div>
+                <dl className={styles.facts}>
+                  <div>
+                    <dt>Public Trust Reg.</dt>
+                    <dd>{SOCIETY.registrationNo}</dd>
+                  </div>
+                  <div>
+                    <dt>Society Reg.</dt>
+                    <dd>{SOCIETY.societyRegNo}</dd>
+                  </div>
+                  <div>
+                    <dt>Established</dt>
+                    <dd>{SOCIETY.foundedYear}</dd>
+                  </div>
+                  <div>
+                    <dt>Registered office</dt>
+                    <dd>
+                      {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Committee</dt>
+                    <dd>
+                      <a href="#committee">{COMMITTEE.elected} elected, Sep 2026</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Contributions</dt>
+                    <dd>Domestic only</dd>
+                  </div>
+                </dl>
               </div>
-              <dl className={styles.facts}>
-                <div>
-                  <dt>Public Trust Reg.</dt>
-                  <dd>{SOCIETY.registrationNo}</dd>
-                </div>
-                <div>
-                  <dt>Society Reg.</dt>
-                  <dd>{SOCIETY.societyRegNo}</dd>
-                </div>
-                <div>
-                  <dt>Established</dt>
-                  <dd>{SOCIETY.foundedYear}</dd>
-                </div>
-                <div>
-                  <dt>Registered office</dt>
-                  <dd>
-                    {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Committee</dt>
-                  <dd>
-                    <a href="#committee">{COMMITTEE.elected} elected, Sep 2026</a>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Contributions</dt>
-                  <dd>Domestic only</dd>
-                </div>
-              </dl>
             </div>
           </div>
         </section>
@@ -915,6 +926,16 @@ export function PeweExperience({
                 </li>
               ))}
             </ul>
+            {draft && (
+              <ToFill
+                title="Photographs we still need"
+                asks={[
+                  "The Haveli, the hill tanks and pipelines, the roads and street lights, the wells, the paddy and the creek",
+                  "Taken by the Society or its members, with their permission to put them on the website",
+                  "No photographs of the families who are helped",
+                ]}
+              />
+            )}
             {draft && (
               <ToFill
                 title="Works running now · Abhi ke kaam"
@@ -1101,8 +1122,12 @@ export function PeweExperience({
             </div>
             <figure className={styles.figure}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/pewe/night.jpg" alt="Pewe at night, windows lit, in the 3D model" loading="lazy" />
-              <figcaption>Pewe at night. On the map above, the light follows Pewe&rsquo;s real time.</figcaption>
+              <img
+                src="/images/hero/hero-right.jpg"
+                alt="The side of the Community Building, with the forested hills of Pewe behind it"
+                loading="lazy"
+              />
+              <figcaption>The Community Building, with Pewe&rsquo;s hills behind it.</figcaption>
             </figure>
           </div>
         </section>
