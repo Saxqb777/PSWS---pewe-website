@@ -1,6 +1,7 @@
 import "server-only";
 import { db, logChange, num } from "./db";
 import type { User } from "./auth";
+import { OFFICE_BEARERS } from "../committee";
 import {
   HEADS,
   METHODS,
@@ -818,37 +819,45 @@ export interface Person {
   post: string | null;
   active: boolean;
   has_password: boolean;
+  /** can choose a password the first time with the Gmail on record */
+  has_first_email: boolean;
   last_login_at: string | null;
 }
 
 export async function listPeople(): Promise<Person[]> {
   const rows = await db()`
-    SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password, last_login_at
+    SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
+           first_email IS NOT NULL AS has_first_email, last_login_at
     FROM erp_user ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Person);
 }
 
 export async function getPerson(id: number): Promise<Person | null> {
   const rows = await db()`
-    SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password, last_login_at
+    SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
+           first_email IS NOT NULL AS has_first_email, last_login_at
     FROM erp_user WHERE id = ${id}`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Person) : null;
 }
 
-export async function addPerson(u: User, p: { name: string; phone: string; role: Role; post: string | null }): Promise<number | null> {
+export async function addPerson(
+  u: User,
+  p: { name: string; phone: string; role: Role; post: string | null; first_email: string | null },
+): Promise<number | null> {
   const rows = await db()`
-    INSERT INTO erp_user (name, phone, role, post, created_by) VALUES (${p.name}, ${p.phone}, ${p.role}, ${p.post}, ${u.id})
+    INSERT INTO erp_user (name, phone, role, post, first_email, created_by)
+    VALUES (${p.name}, ${p.phone}, ${p.role}, ${p.post}, ${p.first_email}, ${u.id})
     ON CONFLICT (phone) DO NOTHING RETURNING id`;
   if (!rows[0]) return null;
   const id = num(rows[0].id);
-  await logChange(u.id, "access", "person", id, `Gave ${p.name} access: ${p.role}`);
+  await logChange(u.id, "access", "person", id, `Gave ${p.name} access`);
   return id;
 }
 
 export async function updatePerson(u: User, id: number, p: { name: string; role: Role; post: string | null; active: boolean }) {
   await db()`UPDATE erp_user SET name = ${p.name}, role = ${p.role}, post = ${p.post}, active = ${p.active} WHERE id = ${id}`;
   if (!p.active) await db()`DELETE FROM erp_session WHERE user_id = ${id}`;
-  await logChange(u.id, "access", "person", id, `${p.name}: ${p.active ? p.role : "access removed"}`);
+  await logChange(u.id, "access", "person", id, `${p.name}: ${p.active ? "details changed" : "access removed"}`);
 }
 
 export async function adminCount(): Promise<number> {
@@ -969,4 +978,40 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     }
   }
   return null;
+}
+
+/* ================================================================== the committee, from the members' details form */
+
+/** Committee members who filled in the details form but have no office login yet. */
+export async function committeeWithoutAccess(): Promise<string[]> {
+  try {
+    const rows = await db()`
+      SELECT k.member_name FROM kyc_submission k
+      WHERE NOT EXISTS (SELECT 1 FROM erp_user e WHERE e.phone = k.phone_cc || k.phone)
+      ORDER BY k.member_name`;
+    return rows.map((r) => String(r.member_name));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * One office login for every committee member in the details form, with
+ * their mobile number, their post, and their Gmail for the first sign-in.
+ * Anyone who already has a login is left as they are.
+ */
+export async function giveCommitteeAccess(u: User): Promise<number> {
+  const names = OFFICE_BEARERS.map((o) => o.name);
+  const posts = OFFICE_BEARERS.map((o) => o.post);
+  // everyone on the committee has full access
+  const rows = await db()`
+    INSERT INTO erp_user (name, phone, role, post, first_email, created_by)
+    SELECT k.member_name, k.phone_cc || k.phone, 'admin', coalesce(ob.post, 'Committee member'), lower(trim(k.gmail)), ${u.id}
+    FROM kyc_submission k
+      LEFT JOIN unnest(${names}::text[], ${posts}::text[]) AS ob(name, post) ON ob.name = k.member_name
+    WHERE (k.phone_cc || k.phone) ~ '^[0-9]{10,15}$'
+    ON CONFLICT (phone) DO NOTHING
+    RETURNING id, name, role`;
+  for (const r of rows) await logChange(u.id, "access", "person", num(r.id), `Gave ${r.name} access from the members' form`);
+  return rows.length;
 }

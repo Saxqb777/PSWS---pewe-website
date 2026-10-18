@@ -192,3 +192,8 @@ CREATE TABLE IF NOT EXISTS erp_audit (
   summary   text        NOT NULL
 );
 CREATE INDEX IF NOT EXISTS erp_audit_at ON erp_audit (at DESC);
+
+-- ---------------------------------------------------------------- first sign-in without a link
+-- The Gmail a committee member gave in the members' details form. With their
+-- mobile number it lets them choose their own password the first time.
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS first_email text;

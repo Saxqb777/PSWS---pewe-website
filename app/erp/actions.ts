@@ -6,6 +6,7 @@ import {
   checkPassword,
   createFirstAdmin,
   endSession,
+  firstSignIn,
   ownerSignIn,
   passwordProblem,
   requireUser,
@@ -32,7 +33,7 @@ export async function signIn(_: FormState, data: FormData): Promise<FormState> {
   if (r === "no-password")
     return {
       error:
-        "You have not set your password yet. Open the link the office sent you on WhatsApp, or ask the admin for a new one.",
+        "You have not chosen a password yet. Tap “First time here” above and use the Gmail you gave in the members' form.",
     };
   return { error: "The phone number and password do not match. (Number ya password galat hai.)" };
 }
@@ -95,5 +96,29 @@ export async function openWithKey(key: string): Promise<{ error: string }> {
       r === "off"
         ? "This link has been switched off. An admin can turn it back on under People with access."
         : "This link is not right. Copy the whole link, with everything after the #.",
+  };
+}
+
+export async function firstTime(_: FormState, data: FormData): Promise<FormState> {
+  const phone = normalPhone(data.get("phone"));
+  const email = String(data.get("email") ?? "");
+  const password = String(data.get("password") ?? "");
+  const again = String(data.get("again") ?? "");
+  const errors: Record<string, string> = {};
+  if (!phone) errors.phone = "Type your mobile number. From abroad, start with + and the country code.";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) errors.email = "Type the Gmail you gave in the members' form.";
+  const problem = passwordProblem(password);
+  if (problem) errors.password = problem;
+  else if (password !== again) errors.again = "The two passwords are not the same. (Dono ek jaise likhiye.)";
+  if (Object.keys(errors).length) return { errors };
+  const r = await firstSignIn(phone!, email, password);
+  if (r === "ok") redirect("/erp?welcome=1");
+  if (r === "locked") return { error: "Too many wrong tries. Wait 15 minutes and try again." };
+  if (r === "done") return { error: "You have already chosen a password. Use “Sign in” with your mobile number and password." };
+  if (r === "no-email")
+    return { error: "There is no Gmail on record for this number. Ask the General Secretary to send you a link instead." };
+  return {
+    error:
+      "This mobile number and Gmail do not match the members' form. Check both. From abroad, start the number with + and the country code.",
   };
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db, num } from "./db";
 import { canDo, type Role } from "./labels";
@@ -121,6 +121,51 @@ export async function tryLogin(phone: string, password: string): Promise<LoginRe
   }
   await db()`UPDATE erp_user SET failed_logins = ${tries} WHERE id = ${u.id}`;
   return "bad";
+}
+
+/* ------------------------------------------------------------ the first sign-in, with the Gmail on record */
+
+export type FirstResult = "ok" | "bad" | "locked" | "done" | "no-email";
+
+/**
+ * A committee member's first time: their mobile number and the Gmail they
+ * gave in the members' details form, then a password of their own. Wrong
+ * tries count towards the same lock as wrong passwords.
+ */
+export async function firstSignIn(phone: string, email: string, password: string): Promise<FirstResult> {
+  const rows = await db()`
+    SELECT id, first_email, password_hash IS NOT NULL AS has_password, failed_logins, locked_until > now() AS locked
+    FROM erp_user WHERE phone = ${phone} AND active`;
+  const u = rows[0];
+  if (!u) return "bad";
+  if (u.locked) return "locked";
+  if (u.has_password) return "done";
+  if (!u.first_email) return "no-email";
+  if (String(u.first_email) !== email.trim().toLowerCase()) {
+    const tries = num(u.failed_logins) + 1;
+    if (tries >= MAX_TRIES) {
+      await db()`UPDATE erp_user SET failed_logins = 0, locked_until = now() + make_interval(mins => ${LOCK_MINUTES}) WHERE id = ${u.id}`;
+      return "locked";
+    }
+    await db()`UPDATE erp_user SET failed_logins = ${tries} WHERE id = ${u.id}`;
+    return "bad";
+  }
+  const hash = await hashPassword(password);
+  // only if still unset, so two tries at once cannot both win
+  const set = await db()`UPDATE erp_user SET password_hash = ${hash} WHERE id = ${u.id} AND password_hash IS NULL RETURNING id`;
+  if (!set[0]) return "done";
+  await startSession(num(u.id));
+  await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary)
+             VALUES (${u.id}, 'access', 'person', ${u.id}, 'Signed in for the first time and chose a password')`;
+  return "ok";
+}
+
+/** This site's address, for links sent on WhatsApp. */
+export async function siteOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "psws-pewe-website.vercel.app";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
 }
 
 /* ------------------------------------------------------------ links to set a password */

@@ -1,4 +1,4 @@
-import { KINDS, PLACES, ROLES, WORK_STATUSES, todayIST, type Role } from "@/lib/erp/labels";
+import { KINDS, PLACES, WORK_STATUSES, todayIST, type Role } from "@/lib/erp/labels";
 import type { Family, Meeting, Member, Request, Work } from "@/lib/erp/data";
 import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, Chips, ErpForm, Field, Submit, type Choice } from "./form";
@@ -259,12 +259,16 @@ export function PersonForm({
           <input name="post" defaultValue={person?.post ?? ""} />
         </Field>
         {!person && (
-          <Field label="Mobile number" hint="They sign in with this" name="phone" wide>
-            <input name="phone" type="tel" inputMode="tel" placeholder="98123 45678" />
-          </Field>
+          <>
+            <Field label="Mobile number" hint="They sign in with this. From abroad, start with +" name="phone">
+              <input name="phone" type="tel" inputMode="tel" placeholder="98123 45678" />
+            </Field>
+            <Field label="Their Gmail" hint="Optional. Lets them sign in the first time without a link" name="email">
+              <input name="email" type="email" inputMode="email" autoCapitalize="none" spellCheck={false} />
+            </Field>
+          </>
         )}
       </div>
-      <Chips name="role" legend="What may they do?" options={choices(ROLES)} defaultValue={person?.role ?? "editor"} />
       {person && (
         <label className={styles.check}>
           <input type="checkbox" name="inactive" defaultChecked={!person.active} />

@@ -1,5 +1,5 @@
 import { OWNER_PHONE, requireUser } from "@/lib/erp/auth";
-import { ROLES, showPhone } from "@/lib/erp/labels";
+import { showPhone } from "@/lib/erp/labels";
 import { ErpForm, Field, Submit } from "@/components/erp/form";
 import { Facts, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
@@ -18,7 +18,6 @@ export default async function AccountPage() {
             ["Name", u.name],
             ["Post", u.post],
             ["Mobile", showPhone(u.phone)],
-            ["Can", `${ROLES[u.role].en}. ${ROLES[u.role].hi}.`],
           ]}
         />
       </div>
