@@ -114,7 +114,7 @@ export async function getMoneyIn(id: number): Promise<MoneyIn | null> {
   const rows = await db()`
     SELECT m.id, m.receipt_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.from_name, m.from_phone, m.from_place,
            m.amount_paise, m.head, m.head_other, m.method, m.reference, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
-           u.name AS created_by_name
+           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_money_in m LEFT JOIN erp_user u ON u.id = m.created_by WHERE m.id = ${id}`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id), amount_paise: num(rows[0].amount_paise) } as MoneyIn) : null;
 }
@@ -219,7 +219,7 @@ export async function getMoneyOut(id: number): Promise<MoneyOut | null> {
     SELECT m.id, m.voucher_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.paid_to, m.amount_paise, m.head,
            m.head_other, m.purpose, m.purpose_other, m.method, m.reference, m.family_id, f.name AS family_name, m.request_id, m.work_id,
            w.name AS work_name, m.stipend_month, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
-           u.name AS created_by_name
+           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_money_out m
       LEFT JOIN erp_user u ON u.id = m.created_by
       LEFT JOIN erp_family f ON f.id = m.family_id
@@ -727,14 +727,16 @@ export type MeetingFields = Omit<Meeting, "id" | "created_by_name">;
 
 export async function listMeetings(): Promise<Meeting[]> {
   const rows = await db()`
-    SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website, u.name AS created_by_name
+    SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website,
+           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_meeting m LEFT JOIN erp_user u ON u.id = m.created_by ORDER BY m.on_date DESC, m.id DESC LIMIT 500`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Meeting);
 }
 
 export async function getMeeting(id: number): Promise<Meeting | null> {
   const rows = await db()`
-    SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website, u.name AS created_by_name
+    SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website,
+           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_meeting m LEFT JOIN erp_user u ON u.id = m.created_by WHERE m.id = ${id}`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Meeting) : null;
 }
@@ -854,7 +856,8 @@ export async function listPeople(): Promise<Person[]> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
            first_email IS NOT NULL AS has_first_email, last_login_at
-    FROM erp_user ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
+    FROM erp_user WHERE phone <> 'owner'
+    ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Person);
 }
 
@@ -862,7 +865,7 @@ export async function getPerson(id: number): Promise<Person | null> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
            first_email IS NOT NULL AS has_first_email, last_login_at
-    FROM erp_user WHERE id = ${id}`;
+    FROM erp_user WHERE id = ${id} AND phone <> 'owner'`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Person) : null;
 }
 
@@ -887,7 +890,7 @@ export async function updatePerson(u: User, id: number, p: { name: string; role:
 }
 
 export async function adminCount(): Promise<number> {
-  const rows = await db()`SELECT count(*) AS n FROM erp_user WHERE role = 'admin' AND active`;
+  const rows = await db()`SELECT count(*) AS n FROM erp_user WHERE role = 'admin' AND active AND phone <> 'owner'`;
   return num(rows[0].n);
 }
 
@@ -905,9 +908,11 @@ export interface HistoryLine {
 
 export async function history(limit = 300, entity: string | null = null): Promise<HistoryLine[]> {
   const rows = await db()`
-    SELECT a.id, a.at, u.name AS who, a.action, a.entity, a.entity_id, a.summary
+    SELECT a.id, a.at, CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS who, a.action, a.entity, a.entity_id, a.summary
     FROM erp_audit a LEFT JOIN erp_user u ON u.id = a.user_id
     WHERE (${entity}::text IS NULL OR a.entity = ${entity})
+      -- the website owner's private-link sign-ins are not part of the office's record
+      AND NOT (coalesce(u.phone, '') = 'owner' AND a.summary = 'Signed in with the private link')
     ORDER BY a.at DESC, a.id DESC LIMIT ${limit}`;
   return rows.map((r) => ({ ...r, id: num(r.id), entity_id: r.entity_id == null ? null : num(r.entity_id) }) as HistoryLine);
 }
@@ -933,7 +938,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "money-in": {
       const rows = await db()`
         SELECT receipt_no, to_char(on_date, 'YYYY-MM-DD') AS d, from_name, from_place, from_phone, amount_paise, head, head_other, method,
-               reference, note, u.name AS entered_by, cancelled_at IS NOT NULL AS cancelled, cancel_reason
+               reference, note, CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS entered_by, cancelled_at IS NOT NULL AS cancelled, cancel_reason
         FROM erp_money_in i LEFT JOIN erp_user u ON u.id = i.created_by
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, receipt_no`;
       return {
@@ -946,7 +951,8 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "money-out": {
       const rows = await db()`
         SELECT voucher_no, to_char(on_date, 'YYYY-MM-DD') AS d, paid_to, amount_paise, purpose, o.purpose_other, head, o.head_other, method, reference,
-               f.name AS family, w.name AS work, stipend_month, note, u.name AS entered_by,
+               f.name AS family, w.name AS work, stipend_month, note,
+               CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS entered_by,
                o.cancelled_at IS NOT NULL AS cancelled, cancel_reason
         FROM erp_money_out o LEFT JOIN erp_user u ON u.id = o.created_by LEFT JOIN erp_family f ON f.id = o.family_id
           LEFT JOIN erp_work w ON w.id = o.work_id

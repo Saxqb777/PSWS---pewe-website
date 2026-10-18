@@ -254,8 +254,9 @@ export async function createFirstAdmin(name: string, phone: string, post: string
  * server's logs; the page hands it to the server once. Only its digest is
  * kept here; ERP_OWNER_KEY in Vercel replaces it without a commit.
  *
- * The owner is an admin like any other, listed under People with access,
- * and any admin can switch the link off there by removing that access.
+ * The owner is an admin who does not appear in the office: not under People
+ * with access, and as "Office" in the history and on entries. Changing
+ * ERP_OWNER_KEY in Vercel switches the link off.
  */
 export const OWNER_PHONE = "owner";
 const OWNER_DIGEST = "0830b63bec76e8cea778cdc3c7ff6988c2877eb9bc8aa87126bff0cbfecef53f";
@@ -274,8 +275,7 @@ export async function ownerSignIn(key: string): Promise<"ok" | "bad" | "off"> {
   const rows = await db()`SELECT id, active FROM erp_user WHERE phone = ${OWNER_PHONE}`;
   if (!rows[0]?.active) return "off";
   const id = num(rows[0].id);
+  // not written to the history: the owner looks over the office without appearing in it
   await startSession(id);
-  await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary)
-             VALUES (${id}, 'access', 'person', ${id}, 'Signed in with the private link')`;
   return "ok";
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OWNER_PHONE, requireUser, siteOrigin } from "@/lib/erp/auth";
+import { requireUser, siteOrigin } from "@/lib/erp/auth";
 import { committeeWithoutAccess, listPeople } from "@/lib/erp/data";
 import { showPhone, showWhen } from "@/lib/erp/labels";
 import { ErpForm, Submit } from "@/components/erp/form";
@@ -86,15 +86,10 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                 <span className={styles.rowTitle}>
                   {p.name}
                   {!p.active && <span className={`${styles.tag} ${styles.tagOut}`}>no access</span>}
-                  {p.phone === OWNER_PHONE ? (
-                    <span className={styles.tag}>private link</span>
-                  ) : (
-                    p.active &&
-                    !p.has_password && (
-                      <span className={`${styles.tag} ${styles.tagWarn}`}>
-                        {p.has_first_email ? "not signed in yet" : "link not used yet"}
-                      </span>
-                    )
+                  {p.active && !p.has_password && (
+                    <span className={`${styles.tag} ${styles.tagWarn}`}>
+                      {p.has_first_email ? "not signed in yet" : "link not used yet"}
+                    </span>
                   )}
                 </span>
                 <span className={styles.rowMeta}>

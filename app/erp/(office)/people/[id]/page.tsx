@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { OWNER_PHONE, requireUser } from "@/lib/erp/auth";
+import { requireUser } from "@/lib/erp/auth";
 import { getPerson } from "@/lib/erp/data";
 import { showPhone, showWhen } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
@@ -25,13 +25,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       />
       <PersonForm action={updatePersonAction.bind(null, p.id)} person={p} submit="Save" />
 
-      {p.phone === OWNER_PHONE && (
-        <p className={styles.p} style={{ marginTop: 20 }}>
-          This person signs in with a private link instead of a mobile number and password. Ticking “Remove their
-          access” switches the link off.
-        </p>
-      )}
-      {p.active && p.id !== me.id && p.phone !== OWNER_PHONE && (
+      {p.active && p.id !== me.id && (
         <>
           <h2 className={styles.h2}>
             Password link
