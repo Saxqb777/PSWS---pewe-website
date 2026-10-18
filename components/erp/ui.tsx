@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HEADS, METHOD_SHORT, PURPOSES, inr, shortNo, showDate, showDay } from "@/lib/erp/labels";
+import { HEADS, METHOD_SHORT, PURPOSES, inr, shortNo, showDate, showDay, labelOf } from "@/lib/erp/labels";
 import type { MoneyRow } from "@/lib/erp/data";
 import styles from "./erp.module.css";
 
@@ -63,7 +63,7 @@ export function Empty({ children, action }: { children: React.ReactNode; action?
 }
 
 function MoneyLine({ r, withDate }: { r: MoneyRow; withDate: boolean }) {
-  const what = r.dir === "in" ? HEADS[r.head].en : (r.work_name ?? PURPOSES[r.purpose ?? "other"].en);
+  const what = r.dir === "in" ? labelOf(HEADS, r.head, r.head_other) : (r.work_name ?? labelOf(PURPOSES, r.purpose, r.purpose_other));
   return (
     <li className={`${styles.row} ${r.cancelled ? styles.cancelled : ""}`}>
       <Link href={`/erp/money/${r.dir}/${r.id}`} className={styles.rowLink}>

@@ -197,3 +197,10 @@ CREATE INDEX IF NOT EXISTS erp_audit_at ON erp_audit (at DESC);
 -- The Gmail a committee member gave in the members' details form. With their
 -- mobile number it lets them choose their own password the first time.
 ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS first_email text;
+
+-- ---------------------------------------------------------------- what "Other" was
+-- When someone picks Other, they type what it is; that text is kept here.
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS head_other text;
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS head_other text;
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS purpose_other text;
+ALTER TABLE erp_request   ADD COLUMN IF NOT EXISTS kind_other text;

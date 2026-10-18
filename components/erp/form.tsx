@@ -251,3 +251,49 @@ export function Submit({
     </button>
   );
 }
+
+/** The same choice, with a box to type what it is when "Other" is picked. */
+export function ChoiceWithOther({
+  name,
+  legend,
+  hint,
+  options,
+  defaultValue,
+  value,
+  onChange,
+  otherLabel,
+  otherDefault,
+}: {
+  name: string;
+  legend: string;
+  hint?: string;
+  options: Choice[];
+  defaultValue?: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  otherLabel: string;
+  otherDefault?: string | null;
+}) {
+  const [own, setOwn] = useState(defaultValue ?? "");
+  const current = value ?? own;
+  return (
+    <>
+      <Chips
+        name={name}
+        legend={legend}
+        hint={hint}
+        options={options}
+        value={current}
+        onChange={(v) => {
+          setOwn(v);
+          onChange?.(v);
+        }}
+      />
+      {current === "other" && (
+        <Field label={otherLabel} name={`${name}_other`}>
+          <input name={`${name}_other`} autoComplete="off" defaultValue={otherDefault ?? ""} autoFocus={!otherDefault} />
+        </Field>
+      )}
+    </>
+  );
+}

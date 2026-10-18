@@ -59,6 +59,8 @@ export async function addFamilyRequest(familyId: number, _: FormState, data: For
   const errors: Record<string, string> = {};
   const kind = data.get("kind");
   if (!isKey(KINDS, kind)) errors.kind = "What do they need? (Kis cheez ki zaroorat?)";
+  const kindOther = kind === "other" ? clean(data.get("kind_other"), 120) : null;
+  if (kind === "other" && !kindOther) errors.kind_other = "Type what they need. (Kya chahiye?)";
   const asked_on = String(data.get("asked_on") ?? "");
   if (!isDate(asked_on) || asked_on > todayIST()) errors.asked_on = "Pick the date they asked.";
   const askedRaw = clean(data.get("asked"), 20);
@@ -69,6 +71,7 @@ export async function addFamilyRequest(familyId: number, _: FormState, data: For
   await addRequest(u, {
     family_id: familyId,
     kind: kind as keyof typeof KINDS,
+    kind_other: kindOther,
     asked_on,
     asked_paise,
     details: cleanLong(data.get("details"), 2000),
@@ -109,6 +112,8 @@ export async function runStipends(month: string, _: FormState, data: FormData): 
   if (!isDate(on_date) || on_date > todayIST()) errors.on_date = "Pick the date the money was sent.";
   const head = data.get("head");
   if (!isKey(HEADS, head)) errors.head = "Paid out of which money?";
+  const headOther = head === "other" ? clean(data.get("head_other"), 120) : null;
+  if (head === "other" && !headOther) errors.head_other = "Type which money it came out of.";
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How was it paid?";
   const lines: { family_id: number; amount_paise: number }[] = [];
@@ -124,6 +129,7 @@ export async function runStipends(month: string, _: FormState, data: FormData): 
   const n = await payStipends(u, month, lines, {
     on_date,
     head: head as keyof typeof HEADS,
+    head_other: headOther,
     method: method as keyof typeof METHODS,
     reference: clean(data.get("reference"), 120),
   });

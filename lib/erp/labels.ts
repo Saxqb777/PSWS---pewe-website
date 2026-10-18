@@ -75,6 +75,15 @@ export const ROLES = {
 } satisfies Labelled<string>;
 export type Role = keyof typeof ROLES;
 
+/** A label, or for "Other" what the person typed for it. */
+export function labelOf(map: Record<string, { en: string }>, key: string | null | undefined, other?: string | null): string {
+  if (key === "other" && other) return other;
+  return (key && map[key]?.en) || "";
+}
+
+/** The kinds of payment that are help for a family. */
+export const FAMILY_PURPOSES: Purpose[] = ["medical", "education", "livelihood", "emergency", "stipend"];
+
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
 export const canDo = (have: Role, need: Role) => RANK[have] >= RANK[need];
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { listMoney, listRequests, stipendLines, totals } from "@/lib/erp/data";
-import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST } from "@/lib/erp/labels";
+import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST, labelOf } from "@/lib/erp/labels";
 import { Empty, MoneyList, Section } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 
@@ -144,7 +144,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
                   <span className={styles.rowMain}>
                     <span className={styles.rowTitle}>{r.family_name}</span>
                     <span className={styles.rowMeta}>
-                      {KINDS[r.kind].en} · asked {showDate(r.asked_on)}
+                      {labelOf(KINDS, r.kind, r.kind_other)} · asked {showDate(r.asked_on)}
                       {r.status === "approved" && <span className={`${styles.tag} ${styles.tagIn}`}>approved, to pay</span>}
                     </span>
                   </span>

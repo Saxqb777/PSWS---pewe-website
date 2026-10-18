@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getFamily, listRequests, paymentsFor } from "@/lib/erp/data";
-import { KINDS, STATUSES, canDo, inr, showDate, showPhone } from "@/lib/erp/labels";
+import { KINDS, STATUSES, canDo, inr, showDate, showPhone, labelOf } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { DecideForm, RequestForm } from "@/components/erp/forms";
 import { Empty, Facts, MoneyList, PageHead } from "@/components/erp/ui";
@@ -67,7 +67,7 @@ export default async function FamilyPage({
               <div className={styles.rowStatic}>
                 <span className={styles.rowMain}>
                   <span className={styles.rowTitle}>
-                    {KINDS[r.kind].en}
+                    {labelOf(KINDS, r.kind, r.kind_other)}
                     <span className={`${styles.tag} ${r.status === "waiting" ? styles.tagWarn : r.status === "declined" ? styles.tagOut : styles.tagIn}`}>
                       {STATUSES[r.status].en}
                     </span>

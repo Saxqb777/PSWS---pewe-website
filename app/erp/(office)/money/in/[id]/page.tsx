@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getMoneyIn } from "@/lib/erp/data";
-import { HEADS, METHODS, canDo, inr, rupeesInWords, showDate, showPhone, showWhen } from "@/lib/erp/labels";
+import { HEADS, METHODS, canDo, inr, rupeesInWords, showDate, showPhone, showWhen, labelOf } from "@/lib/erp/labels";
 import { toId, waLink } from "@/lib/erp/form-state";
 import { SOCIETY } from "@/lib/site";
 import { CancelBox } from "@/components/erp/cancel-box";
@@ -31,7 +31,7 @@ export default async function MoneyInPage({
     SOCIETY.name,
     `Receipt ${m.receipt_no} · ${showDate(m.on_date)}`,
     "",
-    `Received with thanks ${inr(m.amount_paise)} (${words} rupees) from ${m.from_name} towards ${HEADS[m.head].en}, by ${how}${m.reference ? ` (ref. ${m.reference})` : ""}.`,
+    `Received with thanks ${inr(m.amount_paise)} (${words} rupees) from ${m.from_name} towards ${labelOf(HEADS, m.head, m.head_other)}, by ${how}${m.reference ? ` (ref. ${m.reference})` : ""}.`,
     "",
     `Thank you. ${SOCIETY.shortName} office, Pewe`,
   ].join("\n");
@@ -94,7 +94,7 @@ export default async function MoneyInPage({
         <p className={styles.receiptField}>
           towards
           <span className={styles.receiptFill}>
-            {HEADS[m.head].en}, by {how}
+            {labelOf(HEADS, m.head, m.head_other)}, by {how}
             {m.reference ? ` (ref. ${m.reference})` : ""}
           </span>
         </p>

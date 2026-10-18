@@ -5,7 +5,7 @@ import { useState } from "react";
 import { HEADS, METHODS, inr, showMonth, todayIST } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
 import type { StipendLine } from "@/lib/erp/data";
-import { Chips, ErpForm, Field, Submit } from "./form";
+import { ChoiceWithOther, Chips, ErpForm, Field, Submit } from "./form";
 import styles from "./erp.module.css";
 
 /**
@@ -104,12 +104,13 @@ export function StipendRun({
               <input name="reference" autoComplete="off" />
             </Field>
           </div>
-          <Chips
+          <ChoiceWithOther
             name="head"
-            legend="Paid out of"
+            legend="From which money?"
             hint="Kis paise se"
             options={Object.entries(HEADS).map(([value, l]) => ({ value, en: l.en, hi: l.hi }))}
             defaultValue="zakat"
+            otherLabel="Which money?"
           />
           <Chips
             name="method"

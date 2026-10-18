@@ -1,7 +1,7 @@
 import { KINDS, PLACES, WORK_STATUSES, todayIST, type Role } from "@/lib/erp/labels";
 import type { Family, Meeting, Member, Request, Work } from "@/lib/erp/data";
 import type { FormState } from "@/lib/erp/form-state";
-import { AmountInput, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
 import styles from "./erp.module.css";
 
 /** The office's shorter forms. Each one is the same for adding and for changing. */
@@ -81,7 +81,13 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
 export function RequestForm({ action }: { action: Action }) {
   return (
     <ErpForm action={action} resetOnDone>
-      <Chips name="kind" legend="What do they need?" hint="Kis cheez ki zaroorat" options={choices(KINDS)} />
+      <ChoiceWithOther
+        name="kind"
+        legend="What do they need?"
+        hint="Kis cheez ki zaroorat"
+        options={choices(KINDS)}
+        otherLabel="What do they need?"
+      />
       <div className={styles.grid}>
         <AmountInput name="asked" label="Amount asked" hint="Optional, if known" />
         <Field label="Asked on" hint="Kab maanga" name="asked_on">

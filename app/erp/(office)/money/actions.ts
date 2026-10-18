@@ -35,12 +35,13 @@ import {
 } from "@/lib/erp/labels";
 import { toId, type FormState } from "@/lib/erp/form-state";
 
-/** Which payment purposes go with what the money was for. */
-const FOR_PURPOSES: Record<string, Purpose[]> = {
-  family: ["medical", "education", "livelihood", "emergency", "stipend", "other"],
-  work: ["works"],
-  other: ["office", "bank", "other"],
-};
+/** What someone typed for "Other"; required when Other is picked. */
+function readOther(data: FormData, field: string, picked: unknown, errors: Record<string, string>, ask: string) {
+  if (picked !== "other") return null;
+  const v = clean(data.get(`${field}_other`), 120);
+  if (!v) errors[`${field}_other`] = ask;
+  return v;
+}
 
 const SAME_YEAR =
   "The number belongs to its financial year. To move it to another year, cancel this one and add it again there.";
@@ -64,6 +65,7 @@ function readMoneyIn(data: FormData): { f: MoneyInFields; errors: Record<string,
   if (!amount) errors.amount = "Type the amount in numbers, e.g. 5000.";
   const head = data.get("head");
   if (!isKey(HEADS, head)) errors.head = "What is this money for? (Kis cheez ke liye?)";
+  const head_other = readOther(data, "head", head, errors, "Type what it is for. (Kis liye?)");
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How did it come? (Kaise aaya?)";
   return {
@@ -75,6 +77,7 @@ function readMoneyIn(data: FormData): { f: MoneyInFields; errors: Record<string,
       from_place: clean(data.get("from_place"), 80),
       amount_paise: amount ?? 0,
       head: head as MoneyInFields["head"],
+      head_other,
       method: method as MoneyInFields["method"],
       reference: clean(data.get("reference"), 120),
       note: cleanLong(data.get("note"), 1000),
@@ -97,49 +100,54 @@ export async function saveMoneyIn(id: number | null, _: FormState, data: FormDat
   redirect(`/erp/money/in/${r.id}?new=1`);
 }
 
-async function readMoneyOut(data: FormData): Promise<{ f: MoneyOutFields; errors: Record<string, string>; newFamily: { name: string; place: string | null } | null }> {
+/**
+ * A payment: who it went to, how much, and what for. Linking it to a family
+ * or a village work is optional, so nobody is stuck before the family or
+ * the work has been added.
+ */
+async function readMoneyOut(data: FormData): Promise<{
+  f: MoneyOutFields;
+  errors: Record<string, string>;
+  newFamily: { name: string; place: string | null } | null;
+}> {
   const errors: Record<string, string> = {};
   const on_date = readDate(data.get("on_date"), errors);
-  const forWhat = String(data.get("for") ?? "");
-  if (!FOR_PURPOSES[forWhat]) errors.for = "Who or what was it paid for? (Kiske liye?)";
   const purpose = data.get("purpose");
-  if (!isKey(PURPOSES, purpose) || (FOR_PURPOSES[forWhat] && !FOR_PURPOSES[forWhat].includes(purpose as Purpose)))
-    errors.purpose = "What was it for? (Kis kaam ke liye?)";
+  if (!isKey(PURPOSES, purpose)) errors.purpose = "What was it for? (Kis kaam ke liye?)";
+  const purpose_other = readOther(data, "purpose", purpose, errors, "Type what it was for. (Kis liye?)");
   const amount = toPaise(data.get("amount"));
   if (!amount) errors.amount = "Type the amount in numbers, e.g. 5000.";
   const head = data.get("head");
   if (!isKey(HEADS, head)) errors.head = "Which money did it come out of? (Kis paise se?)";
+  const head_other = readOther(data, "head", head, errors, "Type which money it came out of.");
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How was it paid? (Kaise diya?)";
 
   let paid_to = clean(data.get("paid_to"), 120);
   let family_id: number | null = null;
-  let work_id: number | null = null;
   let request_id: number | null = null;
   let newFamily: { name: string; place: string | null } | null = null;
 
-  if (forWhat === "family") {
-    const raw = String(data.get("family_id") ?? "");
-    if (raw === "new") {
-      const name = clean(data.get("new_family_name"), 120);
-      if (!name) errors.new_family_name = "Type the name of the person the help went to.";
-      else newFamily = { name, place: clean(data.get("new_family_place"), 80) };
-      paid_to = paid_to ?? name;
-    } else {
-      family_id = toId(raw);
-      const fam = family_id ? await getFamily(family_id) : null;
-      if (!fam) errors.family_id = "Pick the family, or choose ‘A new family’. (Parivaar chuniye.)";
-      else paid_to = paid_to ?? fam.name;
-      request_id = toId(data.get("request_id"));
-      if (request_id) {
-        const req = await getRequest(request_id);
-        if (!req || req.family_id !== family_id) request_id = null;
-      }
+  const famRaw = String(data.get("family_id") ?? "");
+  if (famRaw === "new") {
+    const name = clean(data.get("new_family_name"), 120);
+    if (!name) errors.new_family_name = "Type the name of the person the help went to.";
+    else newFamily = { name, place: clean(data.get("new_family_place"), 80) };
+    paid_to = paid_to ?? name;
+  } else if (famRaw) {
+    family_id = toId(famRaw);
+    const fam = family_id ? await getFamily(family_id) : null;
+    if (!fam) errors.family_id = "This family is not in the office any more. Pick another, or leave it empty.";
+    else paid_to = paid_to ?? fam.name;
+    request_id = toId(data.get("request_id"));
+    if (request_id) {
+      const req = await getRequest(request_id);
+      if (!req || req.family_id !== family_id) request_id = null;
     }
-  } else if (forWhat === "work") {
-    work_id = toId(data.get("work_id"));
-    if (!work_id || !(await getWork(work_id))) errors.work_id = "Pick the work. Add it under Village works first if it is new.";
   }
+
+  const work_id = toId(data.get("work_id"));
+  if (work_id && !(await getWork(work_id))) errors.work_id = "This work is not in the office any more.";
   if (!paid_to) errors.paid_to = "Who was the money given to? (Kisko diya?)";
 
   return {
@@ -150,7 +158,9 @@ async function readMoneyOut(data: FormData): Promise<{ f: MoneyOutFields; errors
       paid_to: paid_to ?? "",
       amount_paise: amount ?? 0,
       head: head as MoneyOutFields["head"],
+      head_other,
       purpose: purpose as Purpose,
+      purpose_other,
       method: method as MoneyOutFields["method"],
       reference: clean(data.get("reference"), 120),
       family_id,

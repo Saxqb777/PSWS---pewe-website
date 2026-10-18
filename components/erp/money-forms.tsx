@@ -1,9 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { HEADS, METHODS, PLACES, PURPOSES, type Head, type Method, type Purpose } from "@/lib/erp/labels";
+import {
+  FAMILY_PURPOSES,
+  HEADS,
+  METHODS,
+  PLACES,
+  PURPOSES,
+  type Head,
+  type Method,
+  type Purpose,
+} from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
-import { AmountInput, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
 import styles from "./erp.module.css";
 
 type Action = (state: FormState, data: FormData) => Promise<FormState>;
@@ -34,6 +43,7 @@ export interface MoneyInInitial {
   from_place?: string | null;
   amount_paise?: number | null;
   head?: Head;
+  head_other?: string | null;
   method?: Method;
   reference?: string | null;
   note?: string | null;
@@ -67,7 +77,15 @@ export function MoneyInForm({
           <input name="on_date" type="date" defaultValue={initial.on_date} />
         </Field>
       </div>
-      <Chips name="head" legend="What is it for?" hint="Kis cheez ke liye" options={choices(HEADS)} defaultValue={initial.head ?? "zakat"} />
+      <ChoiceWithOther
+        name="head"
+        legend="What is it for?"
+        hint="Kis cheez ke liye"
+        options={choices(HEADS)}
+        defaultValue={initial.head ?? "zakat"}
+        otherLabel="What is it for?"
+        otherDefault={initial.head_other}
+      />
       <Chips
         name="method"
         legend="How did it come?"
@@ -104,37 +122,33 @@ export function MoneyInForm({
 
 /* ------------------------------------------------------------ money paid */
 
-type For = "family" | "work" | "other";
-
-const FOR_CHOICES: Choice[] = [
-  { value: "family", en: "A family", hi: "Kisi parivaar ko madad" },
-  { value: "work", en: "A village work", hi: "Gaon ka kaam" },
-  { value: "other", en: "Office, bank or other", hi: "Baaki kharcha" },
-];
-
-const PURPOSES_FOR: Record<For, Purpose[]> = {
-  family: ["medical", "education", "livelihood", "emergency", "stipend", "other"],
-  work: ["works"],
-  other: ["office", "bank", "other"],
-};
-
-const HEAD_FOR: Record<For, Head> = { family: "zakat", work: "development", other: "other" };
+/** The money a payment usually comes out of, by what it was for. */
+const HEAD_FOR = (p: Purpose | ""): Head | null =>
+  p === "" ? null : FAMILY_PURPOSES.includes(p as Purpose) ? "zakat" : p === "works" ? "development" : null;
 
 export interface MoneyOutInitial {
   on_date: string;
-  for?: For;
   paid_to?: string;
   amount_paise?: number | null;
   head?: Head;
+  head_other?: string | null;
   purpose?: Purpose;
+  purpose_other?: string | null;
   method?: Method;
   reference?: string | null;
   family_id?: number | null;
   request_id?: number | null;
   work_id?: number | null;
   note?: string | null;
+  /** opened from "Family helped": show the family box from the start */
+  forFamily?: boolean;
 }
 
+/**
+ * A payment: who, how much, and what for. A family or a village work can be
+ * linked when it applies, but nothing is required beyond who and how much,
+ * so a payment can always be saved.
+ */
 export function MoneyOutForm({
   action,
   initial,
@@ -151,34 +165,59 @@ export function MoneyOutForm({
   /** when paying a request that was approved, its line is shown and kept */
   request?: { id: number; label: string } | null;
 }) {
-  const [forWhat, setFor] = useState<For>(initial.for ?? "family");
-  const [head, setHead] = useState<Head>(initial.head ?? HEAD_FOR[initial.for ?? "family"]);
-  const [purpose, setPurpose] = useState<Purpose | "">(initial.purpose ?? (initial.for === "work" ? "works" : ""));
+  const [purpose, setPurpose] = useState<Purpose | "">(initial.purpose ?? "");
+  const [head, setHead] = useState<Head>(initial.head ?? HEAD_FOR(initial.purpose ?? "") ?? "zakat");
+  const [headTouched, setHeadTouched] = useState(!!initial.head);
   const [family, setFamily] = useState<string>(initial.family_id ? String(initial.family_id) : "");
   const [method, setMethod] = useState<Method>(initial.method ?? "bank");
+  const showFamily =
+    !!request ||
+    !!initial.forFamily ||
+    family !== "" ||
+    (purpose !== "" && FAMILY_PURPOSES.includes(purpose as Purpose));
+  const showWork = purpose === "works" || !!initial.work_id;
 
   return (
     <ErpForm action={action}>
       {request && <input type="hidden" name="request_id" value={request.id} />}
-      <Chips
-        name="for"
-        legend="Who or what was it paid for?"
-        hint="Kiske liye"
-        options={request ? FOR_CHOICES.slice(0, 1) : FOR_CHOICES}
-        value={forWhat}
-        onChange={(v) => {
-          const f = v as For;
-          setFor(f);
-          setHead(HEAD_FOR[f]);
-          setPurpose(f === "work" ? "works" : "");
-        }}
-      />
 
-      {forWhat === "family" && (
+      <div className={styles.grid}>
+        <Field label="Paid to" hint="Kisko diya: person, shop or contractor" name="paid_to" wide>
+          <input name="paid_to" autoComplete="off" defaultValue={initial.paid_to ?? ""} />
+        </Field>
+        <AmountInput name="amount" defaultPaise={initial.amount_paise} />
+        <Field label="Date" hint="Kab diya" name="on_date">
+          <input name="on_date" type="date" defaultValue={initial.on_date} />
+        </Field>
+      </div>
+
+      <ChoiceWithOther
+        name="purpose"
+        legend="What was it for?"
+        hint="Kis kaam ke liye"
+        options={choices(PURPOSES)}
+        value={purpose}
+        onChange={(v) => {
+          const p = v as Purpose;
+          setPurpose(p);
+          const h = HEAD_FOR(p);
+          if (h && !headTouched) setHead(h);
+        }}
+        otherLabel="What was it for?"
+        otherDefault={initial.purpose_other}
+      />
+      {purpose === "stipend" && !request && (
+        <p className={styles.note}>
+          For regular monthly help, use the Monthly help page: it pays everyone at once and never pays a family twice in
+          a month.
+        </p>
+      )}
+
+      {showFamily && (
         <div className={styles.grid}>
-          <Field label="Family" hint="Kis parivaar ko" name="family_id" wide>
+          <Field label="Which family?" hint="Optional. Leave empty if it was not for a family" name="family_id" wide>
             <select name="family_id" value={family} onChange={(e) => setFamily(e.target.value)} disabled={!!request}>
-              <option value="">Choose…</option>
+              <option value="">Not for a family</option>
               <option value="new">＋ A new family (not in the list yet)</option>
               {families.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -203,10 +242,14 @@ export function MoneyOutForm({
         </div>
       )}
 
-      {forWhat === "work" && (
-        <Field label="Which work?" hint="Kaunsa kaam" name="work_id">
+      {showWork && (
+        <Field
+          label="Which village work?"
+          hint="Optional. Add the work under Village works to see its total cost"
+          name="work_id"
+        >
           <select name="work_id" defaultValue={initial.work_id ? String(initial.work_id) : ""}>
-            <option value="">Choose…</option>
+            <option value="">Not linked to a work</option>
             {works.map((w) => (
               <option key={w.id} value={w.id}>
                 {w.name}
@@ -216,46 +259,18 @@ export function MoneyOutForm({
         </Field>
       )}
 
-      {forWhat !== "work" && (
-        <Chips
-          name="purpose"
-          legend="What was it for?"
-          hint="Kis kaam ke liye"
-          options={choices(PURPOSES, PURPOSES_FOR[forWhat])}
-          value={purpose}
-          onChange={(v) => setPurpose(v as Purpose)}
-        />
-      )}
-      {forWhat === "work" && <input type="hidden" name="purpose" value="works" />}
-      {forWhat === "family" && purpose === "stipend" && (
-        <p className={styles.note}>
-          For regular monthly help, use the Monthly help page: it pays everyone at once and never pays a family twice for
-          the same month.
-        </p>
-      )}
-
-      <div className={styles.grid}>
-        <AmountInput name="amount" defaultPaise={initial.amount_paise} />
-        <Field label="Date" hint="Kab diya" name="on_date">
-          <input name="on_date" type="date" defaultValue={initial.on_date} />
-        </Field>
-        <Field
-          label="Paid to"
-          hint={forWhat === "family" ? "Leave empty if it went to the family itself" : "Contractor, shop or person"}
-          name="paid_to"
-          wide
-        >
-          <input name="paid_to" autoComplete="off" defaultValue={initial.paid_to ?? ""} />
-        </Field>
-      </div>
-
-      <Chips
+      <ChoiceWithOther
         name="head"
-        legend="Paid out of"
+        legend="From which money?"
         hint="Kis paise se"
         options={choices(HEADS)}
         value={head}
-        onChange={(v) => setHead(v as Head)}
+        onChange={(v) => {
+          setHead(v as Head);
+          setHeadTouched(true);
+        }}
+        otherLabel="Which money?"
+        otherDefault={initial.head_other}
       />
       <Chips
         name="method"
