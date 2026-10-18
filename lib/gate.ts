@@ -59,5 +59,7 @@ export function isOpenPath(pathname: string): boolean {
   if (pathname === "/kyc" || pathname === "/api/kyc") return true;
   // The private preview link for the new front page checks its own key.
   if (pathname === "/preview") return true;
+  // The office has its own sign-in: everyone there has a login of their own.
+  if (pathname === "/erp" || pathname.startsWith("/erp/")) return true;
   return false;
 }
