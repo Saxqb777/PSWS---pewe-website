@@ -12,7 +12,7 @@ const GROUPS: { href: string; label: string; admin?: boolean }[][] = [
     { href: "/erp", label: "Home" },
     { href: "/erp/money", label: "Money" },
     { href: "/erp/families", label: "Families" },
-    { href: "/erp/stipends", label: "Monthly stipends" },
+    { href: "/erp/stipends", label: "Monthly help" },
     { href: "/erp/works", label: "Village works" },
   ],
   [

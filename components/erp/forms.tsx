@@ -48,13 +48,13 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
           <label className={styles.check} style={{ marginBottom: 14 }}>
             <input type="checkbox" name="stipend_active" defaultChecked={family?.stipend_active ?? false} />
             <span>
-              <strong>On the monthly stipend</strong>
+              <strong>Gets monthly help</strong>
               <span className={styles.hint} style={{ display: "block" }}>
                 Har maheene paisa milta hai
               </span>
             </span>
           </label>
-          <AmountInput name="stipend" label="Stipend each month" hint="Har maheene kitna" defaultPaise={family?.stipend_paise} />
+          <AmountInput name="stipend" label="Monthly help amount" hint="Har maheene kitna" defaultPaise={family?.stipend_paise} />
         </div>
       </div>
       {family && (
@@ -140,7 +140,7 @@ export function WorkForm({ action, work, submit }: { action: Action; work?: Work
         <Field label="Place" hint="Kahan" name="place">
           <input name="place" list="places" autoComplete="off" defaultValue={work?.place ?? ""} />
         </Field>
-        <AmountInput name="budget" label="Budget" hint="Kitna kharcha socha, optional" defaultPaise={work?.budget_paise} />
+        <AmountInput name="budget" label="Planned cost" hint="Kitna kharcha socha, optional" defaultPaise={work?.budget_paise} />
       </div>
       <Chips
         name="status"

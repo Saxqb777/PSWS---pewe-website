@@ -12,17 +12,17 @@ type Labelled<K extends string> = Record<K, { en: string; hi: string }>;
 export const HEADS = {
   zakat: { en: "Zakat", hi: "Zakat" },
   donation: { en: "Donation (Sadaqah)", hi: "Sadaqah, atiya" },
-  development: { en: "Village development", hi: "Gaon ke kaam" },
+  development: { en: "Village work", hi: "Gaon ke kaam" },
   other: { en: "Other", hi: "Baaki" },
 } satisfies Labelled<string>;
 export type Head = keyof typeof HEADS;
 
 /** What a payment was for. */
 export const PURPOSES = {
-  stipend: { en: "Monthly stipend", hi: "Maheena" },
+  stipend: { en: "Monthly help", hi: "Maheena" },
   medical: { en: "Medical", hi: "Ilaaj" },
   education: { en: "Education", hi: "Padhai" },
-  livelihood: { en: "Livelihood", hi: "Rozgaar" },
+  livelihood: { en: "Help to earn", hi: "Rozgaar" },
   emergency: { en: "Emergency", hi: "Aafat" },
   works: { en: "Village works", hi: "Gaon ka kaam" },
   office: { en: "Office and running costs", hi: "Daftar ka kharcha" },
@@ -45,9 +45,9 @@ export const METHOD_SHORT: Record<Method, string> = { cash: "Cash", upi: "UPI", 
 /** What a family asked for. */
 export const KINDS = {
   medical: { en: "Medical", hi: "Ilaaj" },
-  stipend: { en: "Monthly stipend", hi: "Maheena" },
+  stipend: { en: "Monthly help", hi: "Maheena" },
   education: { en: "Education", hi: "Padhai" },
-  livelihood: { en: "Livelihood", hi: "Rozgaar" },
+  livelihood: { en: "Help to earn", hi: "Rozgaar" },
   emergency: { en: "Emergency", hi: "Aafat" },
   other: { en: "Other", hi: "Baaki" },
 } satisfies Labelled<string>;

@@ -50,7 +50,7 @@ export default async function FamilyPage({
           items={[
             ["Mobile", f.phone && <a className={styles.link} href={`tel:+${f.phone}`}>{showPhone(f.phone)}</a>],
             ["People in the house", f.people],
-            ["Monthly stipend", f.stipend_active ? `${inr(f.stipend_paise)} a month` : "Not on the stipend"],
+            ["Monthly help", f.stipend_active ? `${inr(f.stipend_paise)} a month` : "None"],
             ["Given so far", inr(total)],
             ["Notes", f.notes && <span style={{ whiteSpace: "pre-line" }}>{f.notes}</span>],
           ]}

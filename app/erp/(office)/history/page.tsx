@@ -11,7 +11,7 @@ const KINDS: [string, string][] = [
   ["", "Everything"],
   ["money_in", "Receipts"],
   ["money_out", "Payments"],
-  ["stipend", "Stipends"],
+  ["stipend", "Monthly help"],
   ["family", "Families"],
   ["request", "Requests"],
   ["work", "Works"],

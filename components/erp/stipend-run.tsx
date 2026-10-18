@@ -100,7 +100,7 @@ export function StipendRun({
             <Field label="Date sent" hint="Kab bheja" name="on_date">
               <input name="on_date" type="date" defaultValue={todayIST()} />
             </Field>
-            <Field label="Reference" hint="e.g. NEFT batch, optional" name="reference">
+            <Field label="Bank number" hint="Optional" name="reference">
               <input name="reference" autoComplete="off" />
             </Field>
           </div>

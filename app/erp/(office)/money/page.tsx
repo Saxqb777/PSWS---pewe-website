@@ -87,7 +87,7 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
         <div className={styles.filtersSearch}>
           <label className={styles.field}>
             <span className={styles.srOnly}>Search</span>
-            <input name="q" type="search" placeholder="Name, number or reference" defaultValue={q ?? ""} />
+            <input name="q" type="search" placeholder="Name or number" defaultValue={q ?? ""} />
           </label>
           <button type="submit" className={styles.btnQuiet}>
             Show

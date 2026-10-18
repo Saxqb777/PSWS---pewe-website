@@ -46,8 +46,8 @@ export default async function WorkPage({
         <Facts
           items={[
             ["Spent", inr(w.spent_paise)],
-            ["Budget", w.budget_paise && inr(w.budget_paise)],
-            ["Left", left !== null && (left < 0 ? <span className={styles.out}>{inr(-left)} over the budget</span> : inr(left))],
+            ["Planned cost", w.budget_paise && inr(w.budget_paise)],
+            ["Left", left !== null && (left < 0 ? <span className={styles.out}>{inr(-left)} more than planned</span> : inr(left))],
             ["Started", w.started_on && showDate(w.started_on)],
             ["Finished", w.finished_on && showDate(w.finished_on)],
             ["Notes", w.notes && <span style={{ whiteSpace: "pre-line" }}>{w.notes}</span>],

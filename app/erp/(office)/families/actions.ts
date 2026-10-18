@@ -95,7 +95,7 @@ export async function decideFamilyRequest(requestId: number, _: FormState, data:
   return {
     done: approve
       ? req.kind === "stipend"
-        ? `Approved. ${req.family_name} is now on the monthly stipend at ${inr(approved_paise)} a month.`
+        ? `Approved. ${req.family_name} now gets monthly help of ${inr(approved_paise)}.`
         : "Approved. Record the payment when the money is given."
       : "Saved as not approved.",
   };

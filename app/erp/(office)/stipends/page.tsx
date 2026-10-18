@@ -7,7 +7,7 @@ import { Empty, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { runStipends } from "../families/actions";
 
-export const metadata = { title: "Monthly stipends" };
+export const metadata = { title: "Monthly help" };
 
 export default async function StipendsPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const u = await requireUser();
@@ -25,7 +25,7 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Monthly stipends" sub="Pay everyone on the stipend in one go." />
+      <PageHead title="Monthly help" sub="Pay every family on monthly help in one go." />
 
       <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
         <label className={styles.field}>
@@ -70,7 +70,7 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
             </Link>
           }
         >
-          Nobody is on the monthly stipend yet. Open a family, choose Change details, and tick “On the monthly stipend”.
+          No family gets monthly help yet. Open a family, choose Change details, and tick “Gets monthly help”.
         </Empty>
       ) : editor ? (
         <StipendRun key={month} action={runStipends.bind(null, month)} month={month} lines={lines} />

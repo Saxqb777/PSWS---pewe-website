@@ -351,7 +351,7 @@ export async function getFamily(id: number): Promise<Family | null> {
 }
 
 const familySummary = (f: FamilyFields) =>
-  `Family ${f.name}${f.place ? ", " + f.place : ""}${f.stipend_active && f.stipend_paise ? `, stipend ${inr(f.stipend_paise)} a month` : ""}`;
+  `Family ${f.name}${f.place ? ", " + f.place : ""}${f.stipend_active && f.stipend_paise ? `, monthly help ${inr(f.stipend_paise)}` : ""}`;
 
 export async function addFamily(u: User, f: FamilyFields): Promise<number> {
   const rows = await db()`
@@ -514,7 +514,7 @@ export async function payStipends(
   const last = num(reserved[0].last_no);
   const first = last - todo.length + 1;
   const vouchers = todo.map((_, i) => `P/${fy}/${pad(first + i)}`);
-  const note = `Stipend for ${showMonth(month)}`;
+  const note = `Monthly help for ${showMonth(month)}`;
 
   const rows = await db()`
     INSERT INTO erp_money_out
@@ -530,7 +530,7 @@ export async function payStipends(
   await db()`UPDATE erp_request SET status = 'done', updated_at = now(), updated_by = ${u.id}
              WHERE kind = 'stipend' AND status = 'approved' AND family_id = ANY(${todo.map((l) => l.family_id)}::bigint[])`;
   await logChange(u.id, "paid", "stipend", null,
-    `Stipends for ${showMonth(month)}: ${rows.length} families, ${inr(total)} (${vouchers[0]} to ${vouchers[vouchers.length - 1]})`);
+    `Monthly help for ${showMonth(month)}: ${rows.length} families, ${inr(total)} (${vouchers[0]} to ${vouchers[vouchers.length - 1]})`);
   return rows.length;
 }
 
@@ -591,7 +591,7 @@ export async function addWork(u: User, f: WorkFields): Promise<number> {
     VALUES (${f.name}, ${f.place}, ${f.status}, ${f.started_on}, ${f.finished_on}, ${f.budget_paise}, ${f.notes}, ${u.id})
     RETURNING id`;
   const id = num(rows[0].id);
-  await logChange(u.id, "added", "work", id, `Work ${f.name}${f.budget_paise ? ", budget " + inr(f.budget_paise) : ""}`);
+  await logChange(u.id, "added", "work", id, `Work ${f.name}${f.budget_paise ? ", planned cost " + inr(f.budget_paise) : ""}`);
   return id;
 }
 
@@ -600,7 +600,7 @@ export async function updateWork(u: User, id: number, f: WorkFields) {
     UPDATE erp_work SET name = ${f.name}, place = ${f.place}, status = ${f.status}, started_on = ${f.started_on},
       finished_on = ${f.finished_on}, budget_paise = ${f.budget_paise}, notes = ${f.notes}, updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id}`;
-  await logChange(u.id, "changed", "work", id, `Work ${f.name}: ${f.status}${f.budget_paise ? ", budget " + inr(f.budget_paise) : ""}`);
+  await logChange(u.id, "changed", "work", id, `Work ${f.name}: ${f.status}${f.budget_paise ? ", planned cost " + inr(f.budget_paise) : ""}`);
 }
 
 export async function workNames(): Promise<{ id: number; name: string }[]> {
@@ -911,7 +911,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
         FROM erp_money_in i LEFT JOIN erp_user u ON u.id = i.created_by
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, receipt_no`;
       return {
-        columns: ["Receipt no", "Date", "From", "Place", "Mobile", "Amount (Rs)", "For", "How", "Reference", "Note", "Entered by", "Cancelled", "Why cancelled"],
+        columns: ["Receipt no", "Date", "From", "Place", "Mobile", "Amount (Rs)", "For", "How", "Number", "Note", "Entered by", "Cancelled", "Why cancelled"],
         rows: rows.map((r) => [r.receipt_no, r.d, r.from_name, r.from_place, csvPhone(r.from_phone), rupees(r.amount_paise),
           HEADS[r.head as Head]?.en ?? r.head, METHODS[r.method as Method]?.en ?? r.method, r.reference, r.note, r.entered_by,
           r.cancelled ? "Yes" : "", r.cancel_reason]),
@@ -926,7 +926,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
           LEFT JOIN erp_work w ON w.id = o.work_id
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, voucher_no`;
       return {
-        columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Reference", "Family", "Work", "Stipend month", "Note", "Entered by", "Cancelled", "Why cancelled"],
+        columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Number", "Family", "Work", "Monthly help for", "Note", "Entered by", "Cancelled", "Why cancelled"],
         rows: rows.map((r) => [r.voucher_no, r.d, r.paid_to, rupees(r.amount_paise), PURPOSES[r.purpose as Purpose]?.en ?? r.purpose,
           HEADS[r.head as Head]?.en ?? r.head, METHODS[r.method as Method]?.en ?? r.method, r.reference, r.family, r.work,
           r.stipend_month, r.note, r.entered_by, r.cancelled ? "Yes" : "", r.cancel_reason]),
@@ -935,7 +935,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "families": {
       const rows = await listFamilies(fy, null, "all");
       return {
-        columns: ["Name", "Place", "Mobile", "People", "On stipend", "Stipend a month (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
+        columns: ["Name", "Place", "Mobile", "People", "Monthly help", "Monthly help (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
         rows: rows.map((r) => [r.name, r.place, csvPhone(r.phone), r.people, r.stipend_active ? "Yes" : "", rupees(r.stipend_paise),
           rupees(r.helped_this_year), r.last_help, r.waiting, r.active ? "Yes" : "No", r.notes]),
       };
@@ -951,7 +951,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "works": {
       const rows = await listWorks();
       return {
-        columns: ["Work", "Place", "Status", "Started", "Finished", "Budget (Rs)", "Spent (Rs)", "Notes"],
+        columns: ["Work", "Place", "Status", "Started", "Finished", "Planned cost (Rs)", "Spent (Rs)", "Notes"],
         rows: rows.map((r) => [r.name, r.place, r.status, r.started_on, r.finished_on, rupees(r.budget_paise), rupees(r.spent_paise), r.notes]),
       };
     }

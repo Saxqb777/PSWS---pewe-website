@@ -11,10 +11,17 @@ type Action = (state: FormState, data: FormData) => Promise<FormState>;
 const choices = <K extends string>(o: Record<K, { en: string; hi: string }>, keys?: K[]): Choice[] =>
   (keys ?? (Object.keys(o) as K[])).map((k) => ({ value: k, en: o[k].en, hi: o[k].hi }));
 
+const REFERENCE_LABEL: Record<Method, string> = {
+  cash: "Number",
+  upi: "UPI number",
+  bank: "Bank number (UTR)",
+  cheque: "Cheque number",
+};
+
 const REFERENCE_HINT: Record<Method, string> = {
   cash: "Not needed for cash",
-  upi: "UPI reference number",
-  bank: "UTR or bank reference",
+  upi: "From the UPI message",
+  bank: "From the bank message",
   cheque: "Cheque number and bank",
 };
 
@@ -70,7 +77,7 @@ export function MoneyInForm({
         onChange={(v) => setMethod(v as Method)}
       />
       <div className={styles.grid}>
-        <Field label="Reference" hint={REFERENCE_HINT[method]} name="reference">
+        <Field label={REFERENCE_LABEL[method]} hint={REFERENCE_HINT[method]} name="reference">
           <input name="reference" autoComplete="off" defaultValue={initial.reference ?? ""} />
         </Field>
         <Field label="Their place" hint="Gaon ya shehar, if you know" name="from_place">
@@ -222,7 +229,7 @@ export function MoneyOutForm({
       {forWhat === "work" && <input type="hidden" name="purpose" value="works" />}
       {forWhat === "family" && purpose === "stipend" && (
         <p className={styles.note}>
-          For the regular monthly stipend, use Monthly stipends: it pays everyone at once and never pays a family twice for
+          For regular monthly help, use the Monthly help page: it pays everyone at once and never pays a family twice for
           the same month.
         </p>
       )}
@@ -259,7 +266,7 @@ export function MoneyOutForm({
         onChange={(v) => setMethod(v as Method)}
       />
       <div className={styles.grid}>
-        <Field label="Reference" hint={REFERENCE_HINT[method]} name="reference">
+        <Field label={REFERENCE_LABEL[method]} hint={REFERENCE_HINT[method]} name="reference">
           <input name="reference" autoComplete="off" defaultValue={initial.reference ?? ""} />
         </Field>
         <Field label="Note" hint="Optional, e.g. bill number" name="note">

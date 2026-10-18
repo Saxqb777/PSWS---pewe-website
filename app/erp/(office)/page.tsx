@@ -118,7 +118,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
         </section>
 
         <section>
-          <Section title="Monthly stipends" />
+          <Section title="Monthly help" />
           {stipends.length ? (
             <div className={styles.line}>
               <span>
@@ -129,7 +129,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
               </Link>
             </div>
           ) : (
-            <Empty>Nobody is on the monthly stipend yet.</Empty>
+            <Empty>No family gets monthly help yet.</Empty>
           )}
         </section>
       </div>
