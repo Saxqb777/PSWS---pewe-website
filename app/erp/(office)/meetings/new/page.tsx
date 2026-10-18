@@ -9,7 +9,7 @@ export default async function NewMeeting() {
   await requireUser("editor");
   return (
     <>
-      <PageHead title="Meeting or notice" sub="Baithak ya elaan" back={{ href: "/erp/meetings", label: "Meetings and notices" }} />
+      <PageHead title="Meeting or notice" back={{ href: "/erp/meetings", label: "Meetings and notices" }} />
       <MeetingForm action={saveMeeting.bind(null, null)} submit="Save" />
     </>
   );

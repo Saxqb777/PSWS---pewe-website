@@ -61,9 +61,9 @@ export default async function WorkPage({
       </div>
 
       <h2 className={styles.h2}>
-        Payments<small>Is kaam ka kharcha</small>
+        Payments
       </h2>
-      {payments.length ? <MoneyList rows={payments} /> : <Empty>No payments recorded for this work yet.</Empty>}
+      {payments.length ? <MoneyList rows={payments} byDay={false} /> : <Empty>No payments recorded for this work yet.</Empty>}
     </>
   );
 }

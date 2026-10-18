@@ -236,6 +236,8 @@ export interface MoneyRow {
   head: Head;
   method: Method;
   purpose: Purpose | null;
+  /** for a payment towards a village work, the work's name */
+  work_name: string | null;
   cancelled: boolean;
 }
 
@@ -251,16 +253,16 @@ export async function listMoney(f: MoneyFilter): Promise<MoneyRow[]> {
   const rows = await db()`
     SELECT * FROM (
       SELECT 'in' AS dir, id, receipt_no AS no, to_char(on_date, 'YYYY-MM-DD') AS on_date, from_name AS who,
-             amount_paise, head, method, NULL::text AS purpose, cancelled_at IS NOT NULL AS cancelled
+             amount_paise, head, method, NULL::text AS purpose, NULL::text AS work_name, cancelled_at IS NOT NULL AS cancelled
       FROM erp_money_in
       WHERE fy = ${f.fy} AND ${f.dir} IN ('all', 'in')
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
         AND (${like}::text IS NULL OR from_name ILIKE ${like} OR receipt_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
              OR coalesce(note, '') ILIKE ${like})
       UNION ALL
-      SELECT 'out', id, voucher_no, to_char(on_date, 'YYYY-MM-DD'), paid_to, amount_paise, head, method, purpose,
-             cancelled_at IS NOT NULL
-      FROM erp_money_out
+      SELECT 'out', o.id, voucher_no, to_char(on_date, 'YYYY-MM-DD'), paid_to, amount_paise, head, method, purpose,
+             w.name, cancelled_at IS NOT NULL
+      FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id
       WHERE fy = ${f.fy} AND ${f.dir} IN ('all', 'out')
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
         AND (${like}::text IS NULL OR paid_to ILIKE ${like} OR voucher_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
@@ -611,10 +613,10 @@ export async function paymentsFor(where: { familyId?: number; workId?: number })
   const fam = where.familyId ?? null;
   const work = where.workId ?? null;
   const rows = await db()`
-    SELECT 'out' AS dir, id, voucher_no AS no, to_char(on_date, 'YYYY-MM-DD') AS on_date, paid_to AS who, amount_paise, head,
-           method, purpose, cancelled_at IS NOT NULL AS cancelled
-    FROM erp_money_out
-    WHERE (${fam}::bigint IS NOT NULL AND family_id = ${fam}) OR (${work}::bigint IS NOT NULL AND work_id = ${work})
+    SELECT 'out' AS dir, o.id, voucher_no AS no, to_char(on_date, 'YYYY-MM-DD') AS on_date, paid_to AS who, amount_paise,
+           head, method, purpose, w.name AS work_name, cancelled_at IS NOT NULL AS cancelled
+    FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id
+    WHERE (${fam}::bigint IS NOT NULL AND o.family_id = ${fam}) OR (${work}::bigint IS NOT NULL AND o.work_id = ${work})
     ORDER BY on_date DESC, voucher_no DESC LIMIT 500`;
   return rows.map((r) => ({ ...r, id: num(r.id), amount_paise: num(r.amount_paise) }) as MoneyRow);
 }

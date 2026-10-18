@@ -13,7 +13,7 @@ export default async function MeetingsPage() {
   const editor = canDo(u.role, "editor");
   return (
     <>
-      <PageHead title="Meetings and notices" sub="What the committee met about and decided, and what it told the village.">
+      <PageHead title="Meetings and notices">
         {editor && (
           <Link href="/erp/meetings/new" className={styles.btn}>
             + Add a meeting or notice

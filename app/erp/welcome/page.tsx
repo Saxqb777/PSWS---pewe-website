@@ -13,11 +13,13 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   return (
     <main className={styles.door}>
       <div className={styles.doorBox}>
-        <p className={styles.doorWord}>Pewe Social Welfare Society · the office</p>
+        <p className={styles.doorWord}>
+          PSWS <span>Office</span>
+        </p>
         {invite ? (
           <>
             <h1 className={styles.doorTitle}>Welcome, {invite.name}</h1>
-            <p className={styles.sub}>Choose a password. Apna password khud banaiye.</p>
+            <p className={styles.sub}>Choose your password. Only you will know it.</p>
             <ErpForm action={setPassword}>
               <input type="hidden" name="token" value={String(t)} />
               <Field label="New password" hint="Kam se kam 8 akshar" name="password">
@@ -28,10 +30,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
               </Field>
               <Submit>Save and open the office</Submit>
             </ErpForm>
-            <p className={styles.doorNote}>
-              From now on you sign in with your mobile number and this password. Nobody else, not even the admin, can
-              see it.
-            </p>
+            <p className={styles.doorNote}>From now on you sign in with your mobile number and this password.</p>
           </>
         ) : (
           <>

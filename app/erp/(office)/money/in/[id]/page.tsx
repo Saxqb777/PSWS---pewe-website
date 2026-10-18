@@ -25,13 +25,13 @@ export default async function MoneyInPage({
   const m = id ? await getMoneyIn(id) : null;
   if (!m) notFound();
   const sp = await searchParams;
-  const words = `${rupeesInWords(m.amount_paise)} rupees`;
+  const words = rupeesInWords(m.amount_paise);
   const how = METHODS[m.method].en.split(" (")[0];
   const text = [
     SOCIETY.name,
     `Receipt ${m.receipt_no} · ${showDate(m.on_date)}`,
     "",
-    `Received with thanks ${inr(m.amount_paise)} (${words}) from ${m.from_name} towards ${HEADS[m.head].en}, by ${how}${m.reference ? ` (ref. ${m.reference})` : ""}.`,
+    `Received with thanks ${inr(m.amount_paise)} (${words} rupees) from ${m.from_name} towards ${HEADS[m.head].en}, by ${how}${m.reference ? ` (ref. ${m.reference})` : ""}.`,
     "",
     `Thank you. ${SOCIETY.shortName} office, Pewe`,
   ].join("\n");
@@ -39,7 +39,7 @@ export default async function MoneyInPage({
 
   return (
     <>
-      <PageHead title={m.receipt_no} sub={m.cancelled_at ? "Cancelled" : "Money received"} back={{ href: "/erp/money", label: "Money" }}>
+      <PageHead title={`Receipt ${m.receipt_no}`} sub={m.cancelled_at ? "Cancelled" : showDate(m.on_date)} back={{ href: "/erp/money", label: "Money" }}>
         {!m.cancelled_at && (
           <>
             <a className={styles.btn} href={waLink(m.from_phone, text)} target="_blank" rel="noopener noreferrer">
@@ -67,30 +67,49 @@ export default async function MoneyInPage({
           <p className={styles.receiptName}>{SOCIETY.name}</p>
           <p className={styles.receiptMr}>{SOCIETY.nameMarathi}</p>
           <p className={styles.receiptAddr}>
-            {SOCIETY.address.line1}, {SOCIETY.address.line2}, {SOCIETY.address.line3} · Reg. {SOCIETY.societyRegNo} ·{" "}
-            {SOCIETY.registrationNo}
+            {SOCIETY.address.line1}, Tal. Guhagar, Dist. Ratnagiri
+            <br />
+            Reg. {SOCIETY.societyRegNo} · {SOCIETY.registrationNo}
           </p>
         </header>
         <div className={styles.receiptLine}>
-          <span>Receipt {m.receipt_no}</span>
-          <span>{showDate(m.on_date)}</span>
+          <span>
+            No. <b>{m.receipt_no}</b>
+          </span>
+          <span>
+            Date <b>{showDate(m.on_date)}</b>
+          </span>
         </div>
-        <p className={styles.receiptWord}>Received with thanks from</p>
-        <p className={styles.receiptBody}>
-          {m.from_name}
-          {m.from_place ? `, ${m.from_place}` : ""}
+        <p className={styles.receiptField}>
+          Received with thanks from
+          <span className={styles.receiptFill}>
+            {m.from_name}
+            {m.from_place ? `, ${m.from_place}` : ""}
+          </span>
         </p>
-        <p className={styles.receiptAmount}>{inr(m.amount_paise)}</p>
-        <p className={styles.receiptWords}>{words} only</p>
-        <p className={styles.receiptWord}>Towards</p>
-        <p className={styles.receiptBody}>
-          {HEADS[m.head].en}, by {how}
-          {m.reference ? ` · ref. ${m.reference}` : ""}
+        <p className={styles.receiptField}>
+          the sum of Rupees
+          <span className={styles.receiptFill}>{words} only</span>
         </p>
-        {m.note && <p className={styles.receiptWords} style={{ marginTop: 8 }}>{m.note}</p>}
+        <p className={styles.receiptField}>
+          towards
+          <span className={styles.receiptFill}>
+            {HEADS[m.head].en}, by {how}
+            {m.reference ? ` (ref. ${m.reference})` : ""}
+          </span>
+        </p>
+        {m.note && (
+          <p className={styles.receiptField}>
+            note
+            <span className={styles.receiptFill}>{m.note}</span>
+          </p>
+        )}
         <footer className={styles.receiptFoot}>
-          <span>Entered by {m.created_by_name ?? "the office"}</span>
-          <span className={styles.receiptSign}>For {SOCIETY.shortName}</span>
+          <span className={styles.receiptBox}>{inr(m.amount_paise)}</span>
+          <span className={styles.receiptSign}>
+            <b>For {SOCIETY.shortName}</b>
+            {m.created_by_name ?? "the office"}
+          </span>
         </footer>
         {m.cancelled_at && <span className={styles.stamp}>Cancelled</span>}
       </article>

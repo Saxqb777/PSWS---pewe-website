@@ -12,7 +12,7 @@ export default async function NewMoneyIn() {
   const names = await knownNames("in");
   return (
     <>
-      <PageHead title="Money received" sub="Paisa aaya. A receipt number is given when you save." back={{ href: "/erp/money", label: "Money" }} />
+      <PageHead title="Money received" sub="A receipt number is given when you save." back={{ href: "/erp/money", label: "Money" }} />
       <MoneyInForm action={saveMoneyIn.bind(null, null)} initial={{ on_date: todayIST() }} names={names} submit="Save and make the receipt" />
     </>
   );

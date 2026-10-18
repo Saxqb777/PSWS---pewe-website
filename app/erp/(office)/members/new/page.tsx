@@ -9,7 +9,7 @@ export default async function NewMember() {
   await requireUser("editor");
   return (
     <>
-      <PageHead title="Add a member" sub="Naya sadasya" back={{ href: "/erp/members", label: "Members" }} />
+      <PageHead title="Add a member" back={{ href: "/erp/members", label: "Members" }} />
       <MemberForm action={saveMember.bind(null, null)} submit="Save the member" />
     </>
   );

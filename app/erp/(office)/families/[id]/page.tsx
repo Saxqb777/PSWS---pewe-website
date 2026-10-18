@@ -58,7 +58,7 @@ export default async function FamilyPage({
       </div>
 
       <h2 className={styles.h2}>
-        Requests<small>Kya maanga</small>
+        Requests
       </h2>
       {requests.length ? (
         <ul className={styles.list}>
@@ -112,9 +112,9 @@ export default async function FamilyPage({
       )}
 
       <h2 className={styles.h2}>
-        Help given<small>Kya diya</small>
+        Help given
       </h2>
-      {payments.length ? <MoneyList rows={payments} /> : <Empty>Nothing paid to this family yet.</Empty>}
+      {payments.length ? <MoneyList rows={payments} byDay={false} /> : <Empty>Nothing paid to this family yet.</Empty>}
     </>
   );
 }

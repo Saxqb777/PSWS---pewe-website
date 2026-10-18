@@ -15,8 +15,7 @@ export default async function OfficeLayout({ children }: { children: React.React
     <>
       <header className={styles.top}>
         <Link href="/erp" className={styles.brand}>
-          <span className={styles.brandName}>PSWS</span>
-          <span className={styles.brandWord}>Office</span>
+          PSWS <span className={styles.brandWord}>Office</span>
         </Link>
         <Link href="/erp/account" className={styles.who}>
           {u.name}

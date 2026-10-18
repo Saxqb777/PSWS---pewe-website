@@ -9,7 +9,7 @@ export default async function NewFamily() {
   await requireUser("editor");
   return (
     <>
-      <PageHead title="Add a family" sub="Naya parivaar. Only the name is needed now; the rest can come later." back={{ href: "/erp/families", label: "Families" }} />
+      <PageHead title="Add a family" sub="Only the name is needed now. The rest can come later." back={{ href: "/erp/families", label: "Families" }} />
       <FamilyForm action={saveFamily.bind(null, null)} submit="Save the family" />
     </>
   );

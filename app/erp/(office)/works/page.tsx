@@ -13,7 +13,7 @@ export default async function WorksPage() {
   const editor = canDo(u.role, "editor");
   return (
     <>
-      <PageHead title="Village works" sub="Gaon ke kaam. Water, roads, lights, walls and repairs.">
+      <PageHead title="Village works">
         {editor && (
           <Link href="/erp/works/new" className={styles.btn}>
             + Add a work

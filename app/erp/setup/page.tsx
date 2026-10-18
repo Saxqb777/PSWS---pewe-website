@@ -14,7 +14,9 @@ export default async function SetupPage() {
   return (
     <main className={styles.door}>
       <div className={styles.doorBox}>
-        <p className={styles.doorWord}>Pewe Social Welfare Society · the office</p>
+        <p className={styles.doorWord}>
+          PSWS <span>Office</span>
+        </p>
         {done ? (
           <>
             <h1 className={styles.doorTitle}>The office is set up</h1>

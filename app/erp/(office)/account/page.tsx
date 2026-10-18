@@ -11,7 +11,7 @@ export default async function AccountPage() {
   const u = await requireUser();
   return (
     <>
-      <PageHead title="My account" sub="Mera account" />
+      <PageHead title="My account" />
       <div className={styles.card}>
         <Facts
           items={[
@@ -24,7 +24,7 @@ export default async function AccountPage() {
       </div>
 
       <h2 className={styles.h2}>
-        Change my password<small>Naya password</small>
+        Change my password
       </h2>
       <ErpForm action={changeMyPassword} resetOnDone>
         <div className={styles.grid}>

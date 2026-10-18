@@ -39,6 +39,9 @@ export const METHODS = {
 } satisfies Labelled<string>;
 export type Method = keyof typeof METHODS;
 
+/** The same, short enough for a line in a list. */
+export const METHOD_SHORT: Record<Method, string> = { cash: "Cash", upi: "UPI", bank: "Bank", cheque: "Cheque" };
+
 /** What a family asked for. */
 export const KINDS = {
   medical: { en: "Medical", hi: "Ilaaj" },
@@ -190,6 +193,20 @@ export function showDate(d: string | Date | null | undefined): string {
   const [y, m, day] = s.slice(0, 10).split("-");
   return `${Number(day)} ${MONTHS[Number(m) - 1]} ${y}`;
 }
+
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const LONG_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "2026-10-18" → "Saturday 18 October", with the year only when it is not this one. */
+export function showDay(d: string): string {
+  const [y, m, day] = d.slice(0, 10).split("-").map(Number);
+  const weekday = DAYS[new Date(Date.UTC(y, m - 1, day)).getUTCDay()];
+  const year = String(y) === todayIST().slice(0, 4) ? "" : ` ${y}`;
+  return `${weekday} ${day} ${LONG_MONTHS[m - 1]}${year}`;
+}
+
+/** "R/2026-27/0001" → "R/0001": inside one year's list the year goes without saying. */
+export const shortNo = (no: string) => no.replace(/\/\d{4}-\d{2}\//, "/");
 
 /** "2026-10" → "October 2026". */
 export function showMonth(ym: string): string {

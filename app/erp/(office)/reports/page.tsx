@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { knownYears, report } from "@/lib/erp/data";
 import { HEADS, METHODS, PURPOSES, fyMonths, fyOf, inr, showMonth, todayIST } from "@/lib/erp/labels";
 import { PrintButton } from "@/components/erp/shell";
-import { PageHead, Stat } from "@/components/erp/ui";
+import { PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Reports" };
@@ -43,7 +43,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <form className={`${styles.filters} ${styles.filtersShort} ${styles.noPrint}`} method="get">
         <label className={styles.field}>
-          <span className={styles.label}>Year</span>
+          <span className={styles.srOnly}>Year</span>
           <select name="fy" defaultValue={fy}>
             {years.map((y) => (
               <option key={y} value={y}>
@@ -53,9 +53,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </select>
         </label>
         <label className={styles.field}>
-          <span className={styles.label}>Month</span>
+          <span className={styles.srOnly}>Month</span>
           <select name="month" defaultValue={month ?? ""}>
-            <option value="">The whole year</option>
+            <option value="">Whole year</option>
             {months.map((m) => (
               <option key={m} value={m}>
                 {showMonth(m)}
@@ -68,22 +68,32 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </button>
       </form>
 
-      <div className={`${styles.stats} ${styles.stats4}`}>
-        <Stat label="Received">
-          <span className={styles.in}>{inr(tin)}</span>
-        </Stat>
-        <Stat label="Paid">
-          <span className={styles.out}>{inr(tout)}</span>
-        </Stat>
-        <Stat label="Received minus paid">{inr(tin - tout)}</Stat>
-        <Stat label="Families helped">
-          {r.families}
-          {r.stipendFamilies ? ` · ${r.stipendFamilies} on stipend` : ""}
-        </Stat>
-      </div>
+      <table className={styles.sum}>
+        <tbody>
+          <tr>
+            <td>Received</td>
+            <td className={styles.in}>{inr(tin)}</td>
+          </tr>
+          <tr>
+            <td>Paid</td>
+            <td className={styles.out}>{inr(tout)}</td>
+          </tr>
+          <tr>
+            <td>Received minus paid</td>
+            <td>{inr(tin - tout)}</td>
+          </tr>
+          <tr>
+            <td>Families helped</td>
+            <td>
+              {r.families}
+              {r.stipendFamilies ? `, ${r.stipendFamilies} on the stipend` : ""}
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <h2 className={styles.h2}>
-        By head<small>Kis cheez ka paisa</small>
+        By head
       </h2>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -117,7 +127,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <h2 className={styles.h2}>
-        What the money was paid for<small>Kharcha kis kaam mein</small>
+        What the money was paid for
       </h2>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -154,7 +164,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       {!month && (
         <>
           <h2 className={styles.h2}>
-            Month by month<small>Har maheena</small>
+            Month by month
           </h2>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -191,7 +201,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       )}
 
       <h2 className={styles.h2}>
-        How it came and went<small>Nakad, UPI, bank</small>
+        How it came and went
       </h2>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -216,7 +226,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <section className={styles.noPrint}>
         <h2 className={styles.h2}>
-          Download for Excel<small>Excel mein kholiye</small>
+          Download for Excel
         </h2>
         <ul className={styles.list}>
           {DOWNLOADS.map(([kind, label, forPeriod]) => (

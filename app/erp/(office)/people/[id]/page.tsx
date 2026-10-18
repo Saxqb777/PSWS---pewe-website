@@ -28,7 +28,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       {p.active && p.id !== me.id && (
         <>
           <h2 className={styles.h2}>
-            Password link<small>Naya link</small>
+            Password link
           </h2>
           <p className={styles.p}>
             {p.has_password

@@ -21,7 +21,7 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Families" sub="Parivaar. Who is helped, what they asked, what was given.">
+      <PageHead title="Families">
         {editor && (
           <Link href="/erp/families/new" className={styles.btn}>
             + Add a family
@@ -29,23 +29,12 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
         )}
       </PageHead>
 
-      <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
-        <input type="hidden" name="only" value={only} />
-        <label className={styles.field}>
-          <span className={styles.label}>Search</span>
-          <input name="q" type="search" placeholder="Name, place or mobile" defaultValue={q ?? ""} />
-        </label>
-        <button type="submit" className={styles.btnQuiet}>
-          Search
-        </button>
-      </form>
-
       <nav className={styles.tabs} aria-label="Show">
         {(
           [
             ["all", "All"],
             ["stipend", "On the stipend"],
-            ["waiting", "Waiting for a decision"],
+            ["waiting", "Waiting"],
           ] as const
         ).map(([o, label]) => (
           <Link key={o} href={tab(o)} aria-current={only === o ? "page" : undefined}>
@@ -53,6 +42,17 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
           </Link>
         ))}
       </nav>
+
+      <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
+        <input type="hidden" name="only" value={only} />
+        <label className={styles.field}>
+          <span className={styles.srOnly}>Search</span>
+          <input name="q" type="search" placeholder="Name, place or mobile" defaultValue={q ?? ""} />
+        </label>
+        <button type="submit" className={styles.btnQuiet}>
+          Search
+        </button>
+      </form>
 
       {rows.length ? (
         <ul className={styles.list}>
@@ -62,17 +62,21 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
                 <span className={styles.rowMain}>
                   <span className={styles.rowTitle}>
                     {f.name}
-                    {f.stipend_active && <span className={`${styles.tag} ${styles.tagIn}`}>Stipend</span>}
+                    {f.stipend_active && <span className={`${styles.tag} ${styles.tagIn}`}>stipend</span>}
                     {f.waiting > 0 && <span className={`${styles.tag} ${styles.tagWarn}`}>{f.waiting} waiting</span>}
-                    {!f.active && <span className={styles.tag}>Not helped now</span>}
+                    {!f.active && <span className={styles.tag}>not helped now</span>}
                   </span>
                   <span className={styles.rowMeta}>
-                    {[f.place, f.people ? `${f.people} people` : null, f.last_help ? `last helped ${showDate(f.last_help)}` : "not helped yet"]
+                    {[
+                      f.place,
+                      f.people ? `${f.people} people` : null,
+                      f.helped_this_year ? `${inr(f.helped_this_year)} this year` : null,
+                      f.last_help ? `last helped ${showDate(f.last_help)}` : "not helped yet",
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
                 </span>
-                <span className={styles.rowAmt}>{f.helped_this_year ? inr(f.helped_this_year) : ""}</span>
               </Link>
             </li>
           ))}
@@ -90,7 +94,6 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
           {q ? `No family matches “${q}”.` : only === "all" ? "No families yet." : "None right now."}
         </Empty>
       )}
-      {rows.length > 0 && <p className={styles.note} style={{ marginTop: 10 }}>The amount is what each family received this year (April to March).</p>}
     </>
   );
 }

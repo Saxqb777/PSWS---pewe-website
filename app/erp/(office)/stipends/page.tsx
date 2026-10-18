@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { stipendLines } from "@/lib/erp/data";
 import { canDo, fyMonths, fyOf, inr, showMonth, thisMonthIST, todayIST } from "@/lib/erp/labels";
 import { StipendRun } from "@/components/erp/stipend-run";
-import { Empty, PageHead, Stat } from "@/components/erp/ui";
+import { Empty, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { runStipends } from "../families/actions";
 
@@ -25,11 +25,11 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHead title="Monthly stipends" sub="Maheena. Pay everyone on the stipend in one go." />
+      <PageHead title="Monthly stipends" sub="Pay everyone on the stipend in one go." />
 
       <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
         <label className={styles.field}>
-          <span className={styles.label}>Month</span>
+          <span className={styles.srOnly}>Month</span>
           <select name="month" defaultValue={month}>
             {months.map((m) => (
               <option key={m} value={m}>
@@ -43,12 +43,24 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
         </button>
       </form>
 
-      <div className={`${styles.stats} ${styles.stats4}`} style={{ marginBottom: 18 }}>
-        <Stat label="Families">{lines.length}</Stat>
-        <Stat label="Paid this month">{paid.length}</Stat>
-        <Stat label="Paid so far">{inr(paid.reduce((s, l) => s + (l.paid_paise ?? 0), 0))}</Stat>
-        <Stat label="Still to pay">{inr(due.reduce((s, l) => s + l.stipend_paise, 0))}</Stat>
-      </div>
+      {lines.length > 0 && (
+        <table className={styles.sum} style={{ marginBottom: 18 }}>
+          <tbody>
+            <tr>
+              <td>Paid for {showMonth(month)}</td>
+              <td>
+                {paid.length} of {lines.length}
+              </td>
+              <td>{inr(paid.reduce((s, l) => s + (l.paid_paise ?? 0), 0))}</td>
+            </tr>
+            <tr>
+              <td>Still to pay</td>
+              <td>{due.length}</td>
+              <td>{inr(due.reduce((s, l) => s + l.stipend_paise, 0))}</td>
+            </tr>
+          </tbody>
+        </table>
+      )}
 
       {lines.length === 0 ? (
         <Empty

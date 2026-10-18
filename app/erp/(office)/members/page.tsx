@@ -17,7 +17,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHead title="Members" sub={`Sadasya. ${active} ${active === 1 ? "member" : "members"} of the Society.`}>
+      <PageHead title="Members" sub={`${active} ${active === 1 ? "member" : "members"}`}>
         {editor && (
           <Link href="/erp/members/new" className={styles.btn}>
             + Add a member
@@ -29,7 +29,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
       <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
         <label className={styles.field}>
-          <span className={styles.label}>Search</span>
+          <span className={styles.srOnly}>Search</span>
           <input name="q" type="search" placeholder="Name, place or mobile" defaultValue={q ?? ""} />
         </label>
         <button type="submit" className={styles.btnQuiet}>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { knownYears, listMoney } from "@/lib/erp/data";
 import { canDo, clean, fyMonths, fyOf, inr, showMonth, todayIST } from "@/lib/erp/labels";
-import { Empty, MoneyList, PageHead, Stat } from "@/components/erp/ui";
+import { Empty, MoneyList, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Money" };
@@ -30,58 +30,27 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
     return `/erp/money?${p}`;
   };
   const exportQs = new URLSearchParams({ fy, ...(month ? { month } : {}) });
+  const editor = canDo(u.role, "editor");
 
   return (
     <>
-      <PageHead title="Money" sub="Paisa aaya, paisa gaya. Every receipt and payment.">
-        {canDo(u.role, "editor") && (
+      <PageHead title="Money">
+        {editor && (
           <>
             <Link href="/erp/money/in/new" className={styles.btn}>
-              + Money received
+              + Received
             </Link>
             <Link href="/erp/money/out/new" className={styles.btnQuiet}>
-              − Money paid
+              − Paid
             </Link>
           </>
         )}
       </PageHead>
 
-      <form className={styles.filters} method="get">
-        <input type="hidden" name="dir" value={dir} />
-        <label className={styles.field}>
-          <span className={styles.label}>Year</span>
-          <select name="fy" defaultValue={fy}>
-            {years.map((y) => (
-              <option key={y} value={y}>
-                April {y.slice(0, 4)} to March 20{y.slice(5)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          <span className={styles.label}>Month</span>
-          <select name="month" defaultValue={month ?? ""}>
-            <option value="">The whole year</option>
-            {months.map((m) => (
-              <option key={m} value={m}>
-                {showMonth(m)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.field}>
-          <span className={styles.label}>Search</span>
-          <input name="q" type="search" placeholder="Name, receipt no., reference" defaultValue={q ?? ""} />
-        </label>
-        <button type="submit" className={styles.btnQuiet}>
-          Show
-        </button>
-      </form>
-
       <nav className={styles.tabs} aria-label="Show">
         {(
           [
-            ["all", "Everything"],
+            ["all", "All"],
             ["in", "Received"],
             ["out", "Paid"],
           ] as const
@@ -92,42 +61,82 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
         ))}
       </nav>
 
-      <div className={styles.stats} style={{ marginBottom: 18 }}>
-        <Stat label="Received">
-          <span className={styles.in}>{inr(totalIn)}</span>
-        </Stat>
-        <Stat label="Paid">
-          <span className={styles.out}>{inr(totalOut)}</span>
-        </Stat>
-      </div>
+      <form className={styles.filters} method="get">
+        <input type="hidden" name="dir" value={dir} />
+        <label className={styles.field}>
+          <span className={styles.srOnly}>Year</span>
+          <select name="fy" defaultValue={fy}>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.field}>
+          <span className={styles.srOnly}>Month</span>
+          <select name="month" defaultValue={month ?? ""}>
+            <option value="">Whole year</option>
+            {months.map((m) => (
+              <option key={m} value={m}>
+                {showMonth(m)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className={styles.filtersSearch}>
+          <label className={styles.field}>
+            <span className={styles.srOnly}>Search</span>
+            <input name="q" type="search" placeholder="Name, number or reference" defaultValue={q ?? ""} />
+          </label>
+          <button type="submit" className={styles.btnQuiet}>
+            Show
+          </button>
+        </div>
+      </form>
+
+      <p className={styles.totals}>
+        {dir !== "out" && (
+          <span>
+            Received <b className={styles.in}>{inr(totalIn)}</b>
+          </span>
+        )}
+        {dir !== "in" && (
+          <span>
+            Paid <b className={styles.out}>{inr(totalOut)}</b>
+          </span>
+        )}
+      </p>
 
       {rows.length ? (
         <>
           <MoneyList rows={rows} />
           {rows.length >= 500 && (
-            <p className={styles.note}>Showing the latest 500. Pick a month or search to see the rest.</p>
+            <p className={styles.note} style={{ marginTop: 10 }}>
+              Showing the latest 500. Pick a month or search to see the rest.
+            </p>
           )}
         </>
       ) : (
         <Empty
           action={
-            canDo(u.role, "editor") && !q ? (
+            editor && !q ? (
               <Link href="/erp/money/in/new" className={styles.btn}>
                 Add the first receipt
               </Link>
             ) : null
           }
         >
-          {q ? `Nothing matches “${q}”.` : "Nothing here yet for this time."}
+          {q ? `Nothing matches “${q}”.` : "Nothing entered for this time."}
         </Empty>
       )}
 
-      <p className={styles.note} style={{ marginTop: 16 }}>
-        Download for Excel:{" "}
+      <p className={styles.note} style={{ marginTop: 18 }}>
+        For Excel:{" "}
         <a className={styles.link} href={`/erp/export/money-in?${exportQs}`}>
           money received
-        </a>{" "}
-        ·{" "}
+        </a>
+        ,{" "}
         <a className={styles.link} href={`/erp/export/money-out?${exportQs}`}>
           money paid
         </a>

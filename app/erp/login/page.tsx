@@ -13,9 +13,11 @@ export default async function LoginPage() {
   return (
     <main className={styles.door}>
       <div className={styles.doorBox}>
-        <p className={styles.doorWord}>Pewe Social Welfare Society</p>
+        <p className={styles.doorWord}>
+          PSWS <span>Office</span>
+        </p>
         <h1 className={styles.doorTitle}>The office</h1>
-        <p className={styles.sub}>For the committee. Apna number aur password daliye.</p>
+        <p className={styles.sub}>For the committee of the Pewe Social Welfare Society.</p>
 
         {empty ? (
           <p className={`${styles.banner} ${styles.bannerWarn}`} style={{ marginTop: 20 }}>

@@ -36,14 +36,22 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
   const lines = await history(400, of);
   return (
     <>
-      <PageHead title="Who changed what" sub="Kisne kya kiya. Every entry, change and cancellation, newest first." />
-      <nav className={styles.tabs} aria-label="Show">
-        {KINDS.map(([k, label]) => (
-          <Link key={k} href={k ? `/erp/history?of=${k}` : "/erp/history"} aria-current={(of ?? "") === k ? "page" : undefined}>
-            {label}
-          </Link>
-        ))}
-      </nav>
+      <PageHead title="Who changed what" sub="Every entry, change and cancellation, newest first." />
+      <form className={`${styles.filters} ${styles.filtersOne}`} method="get">
+        <label className={styles.field}>
+          <span className={styles.srOnly}>Show</span>
+          <select name="of" defaultValue={of ?? ""}>
+            {KINDS.map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className={styles.btnQuiet}>
+          Show
+        </button>
+      </form>
       {lines.length ? (
         <ul className={styles.list}>
           {lines.map((l) => {

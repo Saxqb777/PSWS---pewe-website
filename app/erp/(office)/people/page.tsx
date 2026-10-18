@@ -14,11 +14,11 @@ export default async function PeoplePage() {
   const people = await listPeople();
   return (
     <>
-      <PageHead title="People with access" sub="Kaun dekh sakta hai. Everyone signs in with their own mobile number and password." />
+      <PageHead title="People with access" sub="Everyone signs in with their own mobile number and password." />
 
       <section className={styles.card} style={{ marginBottom: 8 }}>
         <h2 className={styles.h2} style={{ marginTop: 0 }}>
-          Give someone access<small>Naya vyakti</small>
+          Give someone access
         </h2>
         <PersonForm action={addPersonAction} submit="Add and make their link" />
       </section>
