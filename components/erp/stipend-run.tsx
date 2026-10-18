@@ -17,10 +17,13 @@ export function StipendRun({
   action,
   month,
   lines,
+  funds = null,
 }: {
   action: (s: FormState, d: FormData) => Promise<FormState>;
   month: string;
   lines: StipendLine[];
+  /** what is left in each fund, once starting balances are set */
+  funds?: { head: string; left: number }[] | null;
 }) {
   const todo = lines.filter((l) => !l.paid_voucher);
   const [ticked, setTicked] = useState<Record<number, boolean>>(() =>
@@ -30,6 +33,7 @@ export function StipendRun({
     Object.fromEntries(todo.map((l) => [l.family_id, String(l.stipend_paise / 100)])),
   );
   const chosen = todo.filter((l) => ticked[l.family_id]);
+  const [head, setHead] = useState("zakat");
   const total = chosen.reduce((s, l) => s + Math.round(Number(String(amounts[l.family_id] ?? "").replace(/[,\s₹]/g, "")) * 100 || 0), 0);
 
   return (
@@ -109,9 +113,11 @@ export function StipendRun({
             legend="From which money?"
             hint="Kis paise se"
             options={Object.entries(HEADS).map(([value, l]) => ({ value, en: l.en, hi: l.hi }))}
-            defaultValue="zakat"
+            value={head}
+            onChange={setHead}
             otherLabel="Which money?"
           />
+          <FundNote funds={funds} head={head} total={total} />
           <Chips
             name="method"
             legend="How was it paid?"
@@ -127,5 +133,28 @@ export function StipendRun({
         </>
       )}
     </ErpForm>
+  );
+}
+
+function FundNote({ funds, head, total }: { funds: { head: string; left: number }[] | null; head: string; total: number }) {
+  const fund = funds?.find((f) => f.head === head);
+  if (!fund) return null;
+  const over = total > fund.left;
+  return (
+    <>
+      <p className={styles.note} style={over ? { color: "var(--out)", fontWeight: 500 } : undefined}>
+        {HEADS[head as keyof typeof HEADS]?.en} fund: {inr(Math.max(fund.left, 0))} left
+        {over ? `. These payments are ${inr(total - Math.max(fund.left, 0))} more than the fund has.` : "."}
+      </p>
+      {over && (
+        <label className={styles.check}>
+          <input type="checkbox" name="over" />
+          <span>
+            <strong>Pay anyway</strong>
+            <span className={styles.checkHint}>Only if this is right.</span>
+          </span>
+        </label>
+      )}
+    </>
   );
 }

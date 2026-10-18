@@ -11,6 +11,7 @@ const GROUPS: { href: string; label: string; admin?: boolean }[][] = [
   [
     { href: "/erp", label: "Home" },
     { href: "/erp/money", label: "Money" },
+    { href: "/erp/accounts", label: "Accounts" },
     { href: "/erp/families", label: "Families" },
     { href: "/erp/stipends", label: "Monthly help" },
     { href: "/erp/works", label: "Village works" },
@@ -20,6 +21,7 @@ const GROUPS: { href: string; label: string; admin?: boolean }[][] = [
     { href: "/erp/meetings", label: "Meetings and notices" },
   ],
   [
+    { href: "/erp/approvals", label: "Approvals" },
     { href: "/erp/reports", label: "Reports and Excel" },
     { href: "/erp/history", label: "Who changed what" },
   ],
@@ -33,7 +35,7 @@ function isHere(path: string, href: string) {
   return href === "/erp" ? path === "/erp" : path === href || path.startsWith(href + "/");
 }
 
-export function Nav({ admin }: { admin: boolean }) {
+export function Nav({ admin, needsMe = 0 }: { admin: boolean; needsMe?: number }) {
   const path = usePathname();
   return (
     <nav className={styles.nav} aria-label="Office">
@@ -50,6 +52,11 @@ export function Nav({ admin }: { admin: boolean }) {
                 aria-current={isHere(path, l.href) ? "page" : undefined}
               >
                 {l.label}
+                {l.href === "/erp/approvals" && needsMe > 0 && (
+                  <span className={styles.badge} aria-label={`${needsMe} waiting for you`}>
+                    {needsMe}
+                  </span>
+                )}
               </Link>
             ))}
         </div>
@@ -58,7 +65,7 @@ export function Nav({ admin }: { admin: boolean }) {
   );
 }
 
-export function MobileMenu({ admin, name }: { admin: boolean; name: string }) {
+export function MobileMenu({ admin, name, needsMe = 0 }: { admin: boolean; name: string; needsMe?: number }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   useEffect(() => setOpen(false), [path]);
@@ -78,11 +85,12 @@ export function MobileMenu({ admin, name }: { admin: boolean; name: string }) {
         onClick={() => setOpen((o) => !o)}
       >
         {open ? "Close" : "Menu"}
+        {!open && needsMe > 0 && <span className={styles.badge}>{needsMe}</span>}
       </button>
       {open && (
         <div id="erp-menu" className={styles.menuSheet}>
           <p className={styles.menuWho}>Signed in as {name}</p>
-          <Nav admin={admin} />
+          <Nav admin={admin} needsMe={needsMe} />
         </div>
       )}
     </>

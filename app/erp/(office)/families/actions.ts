@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
+import { askApproval, closedMessage, fundBalances, getOpening } from "@/lib/erp/books";
+import { db, logChange } from "@/lib/erp/db";
 import { addFamily, addRequest, decideRequest, getFamily, getRequest, payStipends, updateFamily, type FamilyFields } from "@/lib/erp/data";
 import {
   HEADS,
@@ -43,10 +45,13 @@ export async function saveFamily(id: number | null, _: FormState, data: FormData
     notes: cleanLong(data.get("notes"), 2000),
     stipend_paise: stipend_paise,
     stipend_active,
-    active: data.get("inactive") !== "on",
+    active: true,
   };
   if (id) {
-    if (!(await getFamily(id))) return { error: "This family is not in the office any more." };
+    const was = await getFamily(id);
+    if (!was) return { error: "This family is not in the office any more." };
+    // removing a family goes through the approvers, so a change of details keeps it as it was
+    f.active = was.active;
     await updateFamily(u, id, f);
     redirect(`/erp/families/${id}?saved=1`);
   }
@@ -126,6 +131,19 @@ export async function runStipends(month: string, _: FormState, data: FormData): 
   }
   if (!lines.length && !Object.keys(errors).length) errors.pay = "Tick at least one family to pay.";
   if (Object.keys(errors).length) return { errors };
+  const closed = await closedMessage(on_date);
+  if (closed) return { errors: { on_date: closed } };
+  // paying more than the fund has needs a tick, as for any payment
+  if (data.get("over") !== "on" && (await getOpening())) {
+    const total = lines.reduce((t, l) => t + l.amount_paise, 0);
+    const fund = (await fundBalances()).find((f) => f.head === head);
+    if (fund && total > fund.left)
+      return {
+        errors: {
+          head: `The ${HEADS[head as keyof typeof HEADS].en} fund has only ${inr(Math.max(fund.left, 0))} left for ${inr(total)}. Tick “Pay anyway” if this is right.`,
+        },
+      };
+  }
   const n = await payStipends(u, month, lines, {
     on_date,
     head: head as keyof typeof HEADS,
@@ -139,4 +157,28 @@ export async function runStipends(month: string, _: FormState, data: FormData): 
       ? `Paid ${n} ${n === 1 ? "family" : "families"}. Each has its own payment number in Money.`
       : "Nothing new to pay: everyone ticked was already paid for this month.",
   };
+}
+
+/** Removing needs the approvers; bringing back does not. */
+async function askRemove(entity: "family" | "member" | "work", id: number, summary: string, data: FormData): Promise<FormState> {
+  const u = await requireUser("editor");
+  const reason = clean(data.get("reason"), 300);
+  if (!reason) return { errors: { reason: "Say why. The approvers read this. (Kyun?)" } };
+  const r = await askApproval(u, { entity, entity_id: id, entity_key: `${entity}:${id}`, action: "remove", summary, reason });
+  if ("error" in r) return { error: r.error };
+  redirect(`/erp/approvals/${r.id}?new=1`);
+}
+
+export async function askRemoveFamily(id: number, _: FormState, data: FormData): Promise<FormState> {
+  const f = await getFamily(id);
+  if (!f || !f.active) return { error: "This family is already removed." };
+  return askRemove("family", id, `family ${f.name}${f.place ? ", " + f.place : ""}`, data);
+}
+
+export async function bringBackFamily(id: number, _: FormState): Promise<FormState> {
+  const u = await requireUser("editor");
+  const rows = await db()`UPDATE erp_family SET active = true, updated_at = now(), updated_by = ${u.id} WHERE id = ${id} AND NOT active RETURNING name`;
+  if (rows[0]) await logChange(u.id, "changed", "family", id, `Brought back family ${rows[0].name}`);
+  revalidatePath("/erp", "layout");
+  redirect(`/erp/families/${id}?back=1`);
 }

@@ -7,18 +7,26 @@ import {
   addFamily,
   addMoneyIn,
   addMoneyOut,
-  cancelMoneyIn,
-  cancelMoneyOut,
   getFamily,
   getMoneyIn,
   getMoneyOut,
   getRequest,
   getWork,
-  updateMoneyIn,
-  updateMoneyOut,
   type MoneyInFields,
   type MoneyOutFields,
 } from "@/lib/erp/data";
+import {
+  askApproval,
+  closedMessage,
+  fundBalances,
+  getOpening,
+  getTransfer,
+  inSummaryLine,
+  moneyInChanges,
+  moneyOutChanges,
+  outSummaryLine,
+  transferSummaryLine,
+} from "@/lib/erp/books";
 import {
   HEADS,
   METHODS,
@@ -26,7 +34,9 @@ import {
   clean,
   cleanLong,
   isDate,
+  inr,
   isKey,
+  labelOf,
   normalPhone,
   fyOf,
   todayIST,
@@ -85,17 +95,43 @@ function readMoneyIn(data: FormData): { f: MoneyInFields; errors: Record<string,
   };
 }
 
+/** Why a saved entry should change: the approvers read this. */
+function readReason(data: FormData, errors: Record<string, string>, ask: string) {
+  const reason = clean(data.get("reason"), 300);
+  if (!reason) errors.reason = ask;
+  return reason ?? "";
+}
+
+/**
+ * A new receipt is saved at once. A change to a saved one is put to the
+ * approvers, with the reason, and only made once every one of them agrees.
+ */
 export async function saveMoneyIn(id: number | null, _: FormState, data: FormData): Promise<FormState> {
   const u = await requireUser("editor");
   const { f, errors } = readMoneyIn(data);
+  const reason = id ? readReason(data, errors, "Say why it needs changing. The approvers read this. (Kyun?)") : "";
   if (Object.keys(errors).length) return { errors };
   if (id) {
     const was = await getMoneyIn(id);
-    if (!was || was.cancelled_at) return { error: "This receipt was cancelled, so it cannot be changed." };
+    if (!was || was.cancelled_at) return { error: "This receipt was deleted, so it cannot be changed." };
     if (fyOf(f.on_date) !== was.fy) return { errors: { on_date: SAME_YEAR } };
-    await updateMoneyIn(u, id, f);
-    redirect(`/erp/money/in/${id}?saved=1`);
+    const change_lines = moneyInChanges(was, f);
+    if (!change_lines) return { error: "Nothing is different from the saved receipt." };
+    const r = await askApproval(u, {
+      entity: "money_in",
+      entity_id: id,
+      entity_key: `money_in:${id}`,
+      action: "change",
+      summary: inSummaryLine(was),
+      change_lines,
+      changes: f,
+      reason,
+    });
+    if ("error" in r) return { error: r.error };
+    redirect(`/erp/approvals/${r.id}?new=1`);
   }
+  const closed = await closedMessage(f.on_date);
+  if (closed) return { errors: { on_date: closed } };
   const r = await addMoneyIn(u, f);
   redirect(`/erp/money/in/${r.id}?new=1`);
 }
@@ -171,15 +207,42 @@ async function readMoneyOut(data: FormData): Promise<{
   };
 }
 
+/** Paying more out of a fund than it has left needs a tick to say so. Only once starting balances are set. */
+async function fundProblem(f: MoneyOutFields, exceptId: number | null, data: FormData): Promise<string | null> {
+  if (data.get("over") === "on" || !(await getOpening())) return null;
+  const fund = (await fundBalances(exceptId)).find((x) => x.head === f.head);
+  if (!fund || f.amount_paise <= fund.left) return null;
+  return `The ${labelOf(HEADS, f.head)} fund has only ${inr(Math.max(fund.left, 0))} left. Tick “Pay anyway” below if this is right.`;
+}
+
 export async function saveMoneyOut(id: number | null, _: FormState, data: FormData): Promise<FormState> {
   const u = await requireUser("editor");
   const { f, errors, newFamily } = await readMoneyOut(data);
+  const reason = id ? readReason(data, errors, "Say why it needs changing. The approvers read this. (Kyun?)") : "";
   if (Object.keys(errors).length) return { errors };
+  const over = await fundProblem(f, id, data);
+  if (over) return { errors: { head: over } };
   if (id) {
     const was = await getMoneyOut(id);
-    if (!was || was.cancelled_at) return { error: "This payment was cancelled, so it cannot be changed." };
+    if (!was || was.cancelled_at) return { error: "This payment was deleted, so it cannot be changed." };
     if (fyOf(f.on_date) !== was.fy) return { errors: { on_date: SAME_YEAR } };
+    const change_lines = await moneyOutChanges(was, f, newFamily);
+    if (!change_lines) return { error: "Nothing is different from the saved payment." };
+    const r = await askApproval(u, {
+      entity: "money_out",
+      entity_id: id,
+      entity_key: `money_out:${id}`,
+      action: "change",
+      summary: outSummaryLine(was),
+      change_lines,
+      changes: { f, newFamily },
+      reason,
+    });
+    if ("error" in r) return { error: r.error };
+    redirect(`/erp/approvals/${r.id}?new=1`);
   }
+  const closed = await closedMessage(f.on_date);
+  if (closed) return { errors: { on_date: closed } };
   if (newFamily) {
     f.family_id = await addFamily(u, {
       name: newFamily.name,
@@ -192,20 +255,31 @@ export async function saveMoneyOut(id: number | null, _: FormState, data: FormDa
       active: true,
     });
   }
-  if (id) {
-    await updateMoneyOut(u, id, f);
-    redirect(`/erp/money/out/${id}?saved=1`);
-  }
   const r = await addMoneyOut(u, f);
   redirect(`/erp/money/out/${r.id}?new=1`);
 }
 
-export async function cancelEntry(dir: "in" | "out", id: number, _: FormState, data: FormData): Promise<FormState> {
+/** Deleting a receipt, a payment or a move between cash and bank: asked, never done straight away. */
+export async function askDelete(dir: "in" | "out" | "transfer", id: number, _: FormState, data: FormData): Promise<FormState> {
   const u = await requireUser("editor");
-  const reason = clean(data.get("reason"), 300);
-  if (!reason) return { errors: { reason: "Say why, so the history makes sense. (Kyun cancel kiya?)" } };
-  if (dir === "in") await cancelMoneyIn(u, id, reason);
-  else await cancelMoneyOut(u, id, reason);
+  const errors: Record<string, string> = {};
+  const reason = readReason(data, errors, "Say why it should be deleted. The approvers read this. (Kyun?)");
+  if (Object.keys(errors).length) return { errors };
+  let summary: string | null = null;
+  if (dir === "in") {
+    const m = await getMoneyIn(id);
+    if (m && !m.cancelled_at) summary = inSummaryLine(m);
+  } else if (dir === "out") {
+    const m = await getMoneyOut(id);
+    if (m && !m.cancelled_at) summary = outSummaryLine(m);
+  } else {
+    const t = await getTransfer(id);
+    if (t && !t.cancelled_at) summary = transferSummaryLine(t);
+  }
+  if (!summary) return { error: "This has already been deleted." };
+  const entity = dir === "in" ? "money_in" : dir === "out" ? "money_out" : "transfer";
+  const r = await askApproval(u, { entity, entity_id: id, entity_key: `${entity}:${id}`, action: "delete", summary, reason });
+  if ("error" in r) return { error: r.error };
   revalidatePath("/erp", "layout");
-  return { done: "Cancelled. It no longer counts in any total, and the history keeps a note of it." };
+  redirect(`/erp/approvals/${r.id}?new=1`);
 }

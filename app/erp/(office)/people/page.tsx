@@ -86,6 +86,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                 <span className={styles.rowTitle}>
                   {p.name}
                   {!p.active && <span className={`${styles.tag} ${styles.tagOut}`}>no access</span>}
+                  {p.approver && <span className={`${styles.tag} ${styles.tagIn}`}>approver</span>}
                   {p.active && !p.has_password && (
                     <span className={`${styles.tag} ${styles.tagWarn}`}>
                       {p.has_first_email ? "not signed in yet" : "link not used yet"}

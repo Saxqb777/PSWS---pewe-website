@@ -5,11 +5,12 @@ import { getMoneyIn } from "@/lib/erp/data";
 import { HEADS, METHODS, canDo, inr, rupeesInWords, showDate, showPhone, showWhen, labelOf } from "@/lib/erp/labels";
 import { toId, waLink } from "@/lib/erp/form-state";
 import { SOCIETY } from "@/lib/site";
-import { CancelBox } from "@/components/erp/cancel-box";
+import { AskBox } from "@/components/erp/cancel-box";
 import { PrintButton } from "@/components/erp/shell";
-import { PageHead } from "@/components/erp/ui";
+import { PageHead, Pending } from "@/components/erp/ui";
+import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
-import { cancelEntry } from "../../actions";
+import { askDelete } from "../../actions";
 
 export const metadata = { title: "Receipt" };
 
@@ -25,6 +26,7 @@ export default async function MoneyInPage({
   const m = id ? await getMoneyIn(id) : null;
   if (!m) notFound();
   const sp = await searchParams;
+  const pending = m.cancelled_at ? null : await openApproval(`money_in:${m.id}`);
   const words = rupeesInWords(m.amount_paise);
   const how = METHODS[m.method].en.split(" (")[0];
   const text = [
@@ -39,14 +41,14 @@ export default async function MoneyInPage({
 
   return (
     <>
-      <PageHead title={`Receipt ${m.receipt_no}`} sub={m.cancelled_at ? "Cancelled" : showDate(m.on_date)} back={{ href: "/erp/money", label: "Money" }}>
+      <PageHead title={`Receipt ${m.receipt_no}`} sub={m.cancelled_at ? "Deleted" : showDate(m.on_date)} back={{ href: "/erp/money", label: "Money" }}>
         {!m.cancelled_at && (
           <>
             <a className={styles.btn} href={waLink(m.from_phone, text)} target="_blank" rel="noopener noreferrer">
               Send on WhatsApp
             </a>
             <PrintButton />
-            {editor && (
+            {editor && !pending && (
               <Link href={`/erp/money/in/${m.id}/edit`} className={styles.btnQuiet}>
                 Change
               </Link>
@@ -61,6 +63,7 @@ export default async function MoneyInPage({
         </p>
       )}
       {sp.saved && <p className={`${styles.formDone} ${styles.noPrint}`}>Change saved.</p>}
+      {pending && <Pending a={pending} />}
 
       <article className={styles.receipt} aria-label={`Receipt ${m.receipt_no}`}>
         <header className={styles.receiptHead}>
@@ -111,15 +114,23 @@ export default async function MoneyInPage({
             {m.created_by_name ?? "the office"}
           </span>
         </footer>
-        {m.cancelled_at && <span className={styles.stamp}>Cancelled</span>}
+        {m.cancelled_at && <span className={styles.stamp}>Deleted</span>}
       </article>
 
       {m.cancelled_at ? (
         <p className={`${styles.banner} ${styles.bannerWarn}`} style={{ marginTop: 20 }}>
-          Cancelled on {showWhen(m.cancelled_at)}. Reason: {m.cancel_reason}
+          Deleted on {showWhen(m.cancelled_at)}. {m.cancel_reason}
         </p>
       ) : (
-        editor && <CancelBox action={cancelEntry.bind(null, "in", m.id)} what="receipt" />
+        editor &&
+        !pending && (
+          <AskBox
+            action={askDelete.bind(null, "in", m.id)}
+            title="Delete this receipt"
+            explain="Deleting needs the approval of all the approvers. Once they agree, the receipt is crossed out and leaves every total; it stays on record."
+            button="Ask to delete"
+          />
+        )
       )}
     </>
   );

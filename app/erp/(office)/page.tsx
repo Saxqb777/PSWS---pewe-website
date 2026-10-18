@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { listMoney, listRequests, stipendLines, totals } from "@/lib/erp/data";
 import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST, labelOf } from "@/lib/erp/labels";
 import { Empty, MoneyList, Section } from "@/components/erp/ui";
+import { ACTION_LABEL, approvalsForMe, fundBalances, getOpening, placeBalances } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Home" };
@@ -15,13 +16,18 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
   const monthName = showMonth(month).split(" ")[0];
   const fy = fyOf(today);
   const year = fyRange(fy);
-  const [m, y, waiting, stipends, latest] = await Promise.all([
+  const [m, y, waiting, stipends, latest, opening, places, funds, forMe] = await Promise.all([
     totals(`${month}-01`, today),
     totals(year.from, year.to),
     listRequests({ open: true }),
     stipendLines(month),
     listMoney({ fy, month: null, dir: "all", q: null }),
+    getOpening(),
+    placeBalances(),
+    fundBalances(),
+    approvalsForMe(u.id),
   ]);
+  const zakat = funds.find((f) => f.head === "zakat");
   const editor = canDo(u.role, "editor");
   const paid = stipends.filter((s) => s.paid_voucher).length;
   const toPay = stipends.length - paid;
@@ -89,6 +95,33 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
         </nav>
       )}
 
+      {forMe.length > 0 && (
+        <>
+          <Section title="Waiting for your approval" link={{ href: "/erp/approvals", label: "All approvals" }} />
+          <ul className={styles.list}>
+            {forMe.slice(0, 5).map((a) => {
+              return (
+                <li key={a.id} className={styles.row}>
+                  <Link href={`/erp/approvals/${a.id}`} className={styles.rowLink}>
+                    <span className={styles.rowMain}>
+                      <span className={styles.rowTitle}>
+                        {ACTION_LABEL[a.action]} {a.summary}
+                      </span>
+                      <span className={styles.rowMeta}>
+                        Asked by {a.asked_by_name}: {a.reason}
+                      </span>
+                    </span>
+                    <span className={styles.rowAmt}>
+                      {a.yes} of {a.needed}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
       <div className={styles.split}>
         <section>
           <Section title="Money" link={{ href: "/erp/reports", label: "Reports" }} />
@@ -115,6 +148,21 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
               </tr>
             </tbody>
           </table>
+          {opening && (
+            <p className={styles.note} style={{ marginTop: 8 }}>
+              Cash in hand <b>{inr(places.cash)}</b> · In the bank <b>{inr(places.bank)}</b>
+              {zakat ? (
+                <>
+                  {" "}
+                  · Zakat left <b>{inr(zakat.left)}</b>
+                </>
+              ) : null}{" "}
+              ·{" "}
+              <Link href="/erp/accounts" className={styles.link}>
+                Accounts
+              </Link>
+            </p>
+          )}
         </section>
 
         <section>

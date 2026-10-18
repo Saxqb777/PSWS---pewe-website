@@ -2,6 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
+import { askApproval } from "@/lib/erp/books";
+import { clean as cleanText } from "@/lib/erp/labels";
+import { db, logChange } from "@/lib/erp/db";
+import { revalidatePath } from "next/cache";
 import { addWork, getWork, updateWork, type WorkFields } from "@/lib/erp/data";
 import { WORK_STATUSES, clean, cleanLong, isDate, isKey, toPaise } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
@@ -42,4 +46,23 @@ export async function saveWork(id: number | null, _: FormState, data: FormData):
   }
   const newId = await addWork(u, f);
   redirect(`/erp/works/${newId}?new=1`);
+}
+
+export async function askRemoveWork(id: number, _: FormState, data: FormData): Promise<FormState> {
+  const u = await requireUser("editor");
+  const w = await getWork(id);
+  if (!w || w.removed_at) return { error: "This work is already removed." };
+  const reason = cleanText(data.get("reason"), 300);
+  if (!reason) return { errors: { reason: "Say why. The approvers read this. (Kyun?)" } };
+  const r = await askApproval(u, { entity: "work", entity_id: id, entity_key: `work:${id}`, action: "remove", summary: `village work ${w.name}`, reason });
+  if ("error" in r) return { error: r.error };
+  redirect(`/erp/approvals/${r.id}?new=1`);
+}
+
+export async function bringBackWork(id: number, _: FormState): Promise<FormState> {
+  const u = await requireUser("editor");
+  const rows = await db()`UPDATE erp_work SET removed_at = NULL, updated_at = now(), updated_by = ${u.id} WHERE id = ${id} AND removed_at IS NOT NULL RETURNING name`;
+  if (rows[0]) await logChange(u.id, "changed", "work", id, `Brought back village work ${rows[0].name}`);
+  revalidatePath("/erp", "layout");
+  redirect(`/erp/works/${id}?back=1`);
 }

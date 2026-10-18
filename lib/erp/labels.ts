@@ -105,6 +105,13 @@ export function toPaise(raw: unknown): number | null {
   return paise > 0 && Number.isSafeInteger(paise) ? paise : null;
 }
 
+/** Like toPaise, but an empty box or 0 is ₹0 (for balances that can be nothing). */
+export function toPaiseOrZero(raw: unknown): number | null {
+  const s = String(raw ?? "").replace(/[₹,\s]/g, "").trim();
+  if (s === "" || /^0+(\.0+)?$/.test(s)) return 0;
+  return toPaise(s);
+}
+
 /** paise → "₹12,50,000" (Indian grouping), with paise only when there are some. */
 export function inr(paise: number | string | null | undefined): string {
   const n = Number(paise ?? 0);

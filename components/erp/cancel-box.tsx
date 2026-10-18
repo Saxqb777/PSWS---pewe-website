@@ -2,28 +2,33 @@ import type { FormState } from "@/lib/erp/form-state";
 import { ErpForm, Field, Submit } from "./form";
 import styles from "./erp.module.css";
 
-/** Cancelling instead of deleting: the entry stays, struck through, with the reason. */
-export function CancelBox({
+/**
+ * Asking to delete or remove something. Nothing happens straight away: the
+ * request, with the reason, goes to the approvers, and is carried out only
+ * once every one of them agrees.
+ */
+export function AskBox({
   action,
-  what,
+  title,
+  explain,
+  button,
 }: {
   action: (s: FormState, d: FormData) => Promise<FormState>;
-  what: string;
+  title: string;
+  explain: string;
+  button: string;
 }) {
   return (
     <details className={`${styles.fold} ${styles.noPrint}`} style={{ marginTop: 28 }}>
-      <summary>Cancel this {what}</summary>
+      <summary>{title}</summary>
       <div>
-        <p className={styles.p}>
-          Use this when the {what} was entered by mistake. It stays in the list, crossed out, and no longer counts in any
-          total. Nothing is deleted.
-        </p>
-        <ErpForm action={action} confirm={`Cancel this ${what}? This cannot be undone.`}>
-          <Field label="Why?" hint="Kyun cancel kar rahe hain" name="reason">
+        <p className={styles.p}>{explain}</p>
+        <ErpForm action={action}>
+          <Field label="Why?" hint="Kyun? The approvers read this" name="reason">
             <input name="reason" autoComplete="off" />
           </Field>
           <div className={styles.actions}>
-            <Submit danger>Cancel this {what}</Submit>
+            <Submit danger>{button}</Submit>
           </div>
         </ErpForm>
       </div>

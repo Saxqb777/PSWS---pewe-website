@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { knownYears, listMoney } from "@/lib/erp/data";
+import { getOpening, listCorrections, listMonths, placeBalances } from "@/lib/erp/books";
 import { canDo, clean, fyMonths, fyOf, inr, showMonth, todayIST } from "@/lib/erp/labels";
 import { Empty, MoneyList, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
@@ -19,7 +20,14 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
   const month = months.includes(String(sp.month)) ? String(sp.month) : null;
   const dir = sp.dir === "in" || sp.dir === "out" ? sp.dir : "all";
   const q = clean(sp.q, 80);
-  const rows = await listMoney({ fy, month, dir, q });
+  const [rows, corrections, opening, places, monthRows] = await Promise.all([
+    listMoney({ fy, month, dir, q }),
+    q ? Promise.resolve([]) : listCorrections(fy, month),
+    getOpening(),
+    placeBalances(),
+    listMonths(),
+  ]);
+  const closedRow = month ? monthRows.get(month) : undefined;
   const live = rows.filter((r) => !r.cancelled);
   const totalIn = live.filter((r) => r.dir === "in").reduce((s, r) => s + r.amount_paise, 0);
   const totalOut = live.filter((r) => r.dir === "out").reduce((s, r) => s + r.amount_paise, 0);
@@ -108,9 +116,21 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
         )}
       </p>
 
-      {rows.length ? (
+      {opening && (
+        <p className={styles.note} style={{ marginBottom: 12 }}>
+          Now: cash in hand <b>{inr(places.cash)}</b> · in the bank <b>{inr(places.bank)}</b> ·{" "}
+          <Link href="/erp/accounts" className={styles.link}>
+            Accounts
+          </Link>
+        </p>
+      )}
+      {closedRow?.status === "closed" && (
+        <p className={`${styles.banner}`}>{showMonth(month!)} is closed: it was checked against the bank statement and the cash.</p>
+      )}
+
+      {rows.length || corrections.length ? (
         <>
-          <MoneyList rows={rows} />
+          <MoneyList rows={rows} corrections={dir === "all" ? corrections : []} />
           {rows.length >= 500 && (
             <p className={styles.note} style={{ marginTop: 10 }}>
               Showing the latest 500. Pick a month or search to see the rest.

@@ -4,7 +4,11 @@ import { requireUser } from "@/lib/erp/auth";
 import { getWork, paymentsFor } from "@/lib/erp/data";
 import { WORK_STATUSES, canDo, inr, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
-import { Empty, Facts, MoneyList, PageHead } from "@/components/erp/ui";
+import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
+import { AskBox } from "@/components/erp/cancel-box";
+import { Removed } from "@/components/erp/bring-back";
+import { openApproval } from "@/lib/erp/books";
+import { askRemoveWork, bringBackWork } from "../actions";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Village work" };
@@ -14,7 +18,7 @@ export default async function WorkPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ new?: string; saved?: string }>;
+  searchParams: Promise<{ new?: string; saved?: string; back?: string }>;
 }) {
   const u = await requireUser();
   const id = toId((await params).id);
@@ -24,11 +28,12 @@ export default async function WorkPage({
   const payments = await paymentsFor({ workId: w.id });
   const editor = canDo(u.role, "editor");
   const left = w.budget_paise ? w.budget_paise - w.spent_paise : null;
+  const pending = w.removed_at ? null : await openApproval(`work:${w.id}`);
 
   return (
     <>
       <PageHead title={w.name} sub={[w.place, WORK_STATUSES[w.status].en].filter(Boolean).join(" · ")} back={{ href: "/erp/works", label: "Village works" }}>
-        {editor && (
+        {editor && !w.removed_at && (
           <>
             <Link href={`/erp/money/out/new?work=${w.id}`} className={styles.btn}>
               Record a payment
@@ -41,6 +46,7 @@ export default async function WorkPage({
       </PageHead>
       {sp.new && <p className={styles.formDone}>Work saved. Record its payments here as they are made.</p>}
       {sp.saved && <p className={styles.formDone}>Change saved.</p>}
+      {sp.back && !w.removed_at && <p className={styles.formDone}>Brought back.</p>}
 
       <div className={styles.card}>
         <Facts
@@ -64,6 +70,23 @@ export default async function WorkPage({
         Payments
       </h2>
       {payments.length ? <MoneyList rows={payments} byDay={false} /> : <Empty>No payments recorded for this work yet.</Empty>}
+
+      <div style={{ marginTop: 28 }}>
+        {w.removed_at ? (
+          <Removed what="The work and its payments" action={editor ? bringBackWork.bind(null, w.id) : null} />
+        ) : pending ? (
+          <Pending a={pending} />
+        ) : (
+          editor && (
+            <AskBox
+              action={askRemoveWork.bind(null, w.id)}
+              title="Remove this work"
+              explain="For a work added by mistake or dropped. Removing needs all the approvers. Its payments stay on record."
+              button="Ask to remove"
+            />
+          )
+        )}
+      </div>
     </>
   );
 }

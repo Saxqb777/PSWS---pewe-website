@@ -241,7 +241,8 @@ export async function getMoneyOut(id: number): Promise<MoneyOut | null> {
 /* ================================================================== money lists */
 
 export interface MoneyRow {
-  dir: "in" | "out";
+  /** in and out are income and spending; a transfer only moves money between cash and the bank */
+  dir: "in" | "out" | "transfer";
   id: number;
   no: string;
   on_date: string;
@@ -284,6 +285,14 @@ export async function listMoney(f: MoneyFilter): Promise<MoneyRow[]> {
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
         AND (${like}::text IS NULL OR paid_to ILIKE ${like} OR voucher_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
              OR coalesce(note, '') ILIKE ${like})
+      UNION ALL
+      SELECT 'transfer', id, transfer_no, to_char(on_date, 'YYYY-MM-DD'),
+             CASE direction WHEN 'to_bank' THEN 'Cash deposited in bank' ELSE 'Cash taken from bank' END,
+             amount_paise, 'other', 'cash', NULL, NULL, NULL, NULL, cancelled_at IS NOT NULL
+      FROM erp_transfer
+      WHERE fy = ${f.fy} AND ${f.dir} = 'all'
+        AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
+        AND (${like}::text IS NULL OR transfer_no ILIKE ${like} OR coalesce(note, '') ILIKE ${like})
     ) x
     ORDER BY on_date DESC, no DESC
     LIMIT 500`;
@@ -301,7 +310,7 @@ export async function knownNames(dir: "in" | "out"): Promise<string[]> {
 
 /** The financial years that have entries, plus the current one. */
 export async function knownYears(current: string): Promise<string[]> {
-  const rows = await db()`SELECT fy FROM erp_money_in UNION SELECT fy FROM erp_money_out`;
+  const rows = await db()`SELECT fy FROM erp_money_in UNION SELECT fy FROM erp_money_out UNION SELECT fy FROM erp_transfer`;
   return [...new Set([current, ...rows.map((r) => String(r.fy))])].sort().reverse();
 }
 
@@ -572,6 +581,7 @@ export interface Work {
   budget_paise: number | null;
   notes: string | null;
   spent_paise: number;
+  removed_at: string | null;
 }
 
 export interface WorkFields {
@@ -592,12 +602,13 @@ const asWork = (r: Record<string, unknown>) =>
     spent_paise: num(r.spent_paise),
   }) as Work;
 
-export async function listWorks(): Promise<Work[]> {
+export async function listWorks(removed = false): Promise<Work[]> {
   const rows = await db()`
     SELECT w.id, w.name, w.place, w.status, to_char(w.started_on, 'YYYY-MM-DD') AS started_on,
-           to_char(w.finished_on, 'YYYY-MM-DD') AS finished_on, w.budget_paise, w.notes,
+           to_char(w.finished_on, 'YYYY-MM-DD') AS finished_on, w.budget_paise, w.notes, w.removed_at,
            (SELECT coalesce(sum(amount_paise), 0) FROM erp_money_out m WHERE m.work_id = w.id AND m.cancelled_at IS NULL) AS spent_paise
     FROM erp_work w
+    WHERE (w.removed_at IS NULL) = ${!removed}
     ORDER BY array_position(ARRAY['running', 'planned', 'done'], w.status), w.started_on DESC NULLS LAST, w.name`;
   return rows.map(asWork);
 }
@@ -605,7 +616,7 @@ export async function listWorks(): Promise<Work[]> {
 export async function getWork(id: number): Promise<Work | null> {
   const rows = await db()`
     SELECT w.id, w.name, w.place, w.status, to_char(w.started_on, 'YYYY-MM-DD') AS started_on,
-           to_char(w.finished_on, 'YYYY-MM-DD') AS finished_on, w.budget_paise, w.notes,
+           to_char(w.finished_on, 'YYYY-MM-DD') AS finished_on, w.budget_paise, w.notes, w.removed_at,
            (SELECT coalesce(sum(amount_paise), 0) FROM erp_money_out m WHERE m.work_id = w.id AND m.cancelled_at IS NULL) AS spent_paise
     FROM erp_work w WHERE w.id = ${id}`;
   return rows[0] ? asWork(rows[0]) : null;
@@ -630,7 +641,9 @@ export async function updateWork(u: User, id: number, f: WorkFields) {
 }
 
 export async function workNames(): Promise<{ id: number; name: string }[]> {
-  const rows = await db()`SELECT id, name FROM erp_work WHERE status <> 'done' OR finished_on > now() - interval '1 year' ORDER BY name`;
+  const rows = await db()`
+    SELECT id, name FROM erp_work WHERE removed_at IS NULL AND (status <> 'done' OR finished_on > now() - interval '1 year')
+    ORDER BY name`;
   return rows.map((r) => ({ id: num(r.id), name: String(r.name) }));
 }
 
@@ -849,13 +862,14 @@ export interface Person {
   has_password: boolean;
   /** can choose a password the first time with the Gmail on record */
   has_first_email: boolean;
+  approver: boolean;
   last_login_at: string | null;
 }
 
 export async function listPeople(): Promise<Person[]> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
-           first_email IS NOT NULL AS has_first_email, last_login_at
+           first_email IS NOT NULL AS has_first_email, approver, last_login_at
     FROM erp_user WHERE phone <> 'owner'
     ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Person);
@@ -864,7 +878,7 @@ export async function listPeople(): Promise<Person[]> {
 export async function getPerson(id: number): Promise<Person | null> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
-           first_email IS NOT NULL AS has_first_email, last_login_at
+           first_email IS NOT NULL AS has_first_email, approver, last_login_at
     FROM erp_user WHERE id = ${id} AND phone <> 'owner'`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Person) : null;
 }
@@ -887,6 +901,12 @@ export async function updatePerson(u: User, id: number, p: { name: string; role:
   await db()`UPDATE erp_user SET name = ${p.name}, role = ${p.role}, post = ${p.post}, active = ${p.active} WHERE id = ${id}`;
   if (!p.active) await db()`DELETE FROM erp_session WHERE user_id = ${id}`;
   await logChange(u.id, "access", "person", id, `${p.name}: ${p.active ? "details changed" : "access removed"}`);
+}
+
+/** Only the website owner sets who approves deletions and changes. */
+export async function setApprover(u: User, id: number, on: boolean) {
+  const rows = await db()`UPDATE erp_user SET approver = ${on} WHERE id = ${id} AND phone <> 'owner' RETURNING name`;
+  if (rows[0]) await logChange(u.id, "access", "person", id, `${rows[0].name} ${on ? "now approves" : "no longer approves"} deletions and changes`);
 }
 
 export async function adminCount(): Promise<number> {

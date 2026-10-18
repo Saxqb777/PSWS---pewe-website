@@ -5,9 +5,12 @@ import { getFamily, listRequests, paymentsFor } from "@/lib/erp/data";
 import { KINDS, STATUSES, canDo, inr, showDate, showPhone, labelOf } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { DecideForm, RequestForm } from "@/components/erp/forms";
-import { Empty, Facts, MoneyList, PageHead } from "@/components/erp/ui";
+import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
+import { AskBox } from "@/components/erp/cancel-box";
+import { Removed } from "@/components/erp/bring-back";
+import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
-import { addFamilyRequest, decideFamilyRequest } from "../actions";
+import { addFamilyRequest, askRemoveFamily, bringBackFamily, decideFamilyRequest } from "../actions";
 
 export const metadata = { title: "Family" };
 
@@ -16,7 +19,7 @@ export default async function FamilyPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ new?: string; saved?: string }>;
+  searchParams: Promise<{ new?: string; saved?: string; back?: string }>;
 }) {
   const u = await requireUser();
   const id = toId((await params).id);
@@ -24,12 +27,13 @@ export default async function FamilyPage({
   if (!f) notFound();
   const sp = await searchParams;
   const [requests, payments] = await Promise.all([listRequests({ familyId: f.id }), paymentsFor({ familyId: f.id })]);
+  const pending = f.active ? await openApproval(`family:${f.id}`) : null;
   const editor = canDo(u.role, "editor");
   const total = payments.filter((p) => !p.cancelled).reduce((s, p) => s + p.amount_paise, 0);
 
   return (
     <>
-      <PageHead title={f.name} sub={[f.place, f.active ? null : "No longer helped"].filter(Boolean).join(" · ") || "Family"} back={{ href: "/erp/families", label: "Families" }}>
+      <PageHead title={f.name} sub={[f.place, f.active ? null : "Removed"].filter(Boolean).join(" · ") || "Family"} back={{ href: "/erp/families", label: "Families" }}>
         {editor && f.active && (
           <Link href={`/erp/money/out/new?family=${f.id}`} className={styles.btn}>
             Record help given
@@ -44,6 +48,7 @@ export default async function FamilyPage({
 
       {sp.new && <p className={styles.formDone}>Family saved. Add what they asked for below, or record help already given.</p>}
       {sp.saved && <p className={styles.formDone}>Change saved.</p>}
+      {sp.back && f.active && <p className={styles.formDone}>Brought back.</p>}
 
       <div className={styles.card}>
         <Facts
@@ -115,6 +120,25 @@ export default async function FamilyPage({
         Help given
       </h2>
       {payments.length ? <MoneyList rows={payments} byDay={false} /> : <Empty>Nothing paid to this family yet.</Empty>}
+
+      {!f.active ? (
+        <div style={{ marginTop: 28 }}>
+          <Removed what="The family and everything paid to it" action={editor ? bringBackFamily.bind(null, f.id) : null} />
+        </div>
+      ) : pending ? (
+        <div style={{ marginTop: 28 }}>
+          <Pending a={pending} />
+        </div>
+      ) : (
+        editor && (
+          <AskBox
+            action={askRemoveFamily.bind(null, f.id)}
+            title="Remove this family"
+            explain="For a family that is no longer helped. Removing needs all the approvers. Everything paid stays on record."
+            button="Ask to remove"
+          />
+        )
+      )}
     </>
   );
 }

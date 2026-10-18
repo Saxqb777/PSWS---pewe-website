@@ -18,6 +18,8 @@ const KINDS: [string, string][] = [
   ["member", "Members"],
   ["meeting", "Meetings"],
   ["person", "Access"],
+  ["approval", "Approvals"],
+  ["transfer", "Cash and bank"],
 ];
 
 const HREF: Record<string, (id: number) => string> = {
@@ -27,6 +29,8 @@ const HREF: Record<string, (id: number) => string> = {
   work: (id) => `/erp/works/${id}`,
   member: (id) => `/erp/members/${id}`,
   meeting: (id) => `/erp/meetings/${id}`,
+  approval: (id) => `/erp/approvals/${id}`,
+  transfer: (id) => `/erp/money/transfer/${id}`,
 };
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ of?: string }> }) {
@@ -62,7 +66,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
                   {l.summary}
                 </span>
                 <span className={styles.rowMeta}>
-                  {l.who ?? "Someone"} {l.action} · {showWhen(l.at)}
+                  {l.who ?? "Office"} {l.action} · {showWhen(l.at)}
                 </span>
               </span>
             );

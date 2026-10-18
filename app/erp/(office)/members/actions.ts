@@ -2,6 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
+import { askApproval } from "@/lib/erp/books";
+import { db, logChange } from "@/lib/erp/db";
+import { revalidatePath } from "next/cache";
 import { addMeeting, addMember, getMeeting, getMember, updateMeeting, updateMember } from "@/lib/erp/data";
 import { clean, cleanLong, isDate, normalPhone } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
@@ -23,10 +26,12 @@ export async function saveMember(id: number | null, _: FormState, data: FormData
     lives_in: clean(data.get("lives_in"), 80),
     post: clean(data.get("post"), 80),
     notes: clean(data.get("notes"), 300),
-    active: data.get("inactive") !== "on",
+    active: true,
   };
   if (id) {
-    if (!(await getMember(id))) return { error: "This member is not in the office any more." };
+    const was = await getMember(id);
+    if (!was) return { error: "This member is not in the office any more." };
+    f.active = was.active;
     await updateMember(u, id, f);
     redirect("/erp/members?saved=1");
   }
@@ -53,4 +58,28 @@ export async function saveMeeting(id: number | null, _: FormState, data: FormDat
   }
   const newId = await addMeeting(u, f);
   redirect(`/erp/meetings/${newId}?new=1`);
+}
+
+/** Removing needs the approvers; bringing back does not. */
+async function askRemove(entity: "family" | "member" | "work", id: number, summary: string, data: FormData): Promise<FormState> {
+  const u = await requireUser("editor");
+  const reason = clean(data.get("reason"), 300);
+  if (!reason) return { errors: { reason: "Say why. The approvers read this. (Kyun?)" } };
+  const r = await askApproval(u, { entity, entity_id: id, entity_key: `${entity}:${id}`, action: "remove", summary, reason });
+  if ("error" in r) return { error: r.error };
+  redirect(`/erp/approvals/${r.id}?new=1`);
+}
+
+export async function askRemoveMember(id: number, _: FormState, data: FormData): Promise<FormState> {
+  const m = await getMember(id);
+  if (!m || !m.active) return { error: "This member is already removed." };
+  return askRemove("member", id, `member ${m.name}${m.lives_in ? ", " + m.lives_in : ""}`, data);
+}
+
+export async function bringBackMember(id: number, _: FormState): Promise<FormState> {
+  const u = await requireUser("editor");
+  const rows = await db()`UPDATE erp_member SET active = true, updated_at = now(), updated_by = ${u.id} WHERE id = ${id} AND NOT active RETURNING name`;
+  if (rows[0]) await logChange(u.id, "changed", "member", id, `Brought back member ${rows[0].name}`);
+  revalidatePath("/erp", "layout");
+  redirect(`/erp/members/${id}?back=1`);
 }

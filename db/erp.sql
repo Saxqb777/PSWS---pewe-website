@@ -204,3 +204,99 @@ ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS head_other text;
 ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS head_other text;
 ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS purpose_other text;
 ALTER TABLE erp_request   ADD COLUMN IF NOT EXISTS kind_other text;
+
+-- ---------------------------------------------------------------- approvals by the four
+-- Deleting or changing a receipt or payment, and removing a family, member
+-- or work, waits for every approver. A request is open for seven days.
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS approver boolean NOT NULL DEFAULT false;
+ALTER TABLE erp_work ADD COLUMN IF NOT EXISTS removed_at timestamptz;
+
+CREATE TABLE IF NOT EXISTS erp_approval (
+  id           bigserial   PRIMARY KEY,
+  entity       text        NOT NULL,               -- money_in, money_out, transfer, family, member, work, month, opening
+  entity_id    bigint,
+  entity_key   text        NOT NULL,               -- entity and id (or month) as one text, for "one open request each"
+  action       text        NOT NULL CHECK (action IN ('delete', 'change', 'remove', 'reopen')),
+  summary      text        NOT NULL,               -- what it is, in one line
+  change_lines text,                               -- for a change: "Amount: ₹1,000 → ₹1,500", one per line
+  changes      jsonb,                              -- for a change: the new values, applied once approved
+  reason       text        NOT NULL,
+  approvers    bigint[]    NOT NULL,               -- who must approve, fixed when it was asked
+  asked_by     bigint      REFERENCES erp_user(id),
+  asked_at     timestamptz NOT NULL DEFAULT now(),
+  expires_at   timestamptz NOT NULL,
+  status       text        NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'approved', 'expired', 'withdrawn')),
+  closed_at    timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS erp_approval_one_open ON erp_approval (entity_key) WHERE status = 'waiting';
+CREATE INDEX IF NOT EXISTS erp_approval_status ON erp_approval (status, asked_at DESC);
+
+CREATE TABLE IF NOT EXISTS erp_approval_vote (
+  approval_id bigint      NOT NULL REFERENCES erp_approval(id),
+  user_id     bigint      NOT NULL REFERENCES erp_user(id),
+  vote        text        NOT NULL CHECK (vote IN ('yes', 'no')),
+  note        text,
+  at          timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (approval_id, user_id)
+);
+
+-- ---------------------------------------------------------------- the books
+-- Corrections: what an approved change or deletion did, shown in the cash book on the day it was approved.
+CREATE TABLE IF NOT EXISTS erp_correction (
+  id           bigserial   PRIMARY KEY,
+  on_date      date        NOT NULL,
+  dir          text        NOT NULL CHECK (dir IN ('in', 'out', 'transfer')),
+  entity_id    bigint      NOT NULL,
+  no           text        NOT NULL,
+  what         text        NOT NULL,
+  before_paise bigint      NOT NULL DEFAULT 0,
+  after_paise  bigint      NOT NULL DEFAULT 0,
+  approval_id  bigint      REFERENCES erp_approval(id),
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS erp_correction_date ON erp_correction (on_date DESC);
+
+-- Money moved between cash in hand and the bank. Not income or spending, so no fund.
+CREATE TABLE IF NOT EXISTS erp_transfer (
+  id            bigserial   PRIMARY KEY,
+  transfer_no   text        NOT NULL UNIQUE,      -- T/2026-27/0001
+  fy            text        NOT NULL,
+  on_date       date        NOT NULL,
+  direction     text        NOT NULL CHECK (direction IN ('to_bank', 'to_cash')),
+  amount_paise  bigint      NOT NULL CHECK (amount_paise > 0),
+  note          text,
+  cancelled_at  timestamptz,
+  cancelled_by  bigint      REFERENCES erp_user(id),
+  cancel_reason text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  created_by    bigint      REFERENCES erp_user(id)
+);
+CREATE INDEX IF NOT EXISTS erp_transfer_date ON erp_transfer (on_date DESC);
+
+-- What the Society had on the day the office started counting: in cash and in the bank, and in each fund.
+CREATE TABLE IF NOT EXISTS erp_opening (
+  id                 int         PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  on_date            date        NOT NULL,
+  cash_paise         bigint      NOT NULL DEFAULT 0,
+  bank_paise         bigint      NOT NULL DEFAULT 0,
+  zakat_paise        bigint      NOT NULL DEFAULT 0,
+  donation_paise     bigint      NOT NULL DEFAULT 0,
+  development_paise  bigint      NOT NULL DEFAULT 0,
+  other_paise        bigint      NOT NULL DEFAULT 0,
+  set_by             bigint      REFERENCES erp_user(id),
+  set_at             timestamptz NOT NULL DEFAULT now()
+);
+
+-- Month closing: checked against the bank statement and the cash counted, then closed.
+CREATE TABLE IF NOT EXISTS erp_month (
+  month                text        PRIMARY KEY CHECK (month ~ '^[0-9]{4}-[0-9]{2}$'),
+  status               text        NOT NULL CHECK (status IN ('closed', 'open')),
+  cash_book_paise      bigint      NOT NULL,
+  bank_book_paise      bigint      NOT NULL,
+  cash_counted_paise   bigint      NOT NULL,
+  bank_statement_paise bigint      NOT NULL,
+  note                 text,
+  closed_by            bigint      REFERENCES erp_user(id),
+  closed_at            timestamptz NOT NULL DEFAULT now(),
+  reopened_at          timestamptz
+);

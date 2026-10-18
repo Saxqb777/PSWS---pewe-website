@@ -7,6 +7,7 @@ import {
   METHODS,
   PLACES,
   PURPOSES,
+  inr,
   type Head,
   type Method,
   type Purpose,
@@ -34,6 +35,15 @@ const REFERENCE_HINT: Record<Method, string> = {
   cheque: "Cheque number and bank",
 };
 
+/** For a change to a saved entry: why, for the approvers. */
+function ReasonBox() {
+  return (
+    <Field label="Why does it need changing?" hint="Kyun? The approvers read this before they approve" name="reason">
+      <input name="reason" autoComplete="off" />
+    </Field>
+  );
+}
+
 /* ------------------------------------------------------------ money received */
 
 export interface MoneyInInitial {
@@ -54,11 +64,14 @@ export function MoneyInForm({
   initial,
   names,
   submit,
+  askReason = false,
 }: {
   action: Action;
   initial: MoneyInInitial;
   names: string[];
   submit: string;
+  /** changing a saved receipt: the change goes to the approvers with a reason */
+  askReason?: boolean;
 }) {
   const [method, setMethod] = useState<Method>(initial.method ?? "cash");
   return (
@@ -113,6 +126,7 @@ export function MoneyInForm({
           <input name="note" defaultValue={initial.note ?? ""} />
         </Field>
       </div>
+      {askReason && <ReasonBox />}
       <div className={styles.actions}>
         <Submit>{submit}</Submit>
       </div>
@@ -156,6 +170,8 @@ export function MoneyOutForm({
   works,
   submit,
   request,
+  askReason = false,
+  funds = null,
 }: {
   action: Action;
   initial: MoneyOutInitial;
@@ -164,12 +180,19 @@ export function MoneyOutForm({
   submit: string;
   /** when paying a request that was approved, its line is shown and kept */
   request?: { id: number; label: string } | null;
+  /** changing a saved payment: the change goes to the approvers with a reason */
+  askReason?: boolean;
+  /** what is left in each fund, once starting balances are set */
+  funds?: { head: Head; left: number }[] | null;
 }) {
   const [purpose, setPurpose] = useState<Purpose | "">(initial.purpose ?? "");
   const [head, setHead] = useState<Head>(initial.head ?? HEAD_FOR(initial.purpose ?? "") ?? "zakat");
   const [headTouched, setHeadTouched] = useState(!!initial.head);
   const [family, setFamily] = useState<string>(initial.family_id ? String(initial.family_id) : "");
   const [method, setMethod] = useState<Method>(initial.method ?? "bank");
+  const [amount, setAmount] = useState<number | null>(initial.amount_paise ?? null);
+  const fund = funds?.find((f) => f.head === head) ?? null;
+  const over = !!fund && !!amount && amount > fund.left;
   const showFamily =
     !!request ||
     !!initial.forFamily ||
@@ -185,7 +208,7 @@ export function MoneyOutForm({
         <Field label="Paid to" hint="Kisko diya: person, shop or contractor" name="paid_to" wide>
           <input name="paid_to" autoComplete="off" defaultValue={initial.paid_to ?? ""} />
         </Field>
-        <AmountInput name="amount" defaultPaise={initial.amount_paise} />
+        <AmountInput name="amount" defaultPaise={initial.amount_paise} onChange={setAmount} />
         <Field label="Date" hint="Kab diya" name="on_date">
           <input name="on_date" type="date" defaultValue={initial.on_date} />
         </Field>
@@ -272,6 +295,21 @@ export function MoneyOutForm({
         otherLabel="Which money?"
         otherDefault={initial.head_other}
       />
+      {fund && (
+        <p className={styles.note} style={over ? { color: "var(--out)", fontWeight: 500 } : undefined}>
+          {HEADS[head].en} fund: {inr(Math.max(fund.left, 0))} left
+          {over ? `. This payment is ${inr(amount! - Math.max(fund.left, 0))} more than the fund has.` : "."}
+        </p>
+      )}
+      {over && (
+        <label className={styles.check}>
+          <input type="checkbox" name="over" />
+          <span>
+            <strong>Pay anyway</strong>
+            <span className={styles.checkHint}>Only if this is right, e.g. the fund will be paid back.</span>
+          </span>
+        </label>
+      )}
       <Chips
         name="method"
         legend="How was it paid?"
@@ -293,6 +331,7 @@ export function MoneyOutForm({
           <option key={p} value={p} />
         ))}
       </datalist>
+      {askReason && <ReasonBox />}
       <div className={styles.actions}>
         <Submit>{submit}</Submit>
       </div>

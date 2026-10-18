@@ -57,17 +57,6 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
           <AmountInput name="stipend" label="Monthly help amount" hint="Har maheene kitna" defaultPaise={family?.stipend_paise} />
         </div>
       </div>
-      {family && (
-        <label className={styles.check}>
-          <input type="checkbox" name="inactive" defaultChecked={!family.active} />
-          <span>
-            <strong>No longer helped</strong>
-            <span className={styles.hint} style={{ display: "block" }}>
-              Hides the family from the lists. Everything paid stays in the record.
-            </span>
-          </span>
-        </label>
-      )}
       <Places />
       <div className={styles.actions}>
         <Submit>{submit}</Submit>
@@ -196,14 +185,6 @@ export function MemberForm({ action, member, submit }: { action: Action; member?
           <input name="notes" defaultValue={member?.notes ?? ""} />
         </Field>
       </div>
-      {member && (
-        <label className={styles.check}>
-          <input type="checkbox" name="inactive" defaultChecked={!member.active} />
-          <span>
-            <strong>No longer a member</strong>
-          </span>
-        </label>
-      )}
       <Places />
       <div className={styles.actions}>
         <Submit>{submit}</Submit>

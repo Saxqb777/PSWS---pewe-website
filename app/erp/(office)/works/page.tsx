@@ -9,7 +9,7 @@ export const metadata = { title: "Village works" };
 
 export default async function WorksPage() {
   const u = await requireUser();
-  const works = await listWorks();
+  const [works, removed] = await Promise.all([listWorks(), listWorks(true)]);
   const editor = canDo(u.role, "editor");
   return (
     <>
@@ -62,6 +62,25 @@ export default async function WorksPage() {
         >
           No works yet. Add one, then record its payments against it.
         </Empty>
+      )}
+      {removed.length > 0 && (
+        <details className={styles.fold} style={{ marginTop: 20 }}>
+          <summary>Removed works ({removed.length})</summary>
+          <div>
+            <ul className={styles.list}>
+              {removed.map((w) => (
+                <li key={w.id} className={`${styles.row} ${styles.cancelled}`}>
+                  <Link href={`/erp/works/${w.id}`} className={styles.rowLink}>
+                    <span className={styles.rowMain}>
+                      <span className={styles.rowTitle}>{w.name}</span>
+                      <span className={styles.rowMeta}>{inr(w.spent_paise)} spent</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
       )}
     </>
   );

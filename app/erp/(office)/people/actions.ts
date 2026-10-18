@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { makeInvite, requireUser, siteOrigin } from "@/lib/erp/auth";
-import { addPerson, adminCount, getPerson, giveCommitteeAccess, updatePerson } from "@/lib/erp/data";
+import { OWNER_PHONE, makeInvite, requireUser, siteOrigin } from "@/lib/erp/auth";
+import { addPerson, adminCount, getPerson, giveCommitteeAccess, setApprover, updatePerson } from "@/lib/erp/data";
 import { logChange } from "@/lib/erp/db";
 import { clean, normalPhone } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
@@ -73,4 +73,13 @@ export async function giveCommitteeAccessAction(_: FormState): Promise<FormState
   const u = await requireUser("admin");
   const n = await giveCommitteeAccess(u);
   redirect(`/erp/people?given=${n}`);
+}
+
+/** Who approves deletions and changes: set only by the website owner. */
+export async function setApproverAction(id: number, _: FormState, data: FormData): Promise<FormState> {
+  const u = await requireUser();
+  if (u.phone !== OWNER_PHONE) return { error: "Only the website owner sets the approvers." };
+  await setApprover(u, id, data.get("approver") === "on");
+  revalidatePath("/erp", "layout");
+  return { done: "Saved." };
 }

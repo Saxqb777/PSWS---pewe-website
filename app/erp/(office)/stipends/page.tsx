@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { stipendLines } from "@/lib/erp/data";
 import { canDo, fyMonths, fyOf, inr, showMonth, thisMonthIST, todayIST } from "@/lib/erp/labels";
 import { StipendRun } from "@/components/erp/stipend-run";
+import { fundBalances, getOpening } from "@/lib/erp/books";
 import { Empty, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { runStipends } from "../families/actions";
@@ -18,7 +19,8 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
   const prevFy = `${Number(fy.slice(0, 4)) - 1}-${fy.slice(2, 4)}`;
   const months = [...fyMonths(prevFy), ...fyMonths(fy)].filter((m) => m <= now).reverse();
   const month = months.includes(String(sp.month)) ? String(sp.month) : now;
-  const lines = await stipendLines(month);
+  const [lines, opening] = await Promise.all([stipendLines(month), getOpening()]);
+  const funds = opening ? await fundBalances() : null;
   const paid = lines.filter((l) => l.paid_voucher);
   const due = lines.filter((l) => !l.paid_voucher);
   const editor = canDo(u.role, "editor");
@@ -73,7 +75,7 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
           No family gets monthly help yet. Open a family, choose Change details, and tick “Gets monthly help”.
         </Empty>
       ) : editor ? (
-        <StipendRun key={month} action={runStipends.bind(null, month)} month={month} lines={lines} />
+        <StipendRun key={month} action={runStipends.bind(null, month)} month={month} lines={lines} funds={funds} />
       ) : (
         <ul className={styles.list}>
           {lines.map((l) => (
