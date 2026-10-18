@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/erp/auth";
+import { OWNER_PHONE, requireUser } from "@/lib/erp/auth";
 import { listPeople } from "@/lib/erp/data";
 import { ROLES, showPhone, showWhen } from "@/lib/erp/labels";
 import { PersonForm } from "@/components/erp/forms";
@@ -32,8 +32,12 @@ export default async function PeoplePage() {
                 <span className={styles.rowTitle}>
                   {p.name}
                   <span className={styles.tag}>{ROLES[p.role].en}</span>
-                  {!p.active && <span className={`${styles.tag} ${styles.tagOut}`}>No access</span>}
-                  {p.active && !p.has_password && <span className={`${styles.tag} ${styles.tagWarn}`}>Link not used yet</span>}
+                  {!p.active && <span className={`${styles.tag} ${styles.tagOut}`}>no access</span>}
+                  {p.phone === OWNER_PHONE ? (
+                    <span className={styles.tag}>private link</span>
+                  ) : (
+                    p.active && !p.has_password && <span className={`${styles.tag} ${styles.tagWarn}`}>link not used yet</span>
+                  )}
                 </span>
                 <span className={styles.rowMeta}>
                   {[p.post, showPhone(p.phone), p.last_login_at ? `last in ${showWhen(p.last_login_at)}` : "never signed in"]

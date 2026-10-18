@@ -6,6 +6,7 @@ import {
   checkPassword,
   createFirstAdmin,
   endSession,
+  ownerSignIn,
   passwordProblem,
   requireUser,
   setupCodeOk,
@@ -84,4 +85,15 @@ export async function changeMyPassword(_: FormState, data: FormData): Promise<Fo
   if (password !== again) return { errors: { again: "The two passwords are not the same." } };
   await changePassword(u.id, password);
   return { done: "Your password is changed. Other phones signed in as you have been signed out." };
+}
+
+export async function openWithKey(key: string): Promise<{ error: string }> {
+  const r = await ownerSignIn(String(key ?? ""));
+  if (r === "ok") redirect("/erp");
+  return {
+    error:
+      r === "off"
+        ? "This link has been switched off. An admin can turn it back on under People with access."
+        : "This link is not right. Copy the whole link, with everything after the #.",
+  };
 }

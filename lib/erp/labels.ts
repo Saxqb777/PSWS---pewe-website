@@ -250,7 +250,7 @@ export function normalPhone(raw: unknown): string | null {
 
 /** 919812345678 → "+91 98123 45678". */
 export function showPhone(d: string | null | undefined): string {
-  if (!d) return "";
+  if (!d || !/^\d+$/.test(d)) return "";
   if (d.startsWith("91") && d.length === 12) return `+91 ${d.slice(2, 7)} ${d.slice(7)}`;
   return `+${d}`;
 }

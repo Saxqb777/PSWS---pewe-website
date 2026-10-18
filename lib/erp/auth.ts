@@ -182,8 +182,9 @@ export function setupCodeOk(code: string): boolean {
   return got.length === want.length && timingSafeEqual(Buffer.from(got), Buffer.from(want));
 }
 
+/** Whether anyone from the committee has been given access (the owner's private link does not count). */
 export async function hasAnyone(): Promise<boolean> {
-  const rows = await db()`SELECT 1 FROM erp_user LIMIT 1`;
+  const rows = await db()`SELECT 1 FROM erp_user WHERE phone <> ${OWNER_PHONE} LIMIT 1`;
   return rows.length > 0;
 }
 
@@ -193,9 +194,43 @@ export async function createFirstAdmin(name: string, phone: string, post: string
   const rows = await db()`
     INSERT INTO erp_user (name, phone, role, post, password_hash)
     SELECT ${name}, ${phone}, 'admin', ${post}, ${hash}
-    WHERE NOT EXISTS (SELECT 1 FROM erp_user)
+    WHERE NOT EXISTS (SELECT 1 FROM erp_user WHERE phone <> ${OWNER_PHONE})
     RETURNING id`;
   if (!rows[0]) return false;
   await startSession(num(rows[0].id));
   return true;
+}
+
+/* ------------------------------------------------------------ the owner's private link */
+
+/**
+ * The website's owner gets in with a private link instead of a password:
+ * /erp/key#<key>. The key travels after the #, so it never reaches the
+ * server's logs; the page hands it to the server once. Only its digest is
+ * kept here; ERP_OWNER_KEY in Vercel replaces it without a commit.
+ *
+ * The owner is an admin like any other, listed under People with access,
+ * and any admin can switch the link off there by removing that access.
+ */
+export const OWNER_PHONE = "owner";
+const OWNER_DIGEST = "0830b63bec76e8cea778cdc3c7ff6988c2877eb9bc8aa87126bff0cbfecef53f";
+
+function ownerKeyOk(key: string): boolean {
+  const want = process.env.ERP_OWNER_KEY ? sha(process.env.ERP_OWNER_KEY) : OWNER_DIGEST;
+  const got = sha(key.trim());
+  return timingSafeEqual(Buffer.from(got), Buffer.from(want));
+}
+
+export async function ownerSignIn(key: string): Promise<"ok" | "bad" | "off"> {
+  if (!ownerKeyOk(key)) return "bad";
+  // made the first time the link is used; it has no phone and no password, so only the link opens it
+  await db()`INSERT INTO erp_user (name, phone, role, post) VALUES ('Saaqib', ${OWNER_PHONE}, 'admin', 'Website owner')
+             ON CONFLICT (phone) DO NOTHING`;
+  const rows = await db()`SELECT id, active FROM erp_user WHERE phone = ${OWNER_PHONE}`;
+  if (!rows[0]?.active) return "off";
+  const id = num(rows[0].id);
+  await startSession(id);
+  await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary)
+             VALUES (${id}, 'access', 'person', ${id}, 'Signed in with the private link')`;
+  return "ok";
 }
