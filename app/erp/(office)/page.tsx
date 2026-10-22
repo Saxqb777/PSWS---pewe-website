@@ -4,6 +4,8 @@ import { listMoney, listRequests, stipendLines, totals } from "@/lib/erp/data";
 import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST, labelOf } from "@/lib/erp/labels";
 import { Empty, MoneyList, Section } from "@/components/erp/ui";
 import { ACTION_LABEL, approvalsForMe, fundBalances, getOpening, placeBalances } from "@/lib/erp/books";
+import { portalOn } from "@/lib/erp/flags";
+import { officeWaiting } from "@/lib/erp/portal";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Home" };
@@ -16,7 +18,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
   const monthName = showMonth(month).split(" ")[0];
   const fy = fyOf(today);
   const year = fyRange(fy);
-  const [m, y, waiting, stipends, latest, opening, places, funds, forMe] = await Promise.all([
+  const [m, y, waiting, stipends, latest, opening, places, funds, forMe, portal] = await Promise.all([
     totals(`${month}-01`, today),
     totals(year.from, year.to),
     listRequests({ open: true }),
@@ -26,6 +28,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
     placeBalances(),
     fundBalances(),
     approvalsForMe(u.id),
+    portalOn() ? officeWaiting(u.id) : Promise.resolve(null),
   ]);
   const zakat = funds.find((f) => f.head === "zakat");
   const editor = canDo(u.role, "editor");
@@ -44,6 +47,23 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
       {sp.denied && (
         <p className={`${styles.banner} ${styles.bannerWarn}`}>
           You can see everything here but cannot add or change entries. Ask an admin if you need to.
+        </p>
+      )}
+
+      {portal && portal.pledges + portal.asks + portal.messages > 0 && (
+        <p className={styles.banner}>
+          <b>Members&apos; portal:</b>{" "}
+          {[
+            portal.pledges && `${portal.pledges} payment${portal.pledges === 1 ? "" : "s"} to find in the bank`,
+            portal.asks && `${portal.asks} ask${portal.asks === 1 ? "" : "s"} for your approval`,
+            portal.messages && `${portal.messages} message${portal.messages === 1 ? "" : "s"}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          .{" "}
+          <Link href="/erp/portal" className={styles.link}>
+            Open
+          </Link>
         </p>
       )}
 

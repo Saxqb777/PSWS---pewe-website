@@ -5,8 +5,10 @@ import {
   changePassword,
   checkPassword,
   createFirstAdmin,
+  demoSignIn,
   endSession,
   firstSignIn,
+  homePath,
   ownerSignIn,
   passwordProblem,
   requireUser,
@@ -14,20 +16,26 @@ import {
   tryLogin,
   redeemInvite,
 } from "@/lib/erp/auth";
-import { clean, normalPhone } from "@/lib/erp/labels";
+import { clean, normalMemberNo, normalPhone } from "@/lib/erp/labels";
+import { portalOn } from "@/lib/erp/flags";
 import type { FormState } from "@/lib/erp/form-state";
 
 /** Signing in, setting a password, and setting the office up the first time. */
 
 export async function signIn(_: FormState, data: FormData): Promise<FormState> {
-  const phone = normalPhone(data.get("phone"));
+  // with the portal on, the same box takes a PSWS number or a mobile number
+  const memberNo = portalOn() ? normalMemberNo(data.get("phone")) : null;
+  const phone = memberNo ? null : normalPhone(data.get("phone"));
   const password = String(data.get("password") ?? "");
   const errors: Record<string, string> = {};
-  if (!phone) errors.phone = "Type your mobile number, e.g. 98123 45678.";
+  if (!memberNo && !phone)
+    errors.phone = portalOn()
+      ? "Type your PSWS number (e.g. PSWS-48213) or your mobile number."
+      : "Type your mobile number, e.g. 98123 45678.";
   if (!password) errors.password = "Type your password.";
   if (Object.keys(errors).length) return { errors };
-  const r = await tryLogin(phone!, password);
-  if (r === "ok") redirect("/erp");
+  const r = await tryLogin(memberNo ? { member_no: memberNo } : { phone: phone! }, password);
+  if (r === "ok") redirect(homePath());
   if (r === "locked")
     return { error: "Too many wrong tries. Wait 15 minutes and try again. (15 minute ruk kar phir koshish kijiye.)" };
   if (r === "no-password")
@@ -35,7 +43,11 @@ export async function signIn(_: FormState, data: FormData): Promise<FormState> {
       error:
         "You have not chosen a password yet. Tap “First time here” above and use the Gmail you gave in the members' form.",
     };
-  return { error: "The phone number and password do not match. (Number ya password galat hai.)" };
+  return {
+    error: memberNo
+      ? "The PSWS number and password do not match. (Number ya password galat hai.)"
+      : "The phone number and password do not match. (Number ya password galat hai.)",
+  };
 }
 
 export async function setPassword(_: FormState, data: FormData): Promise<FormState> {
@@ -47,7 +59,7 @@ export async function setPassword(_: FormState, data: FormData): Promise<FormSta
   if (password !== again) return { errors: { again: "The two passwords are not the same. (Dono ek jaise likhiye.)" } };
   if (!(await redeemInvite(token, password)))
     return { error: "This link has expired or has already been used. Ask the admin for a new one." };
-  redirect("/erp?welcome=1");
+  redirect(`${homePath()}?welcome=1`);
 }
 
 export async function setUp(_: FormState, data: FormData): Promise<FormState> {
@@ -112,7 +124,7 @@ export async function firstTime(_: FormState, data: FormData): Promise<FormState
   else if (password !== again) errors.again = "The two passwords are not the same. (Dono ek jaise likhiye.)";
   if (Object.keys(errors).length) return { errors };
   const r = await firstSignIn(phone!, email, password);
-  if (r === "ok") redirect("/erp?welcome=1");
+  if (r === "ok") redirect(`${homePath()}?welcome=1`);
   if (r === "locked") return { error: "Too many wrong tries. Wait 15 minutes and try again." };
   if (r === "done") return { error: "You have already chosen a password. Use “Sign in” with your mobile number and password." };
   if (r === "no-email")
@@ -121,4 +133,11 @@ export async function firstTime(_: FormState, data: FormData): Promise<FormState
     error:
       "This mobile number and Gmail do not match the members' form. Check both. From abroad, start the number with + and the country code.",
   };
+}
+
+/** The demo copy only: be one of the sample people, with one tap. */
+export async function demoAs(data: FormData) {
+  const id = Number(data.get("id"));
+  if (Number.isSafeInteger(id) && (await demoSignIn(id))) redirect("/erp/me");
+  redirect("/erp/login");
 }

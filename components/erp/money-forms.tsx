@@ -65,6 +65,7 @@ export function MoneyInForm({
   names,
   submit,
   askReason = false,
+  asks,
 }: {
   action: Action;
   initial: MoneyInInitial;
@@ -72,6 +73,8 @@ export function MoneyInForm({
   submit: string;
   /** changing a saved receipt: the change goes to the approvers with a reason */
   askReason?: boolean;
+  /** with the members' portal on: the open asks a new receipt can be for */
+  asks?: { id: number; title: string }[];
 }) {
   const [method, setMethod] = useState<Method>(initial.method ?? "cash");
   return (
@@ -126,6 +129,23 @@ export function MoneyInForm({
           <input name="note" defaultValue={initial.note ?? ""} />
         </Field>
       </div>
+      {asks && (
+        <div className={styles.grid}>
+          <Field label="Their PSWS number" hint="Optional: it goes in their passbook" name="member_no">
+            <input name="member_no" autoComplete="off" autoCapitalize="characters" placeholder="PSWS-48213" />
+          </Field>
+          <Field label="For an ask" hint="Optional: it counts towards it" name="ask_id">
+            <select name="ask_id" defaultValue="">
+              <option value="">Not for an ask</option>
+              {asks.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.title}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
       {askReason && <ReasonBox />}
       <div className={styles.actions}>
         <Submit>{submit}</Submit>

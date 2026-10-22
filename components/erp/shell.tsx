@@ -7,7 +7,7 @@ import styles from "./erp.module.css";
 
 /** The office's menu: a rail on a computer, a sheet behind a button on a phone. */
 
-const GROUPS: { href: string; label: string; admin?: boolean }[][] = [
+const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean }[][] = [
   [
     { href: "/erp", label: "Home" },
     { href: "/erp/money", label: "Money" },
@@ -21,6 +21,7 @@ const GROUPS: { href: string; label: string; admin?: boolean }[][] = [
     { href: "/erp/meetings", label: "Meetings and notices" },
   ],
   [
+    { href: "/erp/portal", label: "Members' portal", portal: true },
     { href: "/erp/approvals", label: "Approvals" },
     { href: "/erp/reports", label: "Reports and Excel" },
     { href: "/erp/history", label: "Who changed what" },
@@ -35,7 +36,16 @@ function isHere(path: string, href: string) {
   return href === "/erp" ? path === "/erp" : path === href || path.startsWith(href + "/");
 }
 
-export function Nav({ admin, needsMe = 0 }: { admin: boolean; needsMe?: number }) {
+export function Nav({
+  admin,
+  needsMe = 0,
+  portal = null,
+}: {
+  admin: boolean;
+  needsMe?: number;
+  /** with the members' portal on: how much there is for the office to do there */
+  portal?: number | null;
+}) {
   const path = usePathname();
   return (
     <nav className={styles.nav} aria-label="Office">
@@ -43,7 +53,7 @@ export function Nav({ admin, needsMe = 0 }: { admin: boolean; needsMe?: number }
         <div key={i}>
           {i > 0 && <div className={styles.navGroup} />}
           {g
-            .filter((l) => admin || !l.admin)
+            .filter((l) => (admin || !l.admin) && (portal !== null || !l.portal))
             .map((l) => (
               <Link
                 key={l.href}
@@ -57,6 +67,11 @@ export function Nav({ admin, needsMe = 0 }: { admin: boolean; needsMe?: number }
                     {needsMe}
                   </span>
                 )}
+                {l.href === "/erp/portal" && !!portal && (
+                  <span className={styles.badge} aria-label={`${portal} waiting for the office`}>
+                    {portal}
+                  </span>
+                )}
               </Link>
             ))}
         </div>
@@ -65,7 +80,17 @@ export function Nav({ admin, needsMe = 0 }: { admin: boolean; needsMe?: number }
   );
 }
 
-export function MobileMenu({ admin, name, needsMe = 0 }: { admin: boolean; name: string; needsMe?: number }) {
+export function MobileMenu({
+  admin,
+  name,
+  needsMe = 0,
+  portal = null,
+}: {
+  admin: boolean;
+  name: string;
+  needsMe?: number;
+  portal?: number | null;
+}) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   useEffect(() => setOpen(false), [path]);
@@ -85,12 +110,12 @@ export function MobileMenu({ admin, name, needsMe = 0 }: { admin: boolean; name:
         onClick={() => setOpen((o) => !o)}
       >
         {open ? "Close" : "Menu"}
-        {!open && needsMe > 0 && <span className={styles.badge}>{needsMe}</span>}
+        {!open && needsMe + (portal ?? 0) > 0 && <span className={styles.badge}>{needsMe + (portal ?? 0)}</span>}
       </button>
       {open && (
         <div id="erp-menu" className={styles.menuSheet}>
           <p className={styles.menuWho}>Signed in as {name}</p>
-          <Nav admin={admin} needsMe={needsMe} />
+          <Nav admin={admin} needsMe={needsMe} portal={portal} />
         </div>
       )}
     </>

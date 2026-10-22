@@ -300,3 +300,96 @@ CREATE TABLE IF NOT EXISTS erp_month (
   closed_at            timestamptz NOT NULL DEFAULT now(),
   reopened_at          timestamptz
 );
+
+-- ---------------------------------------------------------------- the members' portal
+-- Every member has a PSWS number of their own (PSWS-48213) and a page of
+-- their own: what they gave, what they received, and asks for collections,
+-- Zakat and help. The office's people are members too. The number says who
+-- someone is; signing in still needs their password.
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS member_no    text;
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS lives_in     text;
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS member_since date;
+CREATE UNIQUE INDEX IF NOT EXISTS erp_user_member_no ON erp_user (member_no) WHERE member_no IS NOT NULL;
+-- a member has a portal and no say in the office
+ALTER TABLE erp_user DROP CONSTRAINT IF EXISTS erp_user_role_check;
+ALTER TABLE erp_user ADD CONSTRAINT erp_user_role_check CHECK (role IN ('admin', 'editor', 'viewer', 'member'));
+
+-- An ask: a collection for a cause, a Zakat appeal, or a private ask for help.
+-- It is seen by every member only once two approvers say yes.
+CREATE TABLE IF NOT EXISTS erp_ask (
+  id           bigserial   PRIMARY KEY,
+  kind         text        NOT NULL CHECK (kind IN ('collection', 'zakat', 'help')),
+  title        text        NOT NULL,
+  story        text,                              -- why, as members see it; a Zakat appeal never names the family
+  private_note text,                              -- who it is for: the office and the approvers only
+  family_id    bigint      REFERENCES erp_family(id),
+  target_paise bigint      CHECK (target_paise IS NULL OR target_paise > 0),
+  head         text        NOT NULL CHECK (head IN ('zakat', 'donation', 'development', 'other')),
+  closes_on    date,
+  status       text        NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'live', 'closed', 'declined', 'withdrawn')),
+  asked_by     bigint      REFERENCES erp_user(id),
+  asked_at     timestamptz NOT NULL DEFAULT now(),
+  live_at      timestamptz,
+  closed_at    timestamptz,
+  closed_by    bigint      REFERENCES erp_user(id),
+  closing_note text                               -- how the money was spent, shown to everyone
+);
+CREATE INDEX IF NOT EXISTS erp_ask_status ON erp_ask (status, asked_at DESC);
+
+CREATE TABLE IF NOT EXISTS erp_ask_vote (
+  ask_id  bigint      NOT NULL REFERENCES erp_ask(id),
+  user_id bigint      NOT NULL REFERENCES erp_user(id),
+  vote    text        NOT NULL CHECK (vote IN ('yes', 'no')),
+  note    text,
+  at      timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (ask_id, user_id)
+);
+
+-- "I sent ₹1,000": a member's word that they paid PSWS, until the Treasurer finds it and it becomes a receipt.
+CREATE TABLE IF NOT EXISTS erp_pledge (
+  id           bigserial   PRIMARY KEY,
+  member_id    bigint      NOT NULL REFERENCES erp_user(id),
+  ask_id       bigint      REFERENCES erp_ask(id),       -- empty: a gift to a fund rather than to an ask
+  amount_paise bigint      NOT NULL CHECK (amount_paise > 0),
+  head         text        NOT NULL CHECK (head IN ('zakat', 'donation', 'development', 'other')),
+  method       text        NOT NULL CHECK (method IN ('cash', 'upi', 'bank', 'cheque')),
+  reference    text,                                     -- the UPI or cheque number
+  sent_on      date        NOT NULL,
+  show_name    boolean     NOT NULL DEFAULT false,       -- their name beside it on everyone's screen
+  status       text        NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'confirmed', 'not_found', 'withdrawn')),
+  money_in_id  bigint      REFERENCES erp_money_in(id),  -- the receipt, once found
+  checked_by   bigint      REFERENCES erp_user(id),
+  checked_at   timestamptz,
+  check_note   text,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS erp_pledge_status ON erp_pledge (status, created_at);
+
+-- Who gave, who received, and which ask the money was for.
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS member_id bigint REFERENCES erp_user(id);
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS ask_id    bigint REFERENCES erp_ask(id);
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS member_id bigint REFERENCES erp_user(id);
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS ask_id    bigint REFERENCES erp_ask(id);
+ALTER TABLE erp_family    ADD COLUMN IF NOT EXISTS member_id bigint REFERENCES erp_user(id);
+CREATE INDEX IF NOT EXISTS erp_money_in_member ON erp_money_in (member_id) WHERE member_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS erp_money_in_ask ON erp_money_in (ask_id) WHERE ask_id IS NOT NULL;
+
+-- What everyone sees happening. Written as it happens, already without the names that are private.
+CREATE TABLE IF NOT EXISTS erp_feed (
+  id     bigserial   PRIMARY KEY,
+  at     timestamptz NOT NULL DEFAULT now(),
+  kind   text        NOT NULL CHECK (kind IN ('live', 'gift', 'target', 'closed', 'notice')),
+  ask_id bigint      REFERENCES erp_ask(id),
+  line   text        NOT NULL
+);
+CREATE INDEX IF NOT EXISTS erp_feed_at ON erp_feed (at DESC);
+
+-- A member asking the office to change their details.
+CREATE TABLE IF NOT EXISTS erp_member_message (
+  id        bigserial   PRIMARY KEY,
+  member_id bigint      NOT NULL REFERENCES erp_user(id),
+  body      text        NOT NULL,
+  at        timestamptz NOT NULL DEFAULT now(),
+  done_at   timestamptz,
+  done_by   bigint      REFERENCES erp_user(id)
+);

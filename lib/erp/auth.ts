@@ -2,9 +2,10 @@ import "server-only";
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db, num } from "./db";
 import { canDo, type Role } from "./labels";
+import { demoOn, portalOn } from "./flags";
 
 /**
  * Who is using the office, and what they may do.
@@ -30,6 +31,7 @@ export interface User {
   phone: string;
   role: Role;
   post: string | null;
+  member_no: string | null;
 }
 
 /* ------------------------------------------------------------ passwords */
@@ -72,19 +74,64 @@ export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   const rows = await db()`
-    SELECT u.id, u.name, u.phone, u.role, u.post
+    SELECT u.id, u.name, u.phone, u.role, u.post, u.member_no
     FROM erp_session s JOIN erp_user u ON u.id = s.user_id
     WHERE s.token_hash = ${sha(token)} AND s.expires_at > now() AND u.active`;
   const u = rows[0];
-  return u ? { id: num(u.id), name: String(u.name), phone: String(u.phone), role: u.role as Role, post: (u.post as string) ?? null } : null;
+  return u
+    ? {
+        id: num(u.id),
+        name: String(u.name),
+        phone: String(u.phone),
+        role: u.role as Role,
+        post: (u.post as string) ?? null,
+        member_no: (u.member_no as string) ?? null,
+      }
+    : null;
 }
 
-/** For every page and every action: signed in, and allowed to do this. */
+/** For every office page and action: signed in, and allowed to do this. A member with only a portal goes to it. */
 export async function requireUser(need: Role = "viewer"): Promise<User> {
   const u = await currentUser();
   if (!u) redirect("/erp/login");
+  if (u.role === "member") redirect("/erp/me");
   if (!canDo(u.role, need)) redirect("/erp?denied=1");
   return u;
+}
+
+/**
+ * For every portal page and action: signed in, as anyone with a PSWS number.
+ * The website's owner looks over the office and has no portal of their own.
+ */
+export async function requireMember(): Promise<User & { member_no: string }> {
+  // who it is first: reading the cookie keeps these pages from being built once, ahead of time
+  const u = await currentUser();
+  if (!portalOn()) notFound();
+  if (!u) redirect("/erp/login");
+  if (u.phone === OWNER_PHONE) redirect("/erp");
+  const member_no = u.member_no ?? (await assignMemberNo(u.id));
+  return { ...u, member_no };
+}
+
+/** Where someone lands after signing in. */
+export const homePath = () => (portalOn() ? "/erp/me" : "/erp");
+
+/**
+ * A PSWS number of their own, PSWS- and five random digits, given once and
+ * never reused. Random, so a number says nothing about who joined when.
+ */
+export async function assignMemberNo(userId: number): Promise<string> {
+  for (let i = 0; i < 20; i++) {
+    const no = `PSWS-${10000 + (randomBytes(4).readUInt32BE() % 90000)}`;
+    const rows = await db()`
+      UPDATE erp_user SET member_no = coalesce(member_no, ${no}), member_since = coalesce(member_since, current_date)
+      WHERE id = ${userId} AND NOT EXISTS (SELECT 1 FROM erp_user WHERE member_no = ${no})
+      RETURNING member_no`;
+    if (rows[0]) return String(rows[0].member_no);
+    const had = await db()`SELECT member_no FROM erp_user WHERE id = ${userId}`;
+    if (had[0]?.member_no) return String(had[0].member_no);
+  }
+  throw new Error("Could not find a free member number");
 }
 
 export async function endSession() {
@@ -98,10 +145,16 @@ export async function endSession() {
 
 export type LoginResult = "ok" | "bad" | "locked" | "no-password";
 
-export async function tryLogin(phone: string, password: string): Promise<LoginResult> {
-  const rows = await db()`
-    SELECT id, password_hash, failed_logins, locked_until > now() AS locked
-    FROM erp_user WHERE phone = ${phone} AND active`;
+/** Signing in with a mobile number, or (with the portal on) a PSWS number. */
+export async function tryLogin(who: { phone: string } | { member_no: string }, password: string): Promise<LoginResult> {
+  const rows =
+    "member_no" in who
+      ? await db()`
+          SELECT id, password_hash, failed_logins, locked_until > now() AS locked
+          FROM erp_user WHERE member_no = ${who.member_no} AND active`
+      : await db()`
+          SELECT id, password_hash, failed_logins, locked_until > now() AS locked
+          FROM erp_user WHERE phone = ${who.phone} AND active`;
   const u = rows[0];
   if (!u) {
     // same work as a real check, so a wrong number cannot be told apart by speed
@@ -154,6 +207,7 @@ export async function firstSignIn(phone: string, email: string, password: string
   // only if still unset, so two tries at once cannot both win
   const set = await db()`UPDATE erp_user SET password_hash = ${hash} WHERE id = ${u.id} AND password_hash IS NULL RETURNING id`;
   if (!set[0]) return "done";
+  if (portalOn()) await assignMemberNo(num(u.id));
   await startSession(num(u.id));
   await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary)
              VALUES (${u.id}, 'access', 'person', ${u.id}, 'Signed in for the first time and chose a password')`;
@@ -278,4 +332,29 @@ export async function ownerSignIn(key: string): Promise<"ok" | "bad" | "off"> {
   // not written to the history: the owner looks over the office without appearing in it
   await startSession(id);
   return "ok";
+}
+
+/* ------------------------------------------------------------ the demo copy */
+
+/**
+ * The demo, for certain: the switch is on AND the database is the demo's own,
+ * which alone has the psws_demo_marker table. Both, so that switching
+ * PSWS_DEMO on by mistake on the real office opens nothing.
+ */
+export async function isDemo(): Promise<boolean> {
+  if (!demoOn()) return false;
+  const rows = await db()`SELECT to_regclass('public.psws_demo_marker') IS NOT NULL AS yes`;
+  return rows[0]?.yes === true;
+}
+
+/**
+ * In the demo copy only, anyone can be any of the sample people with one tap,
+ * so the committee can try every side of the portal. Never on the real office.
+ */
+export async function demoSignIn(userId: number): Promise<boolean> {
+  if (!(await isDemo())) return false;
+  const rows = await db()`SELECT id FROM erp_user WHERE id = ${userId} AND active AND phone <> ${OWNER_PHONE}`;
+  if (!rows[0]) return false;
+  await startSession(userId);
+  return true;
 }

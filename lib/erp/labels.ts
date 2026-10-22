@@ -72,6 +72,7 @@ export const ROLES = {
   admin: { en: "Admin", hi: "Sab kuch, aur logon ko access dena" },
   editor: { en: "Can add entries", hi: "Entry daal sakte hain" },
   viewer: { en: "Can only see", hi: "Sirf dekh sakte hain" },
+  member: { en: "Member", hi: "Sirf apna portal" },
 } satisfies Labelled<string>;
 export type Role = keyof typeof ROLES;
 
@@ -84,11 +85,47 @@ export function labelOf(map: Record<string, { en: string }>, key: string | null 
 /** The kinds of payment that are help for a family. */
 export const FAMILY_PURPOSES: Purpose[] = ["medical", "education", "livelihood", "emergency", "stipend"];
 
-const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
+// a member has their own portal and nothing in the office
+const RANK: Record<Role, number> = { member: -1, viewer: 0, editor: 1, admin: 2 };
 export const canDo = (have: Role, need: Role) => RANK[have] >= RANK[need];
 
 /** Places in and around Pewe, offered as suggestions (anything can be typed). */
 export const PLACES = ["Pewe", "Amshet Bhoiwadi", "Rab Bhoiwadi", "Pere", "Pardalewadi", "Guhagar", "Mumbai"];
+
+/* ------------------------------------------------------------------ the members' portal */
+
+/** What a member or the office can put out for everyone. */
+export const ASK_KINDS = {
+  collection: { en: "Collection", hi: "Chanda, kisi kaam ke liye" },
+  zakat: { en: "Zakat appeal", hi: "Zakat, kisi zaroorat-mand ke liye" },
+  help: { en: "Ask for help", hi: "Madad, apne ya kisi aur ke liye" },
+} satisfies Labelled<string>;
+export type AskKind = keyof typeof ASK_KINDS;
+
+export const ASK_STATUSES = {
+  waiting: { en: "Waiting for approval", hi: "Manzoori baaki" },
+  live: { en: "Open", hi: "Chalu" },
+  closed: { en: "Closed", hi: "Band" },
+  declined: { en: "Not approved", hi: "Manzoor nahi" },
+  withdrawn: { en: "Withdrawn", hi: "Wapas liya" },
+} satisfies Labelled<string>;
+export type AskStatus = keyof typeof ASK_STATUSES;
+
+export const PLEDGE_STATUSES = {
+  waiting: { en: "Waiting for the Treasurer", hi: "Treasurer dekh rahe hain" },
+  confirmed: { en: "Received", hi: "Mil gaya" },
+  not_found: { en: "Not found yet", hi: "Abhi nahi mila" },
+  withdrawn: { en: "Withdrawn", hi: "Wapas liya" },
+} satisfies Labelled<string>;
+export type PledgeStatus = keyof typeof PLEDGE_STATUSES;
+
+/** "psws 48213", "48213", "PSWS-48213" → "PSWS-48213". Anything else → null. */
+export function normalMemberNo(raw: unknown): string | null {
+  const m = String(raw ?? "")
+    .trim()
+    .match(/^(?:psws)?[\s-]*(\d{5})$/i);
+  return m ? `PSWS-${m[1]}` : null;
+}
 
 export const isKey = <T extends object>(o: T, k: unknown): k is keyof T => typeof k === "string" && k in o;
 
@@ -231,6 +268,17 @@ export function showMonth(ym: string): string {
 }
 
 /** A timestamp shown in Pewe time: "4 Oct 2026, 3:05 pm". */
+/** "just now", "5 min ago", "3 hours ago", "yesterday", then the date. For what is happening across PSWS. */
+export function ago(t: string | Date | null | undefined, now = Date.now()): string {
+  if (!t) return "";
+  const s = Math.max(0, Math.round((now - new Date(t).getTime()) / 1000));
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} hour${s < 7200 ? "" : "s"} ago`;
+  if (s < 172800) return "yesterday";
+  return showDate(new Date(new Date(t).getTime() + 330 * 60000).toISOString());
+}
+
 export function showWhen(t: string | Date | null | undefined): string {
   if (!t) return "";
   const d = new Date(new Date(t).getTime() + 330 * 60000);

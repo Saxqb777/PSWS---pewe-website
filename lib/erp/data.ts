@@ -65,6 +65,9 @@ export interface MoneyInFields {
   method: Method;
   reference: string | null;
   note: string | null;
+  /** with the portal on: the member who gave it, and the ask it was for */
+  member_id?: number | null;
+  ask_id?: number | null;
 }
 
 const inSummary = (no: string, f: MoneyInFields) =>
@@ -80,9 +83,10 @@ export async function addMoneyIn(u: User, f: MoneyInFields): Promise<{ id: numbe
     )
     INSERT INTO erp_money_in
       (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
-       created_by)
+       member_id, ask_id, created_by)
     SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
-           ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note}, ${u.id}
+           ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
+           ${f.member_id ?? null}, ${f.ask_id ?? null}, ${u.id}
     FROM n
     RETURNING id, receipt_no`;
   const r = { id: num(rows[0].id), receipt_no: String(rows[0].receipt_no) };
@@ -870,7 +874,7 @@ export async function listPeople(): Promise<Person[]> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
            first_email IS NOT NULL AS has_first_email, approver, last_login_at
-    FROM erp_user WHERE phone <> 'owner'
+    FROM erp_user WHERE phone <> 'owner' AND role <> 'member'
     ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Person);
 }
