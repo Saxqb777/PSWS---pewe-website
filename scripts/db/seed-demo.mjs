@@ -202,11 +202,13 @@ const gifts = [
   [2, "Mariam", 2000, "upi", roof, "development"],
   [1, "Junaid", 1000, "upi", hospital, "zakat"],
   [1, "Zaid", 5000, "upi", roof, "development"],
+  // Ayaan gathered this from relatives in Mumbai and sent it in: his collection, not his own gift
+  [2, "Ayaan", 20000, "bank", roof, "development", { people: 10, names: "Relatives in Mumbai (sample): 10 people" }],
 ];
 // oldest first, so receipt numbers run in date order
 gifts.sort((a, b) => b[0] - a[0]);
 let rno = 0;
-for (const [ago, from, amount, method, askId, head] of gifts) {
+for (const [ago, from, amount, method, askId, head, collected] of gifts) {
   const on = daysAgo(ago);
   const fy = fyOf(on);
   rno += 1;
@@ -214,10 +216,12 @@ for (const [ago, from, amount, method, askId, head] of gifts) {
   const who = member ? people.find((x) => x[0].startsWith(from))[0] : from;
   await sql`
     INSERT INTO erp_money_in (receipt_no, fy, on_date, from_name, from_place, amount_paise, head, method, reference, note,
-                              member_id, ask_id, created_by, created_at)
-    VALUES (${`R/${fy}/${String(rno).padStart(4, "0")}`}, ${fy}, ${on}, ${who}, null, ${rs(amount)}, ${head}, ${method},
+                              member_id, collected_by, people, givers_note, ask_id, created_by, created_at)
+    VALUES (${`R/${fy}/${String(rno).padStart(4, "0")}`}, ${fy}, ${on},
+            ${collected ? `Collected by ${who} from ${collected.people} people` : who}, null, ${rs(amount)}, ${head}, ${method},
             ${method === "cash" ? null : `SAMPLE${String(100000 + rno)}`}, ${askId ? "Given through the members' portal" : null},
-            ${member}, ${askId}, ${id.Imran}, ${hoursAgo(ago * 24)})`;
+            ${collected ? null : member}, ${collected ? member : null}, ${collected?.people ?? null}, ${collected?.names ?? null},
+            ${askId}, ${id.Imran}, ${hoursAgo(ago * 24)})`;
 }
 await sql`INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fyOf(daysAgo(0))}, ${rno})`;
 
@@ -262,10 +266,13 @@ const feed = [
   [24 * 8 + 2, "live", hospital, "New Zakat appeal: Hospital costs for a family in Pewe, for ₹40,000"],
   [24 * 6 + 2, "live", roof, "New collection: Roof repair for the Pewe primary school, for ₹1,50,000"],
 ];
-for (const [ago, from, amount, , askId, head] of gifts) {
+for (const [ago, from, amount, , askId, head, collected] of gifts) {
   if (ago > 40) continue;
   const who = id[from.split(" ")[0]] ? people.find((x) => x[0].startsWith(from))[0] : from;
-  const line = `${hiddenGift(from, amount) ? "Received" : `${who} gave`} ${inr(amount)} for ${askId ? titles[askId] : fundName[head]}`;
+  const forWhat = askId ? titles[askId] : fundName[head];
+  const line = collected
+    ? `${who} collected ${inr(amount)} from ${collected.people} people for ${forWhat}`
+    : `${hiddenGift(from, amount) ? "Received" : `${who} gave`} ${inr(amount)} for ${forWhat}`;
   feed.push([ago * 24 - 3, "gift", askId, line]);
 }
 for (const [h, kind, askId, line] of feed)

@@ -68,6 +68,12 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     errors.reference = "Type the number from the payment message, so the Treasurer can find it.";
   const sent_on = String(data.get("sent_on") ?? "");
   if (!isDate(sent_on) || sent_on > todayIST()) errors.sent_on = "Pick the day you sent it.";
+  // money gathered from others: counts for the ask and as their collection, not as their own gift
+  const collected = data.get("collected") === "on";
+  const peopleRaw = clean(data.get("people"), 6);
+  const people = peopleRaw ? Number(peopleRaw) : null;
+  if (collected && peopleRaw && !(Number.isInteger(people) && people! > 0 && people! < 10000))
+    errors.people = "How many people gave? A number, e.g. 10.";
   if (Object.keys(errors).length) return { errors };
   await addPledge(u, {
     ask_id: askId,
@@ -78,6 +84,9 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     sent_on,
     // names show unless the giver asks to keep theirs hidden
     show_name: data.get("hide_name") !== "on",
+    collected,
+    people: collected ? people : null,
+    givers_note: collected ? cleanLong(data.get("givers_note"), 2000) : null,
   });
   redirect(askId ? `/erp/me/asks/${askId}?gave=1` : "/erp/me/passbook?gave=1");
 }

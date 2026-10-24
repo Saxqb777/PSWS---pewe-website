@@ -100,6 +100,44 @@ export async function passbook(memberId: number, fy: string | null = null): Prom
   }));
 }
 
+export interface CollectedLine {
+  id: number;
+  on_date: string;
+  no: string;
+  what: string;
+  amount_paise: number;
+  people: number | null;
+}
+
+/** What a member gathered from others and handed in: shown apart from what they gave themselves. */
+export async function collections(memberId: number, fy: string | null = null): Promise<CollectedLine[]> {
+  const range = fy ? fyRange(fy) : { from: "1900-01-01", to: "9999-12-31" };
+  const rows = await db()`
+    SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.receipt_no AS no, m.amount_paise, m.people, m.head,
+           m.head_other, a.title AS ask_title
+    FROM erp_money_in m LEFT JOIN erp_ask a ON a.id = m.ask_id
+    WHERE m.collected_by = ${memberId} AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${range.from} AND ${range.to}
+    ORDER BY m.on_date DESC, m.receipt_no DESC`;
+  return rows.map((r) => ({
+    id: num(r.id),
+    on_date: String(r.on_date),
+    no: String(r.no),
+    amount_paise: num(r.amount_paise),
+    people: r.people == null ? null : num(r.people),
+    what: r.ask_title ? String(r.ask_title) : labelOf(HEADS, String(r.head), r.head_other as string | null),
+  }));
+}
+
+/** Who collected for an ask, biggest first. Those who asked not to be named are left out here (their money still counts). */
+export async function askCollectors(askId: number): Promise<{ name: string; amount_paise: number; people: number }[]> {
+  const rows = await db()`
+    SELECT u.name, sum(m.amount_paise) AS amount_paise, sum(coalesce(m.people, 0)) AS people
+    FROM erp_money_in m JOIN erp_user u ON u.id = m.collected_by
+    WHERE m.ask_id = ${askId} AND m.cancelled_at IS NULL AND NOT m.name_hidden
+    GROUP BY u.id, u.name ORDER BY sum(m.amount_paise) DESC`;
+  return rows.map((r) => ({ name: String(r.name), amount_paise: num(r.amount_paise), people: num(r.people) }));
+}
+
 /* ================================================================== asks */
 
 export interface Ask {
@@ -131,8 +169,9 @@ const SELECT_ASK = `
          CASE WHEN u.phone = 'owner' THEN 'Office' ELSE coalesce(u.name, 'Office') END AS asked_by_name,
          a.asked_at, a.live_at, a.closed_at, a.closing_note,
          coalesce((SELECT sum(m.amount_paise) FROM erp_money_in m WHERE m.ask_id = a.id AND m.cancelled_at IS NULL), 0) AS raised_paise,
-         (SELECT count(DISTINCT coalesce(m.member_id::text, m.from_name)) FROM erp_money_in m
-           WHERE m.ask_id = a.id AND m.cancelled_at IS NULL) AS givers,
+         (SELECT count(DISTINCT coalesce(m.member_id::text, m.from_name)) FILTER (WHERE m.collected_by IS NULL)
+                 + coalesce(sum(coalesce(m.people, 1)) FILTER (WHERE m.collected_by IS NOT NULL), 0)
+           FROM erp_money_in m WHERE m.ask_id = a.id AND m.cancelled_at IS NULL) AS givers,
          coalesce((SELECT sum(p.amount_paise) FROM erp_pledge p WHERE p.ask_id = a.id AND p.status = 'waiting'), 0) AS waiting_paise,
          (SELECT count(*) FROM erp_ask_vote v WHERE v.ask_id = a.id AND v.vote = 'yes') AS yes,
          (SELECT count(*) FROM erp_ask_vote v WHERE v.ask_id = a.id AND v.vote = 'no') AS no
@@ -307,6 +346,9 @@ export interface Pledge {
   reference: string | null;
   sent_on: string;
   show_name: boolean;
+  collected: boolean;
+  people: number | null;
+  givers_note: string | null;
   status: PledgeStatus;
   receipt_no: string | null;
   check_note: string | null;
@@ -315,7 +357,8 @@ export interface Pledge {
 
 const SELECT_PLEDGE = `
   SELECT p.id, p.member_id, u.name AS member_name, u.member_no, p.ask_id, a.title AS ask_title, p.amount_paise, p.head,
-         p.method, p.reference, to_char(p.sent_on, 'YYYY-MM-DD') AS sent_on, p.show_name, p.status, m.receipt_no,
+         p.method, p.reference, to_char(p.sent_on, 'YYYY-MM-DD') AS sent_on, p.show_name, p.collected, p.people,
+         p.givers_note, p.status, m.receipt_no,
          p.check_note, p.created_at
   FROM erp_pledge p JOIN erp_user u ON u.id = p.member_id
     LEFT JOIN erp_ask a ON a.id = p.ask_id LEFT JOIN erp_money_in m ON m.id = p.money_in_id`;
@@ -326,6 +369,7 @@ const asPledge = (r: Record<string, unknown>): Pledge => ({
   member_id: num(r.member_id),
   ask_id: r.ask_id == null ? null : num(r.ask_id),
   amount_paise: num(r.amount_paise),
+  people: r.people == null ? null : num(r.people),
 });
 
 export async function myPledges(memberId: number): Promise<Pledge[]> {
@@ -351,16 +395,23 @@ export interface PledgeFields {
   reference: string | null;
   sent_on: string;
   show_name: boolean;
+  /** money they gathered from others, not their own gift */
+  collected: boolean;
+  people: number | null;
+  givers_note: string | null;
 }
 
 /** A member says they paid. Nothing counts until the Treasurer finds it. */
 export async function addPledge(u: User, f: PledgeFields): Promise<number> {
   const rows = await db()`
-    INSERT INTO erp_pledge (member_id, ask_id, amount_paise, head, method, reference, sent_on, show_name)
-    VALUES (${u.id}, ${f.ask_id}, ${f.amount_paise}, ${f.head}, ${f.method}, ${f.reference}, ${f.sent_on}, ${f.show_name})
+    INSERT INTO erp_pledge (member_id, ask_id, amount_paise, head, method, reference, sent_on, show_name, collected, people,
+                            givers_note)
+    VALUES (${u.id}, ${f.ask_id}, ${f.amount_paise}, ${f.head}, ${f.method}, ${f.reference}, ${f.sent_on}, ${f.show_name},
+            ${f.collected}, ${f.collected ? f.people : null}, ${f.collected ? f.givers_note : null})
     RETURNING id`;
   const id = num(rows[0].id);
-  await logChange(u.id, "added", "pledge", id, `Said they sent ${inr(f.amount_paise)} (${f.method.toUpperCase()}${f.reference ? ` ${f.reference}` : ""})`);
+  await logChange(u.id, "added", "pledge", id,
+    `Said they sent ${inr(f.amount_paise)}${f.collected ? ` collected from ${f.people ? `${f.people} people` : "others"}` : ""} (${f.method.toUpperCase()}${f.reference ? ` ${f.reference}` : ""})`);
   return id;
 }
 
@@ -370,23 +421,38 @@ export async function withdrawPledge(u: User, id: number): Promise<string | null
   return rows[0] ? null : "This can only be taken back while it waits for the Treasurer.";
 }
 
-/** "Akhtar Khan gave ₹50,000", or without the name when they chose to keep it hidden. */
-const gaveLine = (name: string | null, paise: number, forWhat: string) =>
-  `${name ? `${name.trim()} gave` : "Received"} ${inr(paise)} for ${forWhat}`;
+/** Money handed in by a member who gathered it from others: their effort, not their gift. */
+export interface Collected {
+  people: number | null;
+}
 
-/** A gift has come in for an ask: say so on everyone's screen, and when it reaches its target. */
-export async function noteGift(askId: number, amountPaise: number, shownName: string | null) {
+/**
+ * "Akhtar Khan gave ₹50,000 for …", "Ayaan collected ₹20,000 from 10 people for …",
+ * or without the name when they chose to keep it hidden.
+ */
+function giftLine(name: string | null, paise: number, forWhat: string, collected: Collected | null) {
+  const from = collected?.people ? ` from ${collected.people} ${collected.people === 1 ? "person" : "people"}` : "";
+  if (collected) return name ? `${name.trim()} collected ${inr(paise)}${from} for ${forWhat}` : `Received ${inr(paise)} collected${from} for ${forWhat}`;
+  return `${name ? `${name.trim()} gave` : "Received"} ${inr(paise)} for ${forWhat}`;
+}
+
+/** A gift (or a collection) has come in for an ask: say so on everyone's screen, and when it reaches its target. */
+export async function noteGift(askId: number, amountPaise: number, shownName: string | null, collected: Collected | null = null) {
   const a = await getAsk(askId);
   if (!a || !isPublicKind(a.kind)) return;
-  await addFeed("gift", askId, gaveLine(shownName, amountPaise, a.title));
+  await addFeed("gift", askId, giftLine(shownName, amountPaise, a.title, collected));
   if (a.target_paise && a.raised_paise >= a.target_paise && a.raised_paise - amountPaise < a.target_paise)
     await addFeed("target", askId, `${a.title} reached its target of ${inr(a.target_paise)}`);
 }
 
-/** A member's gift to a fund rather than to an ask, on everyone's screen too. */
-export async function noteFundGift(head: Head, amountPaise: number, shownName: string | null) {
-  await addFeed("gift", null, gaveLine(shownName, amountPaise, HEADS[head].en));
+/** A member's gift (or collection) to a fund rather than to an ask, on everyone's screen too. */
+export async function noteFundGift(head: Head, amountPaise: number, shownName: string | null, collected: Collected | null = null) {
+  await addFeed("gift", null, giftLine(shownName, amountPaise, HEADS[head].en, collected));
 }
+
+/** For the cash book: "Collected by Ayaan from 10 people". */
+export const collectedFrom = (collector: string, people: number | null) =>
+  `Collected by ${collector}${people ? ` from ${people} ${people === 1 ? "person" : "people"}` : ""}`;
 
 /** The Treasurer found it in the bank: it becomes a numbered receipt, and counts. */
 export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: string } | { error: string }> {
@@ -402,9 +468,10 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
   const member = await getMe(p.member_id);
   let r: { id: number; receipt_no: string };
   try {
+    const forWhat = p.ask_title ? `For: ${p.ask_title}` : "Given through the members' portal";
     r = await addMoneyIn(u, {
       on_date: p.sent_on,
-      from_name: member?.name ?? p.member_name,
+      from_name: p.collected ? collectedFrom(member?.name ?? p.member_name, p.people) : (member?.name ?? p.member_name),
       from_phone: member?.phone && /^\d+$/.test(member.phone) ? member.phone : null,
       from_place: member?.lives_in ?? null,
       amount_paise: p.amount_paise,
@@ -412,8 +479,13 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
       head_other: null,
       method: p.method,
       reference: p.reference,
-      note: p.ask_title ? `For: ${p.ask_title}` : "Given through the members' portal",
-      member_id: p.member_id,
+      note: p.collected && p.givers_note ? `${forWhat}. Given by: ${p.givers_note}` : forWhat,
+      // a collection is the collector's effort, never their own gift
+      member_id: p.collected ? null : p.member_id,
+      collected_by: p.collected ? p.member_id : null,
+      people: p.collected ? p.people : null,
+      givers_note: p.collected ? p.givers_note : null,
+      name_hidden: !p.show_name,
       ask_id: p.ask_id,
     });
   } catch (e) {
@@ -423,8 +495,10 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
   }
   await db()`UPDATE erp_pledge SET money_in_id = ${r.id} WHERE id = ${id}`;
   await logChange(u.id, "decided", "pledge", id, `Found ${inr(p.amount_paise)} from ${p.member_name} in the bank: receipt ${r.receipt_no}`);
-  if (p.ask_id) await noteGift(p.ask_id, p.amount_paise, p.show_name ? p.member_name : null);
-  else await noteFundGift(p.head, p.amount_paise, p.show_name ? p.member_name : null);
+  const shown = p.show_name ? p.member_name : null;
+  const collected = p.collected ? { people: p.people } : null;
+  if (p.ask_id) await noteGift(p.ask_id, p.amount_paise, shown, collected);
+  else await noteFundGift(p.head, p.amount_paise, shown, collected);
   return { receipt_no: r.receipt_no };
 }
 
@@ -462,7 +536,8 @@ export async function yearAtAGlance(): Promise<{ given_paise: number; givers: nu
   const range = fyRange(fyOf(todayIST()));
   const rows = await db()`
     SELECT coalesce(sum(m.amount_paise), 0) AS given_paise,
-           count(DISTINCT coalesce(m.member_id::text, m.from_name)) AS givers,
+           count(DISTINCT coalesce(m.member_id::text, m.from_name)) FILTER (WHERE m.collected_by IS NULL)
+             + coalesce(sum(coalesce(m.people, 1)) FILTER (WHERE m.collected_by IS NOT NULL), 0) AS givers,
            (SELECT count(*) FROM erp_ask WHERE status = 'live' AND kind <> 'help') AS open
     FROM erp_money_in m WHERE m.cancelled_at IS NULL AND m.on_date BETWEEN ${range.from} AND ${range.to}`;
   return { given_paise: num(rows[0].given_paise), givers: num(rows[0].givers), open: num(rows[0].open) };
@@ -482,6 +557,7 @@ export interface PortalMember {
   has_password: boolean;
   last_login_at: string | null;
   gave_paise: number;
+  collected_paise: number;
 }
 
 /** Everyone with a PSWS number: the office's people and the members with only a portal. */
@@ -491,9 +567,17 @@ export async function listPortalMembers(): Promise<PortalMember[]> {
     SELECT u.id, u.name, u.member_no, u.phone, u.role, u.post, u.lives_in, u.active, u.password_hash IS NOT NULL AS has_password,
            u.last_login_at,
            coalesce((SELECT sum(m.amount_paise) FROM erp_money_in m
-                     WHERE m.member_id = u.id AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${fy.from} AND ${fy.to}), 0) AS gave_paise
+                     WHERE m.member_id = u.id AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${fy.from} AND ${fy.to}), 0) AS gave_paise,
+           coalesce((SELECT sum(m.amount_paise) FROM erp_money_in m
+                     WHERE m.collected_by = u.id AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${fy.from} AND ${fy.to}), 0)
+             AS collected_paise
     FROM erp_user u WHERE u.phone <> 'owner' ORDER BY u.active DESC, u.name`;
-  return rows.map((r) => ({ ...(r as unknown as PortalMember), id: num(r.id), gave_paise: num(r.gave_paise) }));
+  return rows.map((r) => ({
+    ...(r as unknown as PortalMember),
+    id: num(r.id),
+    gave_paise: num(r.gave_paise),
+    collected_paise: num(r.collected_paise),
+  }));
 }
 
 /** A member with a portal and nothing in the office. They choose their password the first time with mobile and Gmail. */

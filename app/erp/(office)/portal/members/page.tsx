@@ -27,6 +27,7 @@ export default async function PortalMembers() {
             <th scope="col">Mobile</th>
             <th scope="col">Signed in</th>
             <th scope="col">Gave this year</th>
+            <th scope="col">Collected this year</th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +43,7 @@ export default async function PortalMembers() {
               <td>{showPhone(m.phone)}</td>
               <td>{m.has_password ? "Yes" : "Not yet"}</td>
               <td>{m.gave_paise ? inr(m.gave_paise) : ""}</td>
+              <td>{m.collected_paise ? inr(m.collected_paise) : ""}</td>
             </tr>
           ))}
         </tbody>

@@ -44,6 +44,34 @@ function ReasonBox() {
   );
 }
 
+/** Money a member gathered from several people and handed in: their collection, not their own gift. */
+function CollectedBox() {
+  const [on, setOn] = useState(false);
+  return (
+    <>
+      <label className={styles.check}>
+        <input type="checkbox" name="collected" checked={on} onChange={(e) => setOn(e.target.checked)} />
+        <span>
+          <strong>Collected from others by this member</strong>
+          <span className={styles.hint} style={{ display: "block" }}>
+            Type the collector&apos;s PSWS number above. It counts as their collection, not their own gift.
+          </span>
+        </span>
+      </label>
+      {on && (
+        <div className={styles.grid}>
+          <Field label="From how many people?" hint="Kitne logon se" name="people">
+            <input name="people" inputMode="numeric" autoComplete="off" />
+          </Field>
+          <Field label="Their names" hint="Optional, for the books" name="givers_note" wide>
+            <textarea name="givers_note" rows={2} />
+          </Field>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ------------------------------------------------------------ money received */
 
 export interface MoneyInInitial {
@@ -146,6 +174,7 @@ export function MoneyInForm({
           </Field>
         </div>
       )}
+      {asks && <CollectedBox />}
       {asks && (
         <label className={styles.check}>
           <input type="checkbox" name="hide_name" />

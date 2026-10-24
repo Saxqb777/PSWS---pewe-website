@@ -68,6 +68,11 @@ export interface MoneyInFields {
   /** with the portal on: the member who gave it, and the ask it was for */
   member_id?: number | null;
   ask_id?: number | null;
+  /** or the member who collected it from others: their collection, not their gift */
+  collected_by?: number | null;
+  people?: number | null;
+  givers_note?: string | null;
+  name_hidden?: boolean;
 }
 
 const inSummary = (no: string, f: MoneyInFields) =>
@@ -75,20 +80,38 @@ const inSummary = (no: string, f: MoneyInFields) =>
 
 export async function addMoneyIn(u: User, f: MoneyInFields): Promise<{ id: number; receipt_no: string }> {
   const fy = fyOf(f.on_date);
-  const rows = await db()`
-    WITH n AS (
-      INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
-      ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
-      RETURNING last_no
-    )
-    INSERT INTO erp_money_in
-      (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
-       member_id, ask_id, created_by)
-    SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
-           ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
-           ${f.member_id ?? null}, ${f.ask_id ?? null}, ${u.id}
-    FROM n
-    RETURNING id, receipt_no`;
+  // the members' portal's extra details are written only when there are some, so the office alone needs none of its columns
+  const portal = f.collected_by != null || f.people != null || f.givers_note != null || f.name_hidden != null;
+  const rows = portal
+    ? await db()`
+        WITH n AS (
+          INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
+          ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
+          RETURNING last_no
+        )
+        INSERT INTO erp_money_in
+          (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
+           member_id, ask_id, collected_by, people, givers_note, name_hidden, created_by)
+        SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
+               ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
+               ${f.member_id ?? null}, ${f.ask_id ?? null}, ${f.collected_by ?? null}, ${f.people ?? null},
+               ${f.givers_note ?? null}, ${f.name_hidden ?? false}, ${u.id}
+        FROM n
+        RETURNING id, receipt_no`
+    : await db()`
+        WITH n AS (
+          INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
+          ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
+          RETURNING last_no
+        )
+        INSERT INTO erp_money_in
+          (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
+           member_id, ask_id, created_by)
+        SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
+               ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
+               ${f.member_id ?? null}, ${f.ask_id ?? null}, ${u.id}
+        FROM n
+        RETURNING id, receipt_no`;
   const r = { id: num(rows[0].id), receipt_no: String(rows[0].receipt_no) };
   await logChange(u.id, "added", "money_in", r.id, inSummary(r.receipt_no, f));
   return r;

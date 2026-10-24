@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/erp/auth";
-import { ASK_YES_NEEDED, getAsk, isPublicKind, memberMaySee, myPledges } from "@/lib/erp/portal";
+import { ASK_YES_NEEDED, askCollectors, getAsk, isPublicKind, memberMaySee, myPledges } from "@/lib/erp/portal";
 import { ASK_KINDS, canDo, inr, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskStatus, H2, PledgeStatus, Raised } from "@/components/erp/portal-ui";
@@ -27,7 +27,8 @@ export default async function AskPage({
   const office = u.role !== "member" && canDo(u.role, "editor");
   if (!a || !memberMaySee(a, u.id, office)) notFound();
   const sp = await searchParams;
-  const mine = (await myPledges(u.id)).filter((x) => x.ask_id === a.id);
+  const [pledges, collectors] = await Promise.all([myPledges(u.id), askCollectors(a.id)]);
+  const mine = pledges.filter((x) => x.ask_id === a.id);
   const open = a.status === "live" && isPublicKind(a.kind);
   const ended = open && a.closes_on && a.closes_on < new Date().toISOString().slice(0, 10);
 
@@ -73,6 +74,23 @@ export default async function AskPage({
         </div>
       )}
 
+      {collectors.length > 0 && isPublicKind(a.kind) && (
+        <>
+          <H2>Collected by</H2>
+          <ul className={p.items}>
+            {collectors.map((c) => (
+              <li key={c.name}>
+                <span className={p.itemTitle}>{c.name}</span>
+                <span className={p.itemAmt}>{inr(c.amount_paise)}</span>
+                {c.people > 0 && (
+                  <span className={p.itemMeta}>From {c.people === 1 ? "1 person" : `${c.people} people`}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {a.status === "waiting" && (
         <div className={`${styles.banner} ${styles.bannerWarn}`}>
           <p style={{ margin: 0 }}>
@@ -108,6 +126,7 @@ export default async function AskPage({
               <li key={x.id}>
                 <span className={p.itemTitle}>
                   {showDate(x.sent_on)}
+                  {x.collected ? ` · collected${x.people ? ` from ${x.people}` : ""}` : ""}
                   <PledgeStatus status={x.status} />
                 </span>
                 <span className={p.itemAmt}>{inr(x.amount_paise)}</span>

@@ -46,7 +46,7 @@ import {
 } from "@/lib/erp/labels";
 import { toId, type FormState } from "@/lib/erp/form-state";
 import { portalOn } from "@/lib/erp/flags";
-import { getAsk, isPublicKind, noteFundGift, noteGift } from "@/lib/erp/portal";
+import { collectedFrom, getAsk, isPublicKind, noteFundGift, noteGift } from "@/lib/erp/portal";
 import { db, num } from "@/lib/erp/db";
 
 /** What someone typed for "Other"; required when Other is picked. */
@@ -161,13 +161,28 @@ export async function saveMoneyIn(id: number | null, _: FormState, data: FormDat
         f.head_other = null;
       }
     }
+    // gathered from others by this member: their collection, not their own gift
+    if (data.get("collected") === "on") {
+      if (!f.member_id) linkErrors.member_no = "Type the PSWS number of the member who collected it.";
+      const raw = clean(data.get("people"), 6);
+      const people = raw ? Number(raw) : null;
+      if (raw && !(Number.isInteger(people) && people! > 0 && people! < 10000)) linkErrors.people = "A number, e.g. 10.";
+      f.collected_by = f.member_id;
+      f.member_id = null;
+      f.people = people;
+      f.givers_note = cleanLong(data.get("givers_note"), 2000);
+      if (memberName) f.from_name = collectedFrom(memberName, people);
+      if (f.givers_note) f.note = [f.note, `Given by: ${f.givers_note}`].filter(Boolean).join(". ");
+    }
+    f.name_hidden = data.get("hide_name") === "on";
     if (Object.keys(linkErrors).length) return { errors: linkErrors };
   }
   const r = await addMoneyIn(u, f);
   // a member's gift, or a gift to an ask, is seen by everyone: with the name, unless they asked to keep it hidden
-  const shown = data.get("hide_name") === "on" ? null : (memberName ?? f.from_name);
-  if (f.ask_id) await noteGift(f.ask_id, f.amount_paise, shown);
-  else if (f.member_id) await noteFundGift(f.head, f.amount_paise, shown);
+  const shown = f.name_hidden ? null : (memberName ?? f.from_name);
+  const collected = f.collected_by ? { people: f.people ?? null } : null;
+  if (f.ask_id) await noteGift(f.ask_id, f.amount_paise, shown, collected);
+  else if (f.member_id || f.collected_by) await noteFundGift(f.head, f.amount_paise, shown, collected);
   redirect(`/erp/money/in/${r.id}?new=1`);
 }
 

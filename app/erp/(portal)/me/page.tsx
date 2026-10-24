@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
-import { feed, getMe, myPledges, passbook, publicAsks } from "@/lib/erp/portal";
+import { collections, feed, getMe, myPledges, passbook, publicAsks } from "@/lib/erp/portal";
 import { listMeetings } from "@/lib/erp/data";
 import { fyOf, inr, showDate, showDay, todayIST } from "@/lib/erp/labels";
 import { AskCard, Feed, H2, MemberCard } from "@/components/erp/portal-ui";
@@ -19,14 +19,16 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
   const u = await requireMember();
   const sp = await searchParams;
   const today = todayIST();
-  const [me, asks, lines, pledges, mine, meetings] = await Promise.all([
+  const [me, asks, lines, pledges, mine, meetings, gathered] = await Promise.all([
     getMe(u.id),
     publicAsks("live"),
     feed(8),
     myPledges(u.id),
     passbook(u.id, fyOf(today)),
     listMeetings(),
+    collections(u.id, fyOf(today)),
   ]);
+  const collected = gathered.reduce((s, l) => s + l.amount_paise, 0);
   const waiting = pledges.filter((x) => x.status === "waiting" || x.status === "not_found");
   const gave = mine.filter((l) => l.dir === "gave").reduce((s, l) => s + l.amount_paise, 0);
   const got = mine.filter((l) => l.dir === "received").reduce((s, l) => s + l.amount_paise, 0);
@@ -104,6 +106,12 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
           <b>{inr(got)}</b>
         </div>
       </div>
+      {collected > 0 && (
+        <p className={p.collectedSum}>
+          <span>I collected from others</span>
+          <b>{inr(collected)}</b>
+        </p>
+      )}
 
       {next && (
         <>

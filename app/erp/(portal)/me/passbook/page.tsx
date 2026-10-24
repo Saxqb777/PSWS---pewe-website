@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
-import { myPledges, passbook } from "@/lib/erp/portal";
+import { collections, myPledges, passbook } from "@/lib/erp/portal";
 import { knownYears } from "@/lib/erp/data";
 import { fyOf, inr, showDate, todayIST } from "@/lib/erp/labels";
 import { H2, Passbook, PledgeStatus } from "@/components/erp/portal-ui";
@@ -16,7 +16,8 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
   const current = fyOf(todayIST());
   const years = await knownYears(current);
   const fy = years.includes(String(sp.fy)) ? String(sp.fy) : current;
-  const [lines, pledges] = await Promise.all([passbook(u.id, fy), myPledges(u.id)]);
+  const [lines, pledges, gathered] = await Promise.all([passbook(u.id, fy), myPledges(u.id), collections(u.id, fy)]);
+  const collectedTotal = gathered.reduce((s, l) => s + l.amount_paise, 0);
   const open = pledges.filter((x) => x.status === "waiting" || x.status === "not_found");
   const gave = lines.filter((l) => l.dir === "gave").reduce((s, l) => s + l.amount_paise, 0);
   const got = lines.filter((l) => l.dir === "received").reduce((s, l) => s + l.amount_paise, 0);
@@ -56,12 +57,40 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
 
+      {collectedTotal > 0 && (
+        <p className={p.collectedSum}>
+          <span>Collected from others in {fy}</span>
+          <b>{inr(collectedTotal)}</b>
+        </p>
+      )}
+
       {lines.length ? (
         <Passbook lines={lines} />
       ) : (
         <p className={styles.note} style={{ marginTop: 14 }}>
           Nothing in {fy} yet. When you give, the Treasurer makes your receipt and it appears here.
         </p>
+      )}
+
+      {gathered.length > 0 && (
+        <>
+          <H2>I collected</H2>
+          <p className={styles.note} style={{ margin: "0 0 8px" }}>
+            Money you gathered from others and handed in. It counts for the ask, not as your own gift.
+          </p>
+          <ul className={p.items}>
+            {gathered.map((c) => (
+              <li key={c.id}>
+                <span className={p.itemTitle}>{c.what}</span>
+                <span className={p.itemAmt}>{inr(c.amount_paise)}</span>
+                <span className={p.itemMeta}>
+                  {showDate(c.on_date)} · {c.no}
+                  {c.people ? ` · from ${c.people} ${c.people === 1 ? "person" : "people"}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {open.length > 0 && (
@@ -72,6 +101,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
               <li key={x.id}>
                 <span className={p.itemTitle}>
                   {x.ask_title ?? "Gift"}
+                  {x.collected ? " (collected)" : ""}
                   <PledgeStatus status={x.status} />
                 </span>
                 <span className={p.itemAmt}>{inr(x.amount_paise)}</span>

@@ -393,3 +393,15 @@ CREATE TABLE IF NOT EXISTS erp_member_message (
   done_at   timestamptz,
   done_by   bigint      REFERENCES erp_user(id)
 );
+
+-- ---------------------------------------------------------------- money a member collected from others
+-- Handed in by a member who gathered it from several people: it counts for the
+-- ask, and as that member's collection, never as their own gift.
+ALTER TABLE erp_money_in ADD COLUMN IF NOT EXISTS collected_by bigint REFERENCES erp_user(id);
+ALTER TABLE erp_money_in ADD COLUMN IF NOT EXISTS people      int CHECK (people IS NULL OR people > 0);  -- how many gave it
+ALTER TABLE erp_money_in ADD COLUMN IF NOT EXISTS givers_note text;                                      -- who gave: the office only
+ALTER TABLE erp_money_in ADD COLUMN IF NOT EXISTS name_hidden boolean NOT NULL DEFAULT false;             -- the giver or collector asked not to be named
+ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS collected   boolean NOT NULL DEFAULT false;
+ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS people      int CHECK (people IS NULL OR people > 0);
+ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS givers_note text;
+CREATE INDEX IF NOT EXISTS erp_money_in_collected_by ON erp_money_in (collected_by) WHERE collected_by IS NOT NULL;

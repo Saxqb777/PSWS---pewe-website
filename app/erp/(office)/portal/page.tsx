@@ -74,6 +74,13 @@ export default async function OfficePortal({ searchParams }: { searchParams: Pro
               </p>
               <p className={styles.note} style={{ margin: "4px 0 10px" }}>
                 For {x.ask_title ?? "a fund"} · told us {showWhen(x.created_at)}
+                {x.collected && (
+                  <>
+                    <br />
+                    <b>Collected from {x.people ? `${x.people} people` : "others"}</b>
+                    {x.givers_note ? `: ${x.givers_note}` : ""}
+                  </>
+                )}
               </p>
               <ErpForm action={foundPayment.bind(null, x.id)}>
                 <div className={styles.actions}>

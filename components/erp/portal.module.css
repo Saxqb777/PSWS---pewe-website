@@ -844,3 +844,30 @@
     animation: none;
   }
 }
+
+/* what a member collected from others: their effort, set apart from what they gave */
+.collectedSum {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border: 1px solid var(--ink);
+  border-top: 0;
+  background: var(--in-tint);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.collectedSum b {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.sums + .collectedSum {
+  margin-top: 0;
+}

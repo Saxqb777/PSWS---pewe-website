@@ -27,10 +27,30 @@ const REF_LABEL: Record<string, [string, string]> = {
 /** "I sent ₹1,000": after paying PSWS from their own phone, a member says so; the Treasurer finds it and it counts. */
 export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: boolean }) {
   const [method, setMethod] = useState("upi");
+  const [collected, setCollected] = useState(false);
   const [label, hint] = REF_LABEL[method];
   return (
     <ErpForm action={action}>
-      <AmountInput name="amount" label="How much did you send?" hint="Kitna bheja" />
+      <label className={styles.check}>
+        <input type="checkbox" name="collected" checked={collected} onChange={(e) => setCollected(e.target.checked)} />
+        <span>
+          <strong>I collected this from others</strong>
+          <span className={styles.hint} style={{ display: "block" }}>
+            Money you gathered from family or friends. It counts as your collection, not your own gift. Doosron se jama kiya.
+          </span>
+        </span>
+      </label>
+      {collected && (
+        <div className={styles.grid}>
+          <Field label="From how many people?" hint="Kitne logon se" name="people">
+            <input name="people" inputMode="numeric" autoComplete="off" placeholder="10" />
+          </Field>
+          <Field label="Their names" hint="Optional. Only the office sees this" name="givers_note" wide>
+            <textarea name="givers_note" rows={3} />
+          </Field>
+        </div>
+      )}
+      <AmountInput name="amount" label={collected ? "How much did you send in all?" : "How much did you send?"} hint="Kitna bheja" />
       {chooseFund && (
         <Chips
           name="head"
@@ -54,7 +74,9 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
         <span>
           <strong>Keep my name hidden</strong>
           <span className={styles.hint} style={{ display: "block" }}>
-            Otherwise every member sees your name and how much you gave, as it comes in. Naam chhupana ho to tick kijiye.
+            {collected
+              ? "Otherwise every member sees your name with what you collected. Naam chhupana ho to tick kijiye."
+              : "Otherwise every member sees your name and how much you gave, as it comes in. Naam chhupana ho to tick kijiye."}
           </span>
         </span>
       </label>
