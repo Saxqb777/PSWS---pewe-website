@@ -46,7 +46,7 @@ import {
 } from "@/lib/erp/labels";
 import { toId, type FormState } from "@/lib/erp/form-state";
 import { portalOn } from "@/lib/erp/flags";
-import { getAsk, isPublicKind, noteGift } from "@/lib/erp/portal";
+import { getAsk, isPublicKind, noteFundGift, noteGift } from "@/lib/erp/portal";
 import { db, num } from "@/lib/erp/db";
 
 /** What someone typed for "Other"; required when Other is picked. */
@@ -136,14 +136,18 @@ export async function saveMoneyIn(id: number | null, _: FormState, data: FormDat
   }
   const closed = await closedMessage(f.on_date);
   if (closed) return { errors: { on_date: closed } };
+  let memberName: string | null = null;
   if (portalOn()) {
     // optional: the member who gave it, so it is in their passbook, and the ask it was for
     const linkErrors: Record<string, string> = {};
     const noRaw = clean(data.get("member_no"), 20);
     if (noRaw) {
       const no = normalMemberNo(noRaw);
-      const rows = no ? await db()`SELECT id FROM erp_user WHERE member_no = ${no} AND active` : [];
-      if (rows[0]) f.member_id = num(rows[0].id);
+      const rows = no ? await db()`SELECT id, name FROM erp_user WHERE member_no = ${no} AND active` : [];
+      if (rows[0]) {
+        f.member_id = num(rows[0].id);
+        memberName = String(rows[0].name);
+      }
       else linkErrors.member_no = "No member has this PSWS number. Check it, or leave it empty.";
     }
     const askId = toId(data.get("ask_id"));
@@ -160,7 +164,10 @@ export async function saveMoneyIn(id: number | null, _: FormState, data: FormDat
     if (Object.keys(linkErrors).length) return { errors: linkErrors };
   }
   const r = await addMoneyIn(u, f);
-  if (f.ask_id) await noteGift(f.ask_id, f.amount_paise, null);
+  // a member's gift, or a gift to an ask, is seen by everyone: with the name, unless they asked to keep it hidden
+  const shown = data.get("hide_name") === "on" ? null : (memberName ?? f.from_name);
+  if (f.ask_id) await noteGift(f.ask_id, f.amount_paise, shown);
+  else if (f.member_id) await noteFundGift(f.head, f.amount_paise, shown);
   redirect(`/erp/money/in/${r.id}?new=1`);
 }
 

@@ -42,7 +42,8 @@ const fyOf = (d) => {
 };
 const nextSaturday = () => {
   const d = new Date(todayIST);
-  d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7 || 7));
+  // today, when today is the Saturday
+  d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7));
   return d.toISOString().slice(0, 10);
 };
 const rs = (n) => n * 100;
@@ -180,7 +181,11 @@ const gifts = [
   [155, "A well-wisher in Mumbai (sample)", 15000, "cash", ration, "donation"],
   [154, "Zaid", 6200, "upi", ration, "donation"],
   [152, "Mariam", 5000, "upi", ration, "donation"],
+  [175, "Rashid", 150000, "bank", null, "zakat"],
+  [120, "Rashid", 200000, "bank", null, "development"],
+  [75, "Rashid", 150000, "bank", null, "donation"],
   [60, "Ayaan", 2500, "upi", null, "zakat"],
+  [30, "Rashid", 200000, "bank", null, "zakat"],
   [40, "Huda", 500, "cash", null, "donation"],
   [8, "Rashid", 3000, "bank", hospital, "zakat"],
   [7, "Faisal", 10000, "bank", hospital, "zakat"],
@@ -198,6 +203,8 @@ const gifts = [
   [1, "Junaid", 1000, "upi", hospital, "zakat"],
   [1, "Zaid", 5000, "upi", roof, "development"],
 ];
+// oldest first, so receipt numbers run in date order
+gifts.sort((a, b) => b[0] - a[0]);
 let rno = 0;
 for (const [ago, from, amount, method, askId, head] of gifts) {
   const on = daysAgo(ago);
@@ -238,20 +245,29 @@ await sql`
          (${id.Ayaan}, ${roof}, ${rs(5000)}, 'development', 'upi', '630155283324', ${daysAgo(0)}, false, ${hoursAgo(1)})`;
 
 /* ------------------------------------------------------------ what everyone has seen happen */
+const titles = {
+  [ration]: "Ration kits for 40 families before the monsoon",
+  [hospital]: "Hospital costs for a family in Pewe",
+  [roof]: "Roof repair for the Pewe primary school",
+};
+const fundName = { zakat: "Zakat", donation: "Donation (Sadaqah)", development: "Village work" };
+const inr = (n) => `₹${n.toLocaleString("en-IN")}`;
+// Mariam asked to keep her name off her cash gift; everyone else's shows
+const hiddenGift = (from, amount) => from === "Mariam" && amount === 1000;
 const feed = [
   [24 * 158, "live", ration, "New collection: Ration kits for 40 families before the monsoon, for ₹60,000"],
   [24 * 152, "target", ration, "Ration kits for 40 families before the monsoon reached its target of ₹60,000"],
   [24 * 130, "closed", ration,
     "Closed: Ration kits for 40 families before the monsoon. ₹61,200 raised. 40 kits bought at the Guhagar wholesale market for ₹58,400 and given out."],
-  [24 * 8, "live", hospital, "New Zakat appeal: Hospital costs for a family in Pewe, for ₹40,000"],
-  [24 * 7, "gift", hospital, "Faisal gave ₹10,000 for Hospital costs for a family in Pewe"],
-  [24 * 6, "live", roof, "New collection: Roof repair for the Pewe primary school, for ₹1,50,000"],
-  [24 * 5, "gift", roof, "Received ₹25,000 for Roof repair for the Pewe primary school"],
-  [24 * 4, "gift", roof, "Received ₹15,000 for Roof repair for the Pewe primary school"],
-  [24 * 3, "gift", roof, "Sana gave ₹5,000 for Roof repair for the Pewe primary school"],
-  [30, "gift", hospital, "Received ₹1,000 for Hospital costs for a family in Pewe"],
-  [20, "gift", roof, "Received ₹5,000 for Roof repair for the Pewe primary school"],
+  [24 * 8 + 2, "live", hospital, "New Zakat appeal: Hospital costs for a family in Pewe, for ₹40,000"],
+  [24 * 6 + 2, "live", roof, "New collection: Roof repair for the Pewe primary school, for ₹1,50,000"],
 ];
+for (const [ago, from, amount, , askId, head] of gifts) {
+  if (ago > 40) continue;
+  const who = id[from.split(" ")[0]] ? people.find((x) => x[0].startsWith(from))[0] : from;
+  const line = `${hiddenGift(from, amount) ? "Received" : `${who} gave`} ${inr(amount)} for ${askId ? titles[askId] : fundName[head]}`;
+  feed.push([ago * 24 - 3, "gift", askId, line]);
+}
 for (const [h, kind, askId, line] of feed)
   await sql`INSERT INTO erp_feed (at, kind, ask_id, line) VALUES (${hoursAgo(h)}, ${kind}, ${askId}, ${line})`;
 

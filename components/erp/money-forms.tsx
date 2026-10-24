@@ -146,6 +146,17 @@ export function MoneyInForm({
           </Field>
         </div>
       )}
+      {asks && (
+        <label className={styles.check}>
+          <input type="checkbox" name="hide_name" />
+          <span>
+            <strong>Keep their name hidden</strong>
+            <span className={styles.hint} style={{ display: "block" }}>
+              With a PSWS number or an ask, every member sees who gave and how much. Tick this if the giver asked not to be named.
+            </span>
+          </span>
+        </label>
+      )}
       {askReason && <ReasonBox />}
       <div className={styles.actions}>
         <Submit>{submit}</Submit>

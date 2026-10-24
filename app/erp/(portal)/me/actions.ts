@@ -76,7 +76,8 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     method: method as keyof typeof METHODS,
     reference,
     sent_on,
-    show_name: data.get("show_name") === "on",
+    // names show unless the giver asks to keep theirs hidden
+    show_name: data.get("hide_name") !== "on",
   });
   redirect(askId ? `/erp/me/asks/${askId}?gave=1` : "/erp/me/passbook?gave=1");
 }

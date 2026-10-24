@@ -50,11 +50,11 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
         </Field>
       </div>
       <label className={styles.check}>
-        <input type="checkbox" name="show_name" />
+        <input type="checkbox" name="hide_name" />
         <span>
-          <strong>Show my name with it</strong>
+          <strong>Keep my name hidden</strong>
           <span className={styles.hint} style={{ display: "block" }}>
-            Otherwise everyone sees only “₹1,000 received”. Aapka naam chhupa rahega.
+            Otherwise every member sees your name and how much you gave, as it comes in. Naam chhupana ho to tick kijiye.
           </span>
         </span>
       </label>

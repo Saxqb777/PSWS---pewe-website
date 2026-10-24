@@ -27,15 +27,14 @@ import {
  * Three rules hold everywhere here:
  *  - money for an ask goes to PSWS's own bank or UPI, never to the member who asked;
  *  - an ask is seen by members only once two approvers say yes;
- *  - nobody sees another member's money: the feed says "₹2,000 received"
- *    unless the giver chose to show their name, and a Zakat appeal or an
- *    ask for help never shows who it is for.
+ *  - giving is seen: the feed says "Akhtar Khan gave ₹50,000 for …" unless
+ *    the giver chose to keep their name hidden ("Received ₹50,000 for …");
+ *    a member's passbook, and what they received, stay between them and the
+ *    office, and a Zakat appeal or an ask for help never shows who it is for.
  */
 
 /** How many approvers must say yes before an ask is seen by everyone (or say no before it is turned down). */
 export const ASK_YES_NEEDED = 2;
-
-const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 
 /* ================================================================== me */
 
@@ -371,13 +370,22 @@ export async function withdrawPledge(u: User, id: number): Promise<string | null
   return rows[0] ? null : "This can only be taken back while it waits for the Treasurer.";
 }
 
+/** "Akhtar Khan gave ₹50,000", or without the name when they chose to keep it hidden. */
+const gaveLine = (name: string | null, paise: number, forWhat: string) =>
+  `${name ? `${name.trim()} gave` : "Received"} ${inr(paise)} for ${forWhat}`;
+
 /** A gift has come in for an ask: say so on everyone's screen, and when it reaches its target. */
 export async function noteGift(askId: number, amountPaise: number, shownName: string | null) {
   const a = await getAsk(askId);
   if (!a || !isPublicKind(a.kind)) return;
-  await addFeed("gift", askId, `${shownName ? `${firstName(shownName)} gave` : "Received"} ${inr(amountPaise)} for ${a.title}`);
+  await addFeed("gift", askId, gaveLine(shownName, amountPaise, a.title));
   if (a.target_paise && a.raised_paise >= a.target_paise && a.raised_paise - amountPaise < a.target_paise)
     await addFeed("target", askId, `${a.title} reached its target of ${inr(a.target_paise)}`);
+}
+
+/** A member's gift to a fund rather than to an ask, on everyone's screen too. */
+export async function noteFundGift(head: Head, amountPaise: number, shownName: string | null) {
+  await addFeed("gift", null, gaveLine(shownName, amountPaise, HEADS[head].en));
 }
 
 /** The Treasurer found it in the bank: it becomes a numbered receipt, and counts. */
@@ -416,9 +424,7 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
   await db()`UPDATE erp_pledge SET money_in_id = ${r.id} WHERE id = ${id}`;
   await logChange(u.id, "decided", "pledge", id, `Found ${inr(p.amount_paise)} from ${p.member_name} in the bank: receipt ${r.receipt_no}`);
   if (p.ask_id) await noteGift(p.ask_id, p.amount_paise, p.show_name ? p.member_name : null);
-  else
-    await addFeed("gift", null,
-      `${p.show_name ? `${firstName(p.member_name)} gave` : "Received"} ${inr(p.amount_paise)} for ${HEADS[p.head].en}`);
+  else await noteFundGift(p.head, p.amount_paise, p.show_name ? p.member_name : null);
   return { receipt_no: r.receipt_no };
 }
 
