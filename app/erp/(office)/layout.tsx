@@ -5,6 +5,7 @@ import { waitingForMe } from "@/lib/erp/books";
 import { portalOn } from "@/lib/erp/flags";
 import { officeWaiting } from "@/lib/erp/portal";
 import { MobileMenu, Nav } from "@/components/erp/shell";
+import { DemoTour } from "@/components/erp/demo-tour";
 import styles from "@/components/erp/erp.module.css";
 
 /**
@@ -42,6 +43,7 @@ export default async function OfficeLayout({ children }: { children: React.React
         </aside>
         <main className={styles.main}>{children}</main>
       </div>
+      <DemoTour />
     </>
   );
 }

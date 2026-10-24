@@ -8,6 +8,7 @@ import { ErpForm, Field, Submit } from "@/components/erp/form";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 import { demoAs, firstTime, signIn } from "../actions";
+import { DemoTour } from "@/components/erp/demo-tour";
 
 export const metadata = { title: "Sign in" };
 
@@ -137,6 +138,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         )}
 
         <p className={styles.doorNote}>Forgot your password? Ask the General Secretary to send you a new link.</p>
+        {demo && <DemoTour />}
       </div>
     </main>
   );

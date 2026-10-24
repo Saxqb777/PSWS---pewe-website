@@ -138,6 +138,9 @@ export async function firstTime(_: FormState, data: FormData): Promise<FormState
 /** The demo copy only: be one of the sample people, with one tap. */
 export async function demoAs(data: FormData) {
   const id = Number(data.get("id"));
-  if (Number.isSafeInteger(id) && (await demoSignIn(id))) redirect("/erp/me");
+  // the demo tour can send someone straight to the page for its next step
+  const next = String(data.get("next") ?? "");
+  const to = /^\/erp\/[a-z0-9/?=&_-]*$/i.test(next) ? next : "/erp/me";
+  if (Number.isSafeInteger(id) && (await demoSignIn(id))) redirect(to);
   redirect("/erp/login");
 }

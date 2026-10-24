@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { isDemo, requireMember } from "@/lib/erp/auth";
 import { TabBar } from "@/components/erp/portal-client";
+import { DemoTour } from "@/components/erp/demo-tour";
 import p from "@/components/erp/portal.module.css";
 
 export const metadata = { title: { default: "My PSWS", template: "%s · My PSWS" } };
@@ -31,6 +32,7 @@ export default async function PortalLayout({ children }: { children: React.React
       )}
       <main className={p.main}>{children}</main>
       <TabBar />
+      <DemoTour bottom={72} />
     </>
   );
 }

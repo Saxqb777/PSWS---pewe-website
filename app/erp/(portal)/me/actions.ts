@@ -88,7 +88,8 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     people: collected ? people : null,
     givers_note: collected ? cleanLong(data.get("givers_note"), 2000) : null,
   });
-  redirect(askId ? `/erp/me/asks/${askId}?gave=1` : "/erp/me/passbook?gave=1");
+  const flag = collected ? "gave=1&collected=1" : "gave=1";
+  redirect(askId ? `/erp/me/asks/${askId}?${flag}` : `/erp/me/passbook?${flag}`);
 }
 
 export async function takeBackAsk(id: number) {

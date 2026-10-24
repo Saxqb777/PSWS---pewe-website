@@ -4,6 +4,7 @@ import { feed, publicAsks, yearAtAGlance } from "@/lib/erp/portal";
 import { ago, fyOf, inr, inrShort, todayIST } from "@/lib/erp/labels";
 import { Meter } from "@/components/erp/portal-ui";
 import { AutoRefresh } from "@/components/erp/portal-client";
+import { DemoTour } from "@/components/erp/demo-tour";
 import p from "@/components/erp/portal.module.css";
 
 export const metadata = { title: "Live" };
@@ -16,6 +17,7 @@ export default async function LiveScreen() {
   return (
     <div className={p.board}>
       <AutoRefresh every={4000} />
+      <DemoTour />
       <header className={p.boardTop}>
         <h1 className={p.boardTitle}>
           PSWS <span>live</span>
