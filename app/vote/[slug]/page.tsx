@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Baloo_2, Mukta } from "next/font/google";
+import Image from "next/image";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { VOTER_COOKIE, getPoll, myChoice, type Option, type Poll } from "@/lib/vote";
+import { SOCIETY } from "@/lib/site";
+import { Seal } from "@/components/seal";
 import { ShareVote, StayLive } from "@/components/vote/live";
 import v from "@/components/vote/vote.module.css";
 import { vote } from "./actions";
@@ -20,25 +23,52 @@ export const metadata: Metadata = {
 
 const hours = (o: Option) => `${o.from} – ${o.to} am`;
 
-/** A tank of water, filled to this option's share of the votes. */
-function Tank({ o, poll, mine }: { o: Option; poll: Poll; mine: boolean }) {
+/** Water standing in a tank, to a given height. */
+function Water({ level }: { level: number }) {
+  return (
+    <span className={v.water} style={{ height: `${level}%` }} aria-hidden="true">
+      <svg className={v.wave} viewBox="0 0 240 20" preserveAspectRatio="none">
+        <path d="M0 10 Q 30 0 60 10 T 120 10 T 180 10 T 240 10 V 20 H 0 Z" />
+      </svg>
+    </span>
+  );
+}
+
+/** An overhead water tank on its stand: a lid, ribs round the body, a tap; the water inside is the level. */
+function Tank({ level, children }: { level: number; children: React.ReactNode }) {
+  return (
+    <span className={v.tank}>
+      <span className={v.lid} aria-hidden="true" />
+      <span className={v.body}>
+        <Water level={level} />
+        {children}
+      </span>
+      <span className={v.tap} aria-hidden="true" />
+      <span className={v.stand} aria-hidden="true" />
+    </span>
+  );
+}
+
+/** A tank filled to this option's share of the votes. */
+function Result({ o, poll, mine }: { o: Option; poll: Poll; mine: boolean }) {
   const n = poll.counts[o.id] ?? 0;
   const pct = poll.total ? Math.round((n / poll.total) * 100) : 0;
   const lead = poll.leader === o.id;
+  const level = Math.max(pct, 3);
+  // the number floats just above the water, or once the tank is mostly full, just under its surface
+  const onWater = level > 62;
+  const at = onWater ? { top: `calc(${100 - level}% + 14px)` } : { bottom: `calc(${level}% + 10px)` };
   return (
-    <div className={`${v.tank} ${lead ? v.tankLead : ""}`}>
-      <div className={v.glass} aria-hidden="true">
-        <div className={v.water} style={{ height: `${Math.max(pct, 3)}%` }}>
-          <svg className={v.wave} viewBox="0 0 240 20" preserveAspectRatio="none">
-            <path d="M0 10 Q 30 0 60 10 T 120 10 T 180 10 T 240 10 V 20 H 0 Z" />
-          </svg>
-        </div>
-        <span className={`${v.pct} ${pct >= 50 ? v.pctOnWater : ""}`}>{pct}%</span>
-      </div>
-      <p className={v.tankHours}>
+    <div className={`${v.result} ${lead ? v.lead : ""}`}>
+      <Tank level={level}>
+        <span className={`${v.pct} ${onWater ? v.pctOnWater : ""}`} style={at}>
+          {pct}%
+        </span>
+      </Tank>
+      <p className={v.resultHours}>
         {o.from}–{o.to} <small>am</small>
       </p>
-      <p className={v.tankCount}>
+      <p className={v.resultCount}>
         {n === 1 ? "1 vote" : `${n} votes`}
         {mine && <span className={v.mine}>your vote</span>}
       </p>
@@ -67,26 +97,46 @@ export default async function VotePage({
 
   return (
     <main className={`${v.page} ${baloo.variable} ${mukta.variable}`}>
+      <header className={v.hero}>
+        <Image
+          src="/images/hero/hero-right.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className={v.heroPhoto}
+        />
+        <div className="jali-band" />
+        <div className={v.heroText}>
+          <div className={v.society}>
+            <span className={v.sealChip}>
+              <Seal size={40} />
+            </span>
+            <p>
+              <span className={v.label}>Members&apos; vote</span>
+              <span className={v.societyName}>{SOCIETY.name}</span>
+            </p>
+          </div>
+          <h1 className={v.title}>When should the water come?</h1>
+          <p className={v.hi}>Paani kab aaye? Subah ka samay chuniye.</p>
+        </div>
+        <div className="arcade-band" />
+      </header>
+
       <div className={v.col}>
-        <p className={v.eyebrow}>Pewe Social Welfare Society · Members&apos; vote</p>
-        <h1 className={v.title}>When should the water come?</h1>
-        <p className={v.hi}>Paani kab aaye? Subah ka samay chuniye.</p>
 
         {choosing ? (
           <>
-            <p className={v.lead}>Tap the hour that suits your home. One vote per phone.</p>
-            <form action={vote.bind(null, slug)} className={v.ballot}>
+            <p className={v.intro}>Tap the hour that suits your home. One vote per phone.</p>
+            <form action={vote.bind(null, slug)} className={v.pair}>
               {poll.options.map((o) => (
                 <button key={o.id} type="submit" name="choice" value={o.id} className={v.option}>
-                  <span className={v.optionWater} aria-hidden="true">
-                    <svg className={v.wave} viewBox="0 0 240 20" preserveAspectRatio="none">
-                      <path d="M0 10 Q 30 0 60 10 T 120 10 T 180 10 T 240 10 V 20 H 0 Z" />
-                    </svg>
-                  </span>
-                  <span className={v.optionHours}>
-                    {o.from}–{o.to}
-                  </span>
-                  <span className={v.optionAm}>am · subah</span>
+                  <Tank level={24}>
+                    <span className={v.optionHours}>
+                      {o.from}–{o.to}
+                    </span>
+                    <span className={v.optionAm}>am · subah</span>
+                  </Tank>
                   <span className={v.optionTap}>{mine === o.id ? "Your vote now" : "Vote for this"}</span>
                 </button>
               ))}
@@ -105,23 +155,19 @@ export default async function VotePage({
           <>
             <StayLive />
             {poll.closed ? (
-              <section className={v.verdict}>
-                <p className={v.verdictLabel}>Voting has closed</p>
-                <p className={v.verdictText}>
+              <section className={v.thanks}>
+                <p className={v.label}>Voting has closed</p>
+                <p className={v.thanksTitle}>
                   {leader ? `The water will come ${hours(leader)}.` : "It ended level."}
                 </p>
               </section>
             ) : (
               <section className={v.thanks} aria-live="polite">
-                <svg className={v.drop} viewBox="0 0 24 32" aria-hidden="true">
-                  <path d="M12 1 C 12 1 2 13 2 20 a 10 10 0 0 0 20 0 C 22 13 12 1 12 1 Z" />
-                </svg>
-                <div>
-                  <p className={v.thanksTitle}>Thank you for your vote</p>
-                  <p className={v.thanksText}>
-                    Shukriya. You chose <b>{hours(chosen!)}</b>.
-                  </p>
-                </div>
+                <p className={v.label}>Shukriya</p>
+                <p className={v.thanksTitle}>Thank you for your vote</p>
+                <p className={v.thanksText}>
+                  You chose <b>{hours(chosen!)}</b>.
+                </p>
               </section>
             )}
 
@@ -136,15 +182,15 @@ export default async function VotePage({
                 {poll.closed ? "" : " · updates by itself"}
               </span>
             </p>
-            <div className={v.tanks}>
+            <div className={v.pair}>
               {poll.options.map((o) => (
-                <Tank key={o.id} o={o} poll={poll} mine={mine === o.id} />
+                <Result key={o.id} o={o} poll={poll} mine={mine === o.id} />
               ))}
             </div>
 
             {!poll.closed && (
               <>
-                <h2 className={v.h2}>Ask others to vote</h2>
+                <h2 className={`${v.label} ${v.h2}`}>Ask others to vote</h2>
                 <ShareVote path={`/vote/${slug}`} text={share} />
                 <p className={v.small}>
                   Changed your mind?{" "}
@@ -157,6 +203,14 @@ export default async function VotePage({
           </>
         )}
       </div>
+
+      <footer className={v.foot}>
+        <div className="jali-band" />
+        <p>
+          {SOCIETY.name} · Reg. {SOCIETY.registrationNo} · Est. {SOCIETY.foundedYear}
+        </p>
+        <p className={v.marathi}>{SOCIETY.nameMarathi}</p>
+      </footer>
     </main>
   );
 }
