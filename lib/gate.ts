@@ -61,5 +61,7 @@ export function isOpenPath(pathname: string): boolean {
   if (pathname === "/preview") return true;
   // The office has its own sign-in: everyone there has a login of their own.
   if (pathname === "/erp" || pathname.startsWith("/erp/")) return true;
+  // A vote is shared by link with the members who vote on it.
+  if (pathname.startsWith("/vote/")) return true;
   return false;
 }

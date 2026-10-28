@@ -8,6 +8,15 @@ import { GATE_COOKIE, expectedDigest, digestsMatch, isOpenPath } from "@/lib/gat
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
+  // A site set up for one vote (VOTE_ONLY=water) shows that vote and nothing else.
+  const only = process.env.VOTE_ONLY;
+  if (only && !pathname.startsWith("/vote/")) {
+    const to = req.nextUrl.clone();
+    to.pathname = `/vote/${only}`;
+    to.search = "";
+    return NextResponse.redirect(to);
+  }
+
   if (isOpenPath(pathname)) return NextResponse.next();
 
   const cookie = req.cookies.get(GATE_COOKIE)?.value ?? "";
