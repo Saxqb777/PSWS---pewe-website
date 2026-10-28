@@ -1,22 +1,18 @@
 /*
- * A members' vote on the water supply, in the Society's own dress: the
- * building under dark ink, brass lattice and arches, lime-wash paper. The two
- * hours are drawn as overhead water tanks, and once you vote each one fills to
- * its share.
+ * A members' vote on when the water should come. A plain page, so it suits
+ * whichever society runs it: the two hours are drawn as overhead water
+ * tanks, and once you vote each one fills to its share.
  */
 
 .page {
-  --paper: #f4efe6;
-  --paper-2: #ede6d9;
-  --limewash: #faf6ee;
-  --ink: #1c1815;
-  --ink-2: #4a4239;
-  --ink-3: #786c5d;
-  --rule: #d6c9b2;
-  --brass: #a67c3d;
-  --brass-light: #c9a063;
-  --maroon: #7a2e2e;
-  --well: #2f5f6b;
+  --paper: #f5f7f7;
+  --tank-inside: #ffffff;
+  --ink: #16191b;
+  --ink-2: #4a5257;
+  --ink-3: #6b7479;
+  --rule: #dde2e4;
+  --well: #2f6f86;
+  --lead: #1d5c74;
   --display: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
   --sans: var(--font-mukta), "Mukta", system-ui, sans-serif;
 
@@ -38,81 +34,25 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--ink-3);
 }
 
-/* ------------------------------------------------------------ the building, under ink */
-
-.hero {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  color: var(--paper);
-  background: var(--ink);
-}
-
-.heroPhoto {
-  z-index: -2;
-  object-fit: cover;
-  object-position: center 40%;
-}
-
-/* ink over the photograph: lighter at the top so the building shows, dark where the words sit */
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(180deg, rgba(28, 24, 21, 0.42) 0%, rgba(28, 24, 21, 0.86) 52%, rgba(28, 24, 21, 0.95) 100%);
-}
-
-.hero :global(.jali-band) {
-  opacity: 0.9;
-}
-
-.hero :global(.arcade-band) {
-  opacity: 0.85;
-}
-
-.heroText {
+.col {
   max-width: 520px;
   margin: 0 auto;
-  padding: 132px max(18px, env(safe-area-inset-right, 0px)) 20px max(18px, env(safe-area-inset-left, 0px));
+  padding: 28px max(18px, env(safe-area-inset-right, 0px)) 40px max(18px, env(safe-area-inset-left, 0px));
 }
 
-.society {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.society p {
-  margin: 0;
-}
-
-.sealChip {
-  display: inline-flex;
-  padding: 3px;
-  background: var(--paper);
-}
-
-.society .label {
-  color: var(--brass-light);
-}
-
-.societyName {
-  display: block;
-  font-size: 14px;
-  color: rgba(244, 239, 230, 0.78);
+.head {
+  margin-bottom: 22px;
 }
 
 .title {
-  margin: 18px 0 2px;
+  margin: 8px 0 2px;
   font-family: var(--display);
   font-size: clamp(34px, 9vw, 46px);
   font-weight: 700;
   line-height: 1.02;
-  color: var(--paper);
   text-wrap: balance;
 }
 
@@ -120,15 +60,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 500;
-  color: rgba(244, 239, 230, 0.76);
-}
-
-/* ------------------------------------------------------------ the page below */
-
-.col {
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 22px max(18px, env(safe-area-inset-right, 0px)) 36px max(18px, env(safe-area-inset-left, 0px));
+  color: var(--ink-2);
 }
 
 .intro {
@@ -166,7 +98,7 @@
   align-items: center;
   justify-content: center;
   height: 210px;
-  background: var(--limewash);
+  background: var(--tank-inside);
   border: 2px solid var(--ink);
   border-radius: 30px 30px 10px 10px;
 }
@@ -278,7 +210,7 @@
 }
 
 .option:focus-visible {
-  outline: 3px solid var(--brass);
+  outline: 3px solid var(--lead);
   outline-offset: 4px;
 }
 
@@ -312,7 +244,7 @@
 }
 
 .option:hover .optionTap {
-  background: var(--maroon);
+  background: var(--lead);
 }
 
 /* ------------------------------------------------------------ after voting */
@@ -407,12 +339,12 @@
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--brass);
+  color: var(--lead);
   border: 1px solid currentColor;
 }
 
 .lead .body {
-  border-color: var(--maroon);
+  border-color: var(--lead);
 }
 
 .lead .lid,
@@ -421,11 +353,11 @@
 .lead .stand,
 .lead .stand::before,
 .lead .stand::after {
-  background: var(--maroon);
+  background: var(--lead);
 }
 
 .lead .resultHours {
-  color: var(--maroon);
+  color: var(--lead);
 }
 
 .h2 {
@@ -474,29 +406,6 @@
   color: var(--ink);
   font-weight: 600;
   text-underline-offset: 3px;
-}
-
-/* ------------------------------------------------------------ the Society, at the foot */
-
-.foot {
-  padding: 0 18px 28px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--ink-3);
-}
-
-.foot :global(.jali-band) {
-  margin-bottom: 14px;
-}
-
-.foot p {
-  margin: 0;
-}
-
-.foot .marathi {
-  margin-top: 2px;
-  font-family: var(--font-tiro-marathi), serif;
-  font-size: 15px;
 }
 
 @media (prefers-reduced-motion: reduce) {

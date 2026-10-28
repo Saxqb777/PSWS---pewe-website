@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_2, Mukta } from "next/font/google";
-import Image from "next/image";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { VOTER_COOKIE, getPoll, myChoice, type Option, type Poll } from "@/lib/vote";
-import { SOCIETY } from "@/lib/site";
-import { Seal } from "@/components/seal";
 import { ShareVote, StayLive } from "@/components/vote/live";
 import v from "@/components/vote/vote.module.css";
 import { vote } from "./actions";
@@ -15,11 +12,22 @@ import { vote } from "./actions";
 const baloo = Baloo_2({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-baloo", display: "swap" });
 const mukta = Mukta({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-mukta", display: "swap" });
 
+const TITLE = "Vote: when should the water come?";
+const ABOUT = "Members: tap 9 to 10 am or 10 to 11 am. One vote per phone.";
+
+// The vote is run for another society, so nothing of this site's own name, picture or address carries over.
 export const metadata: Metadata = {
-  title: "Vote: when should the water come?",
-  description: "PSWS members: tap 9 to 10 am or 10 to 11 am. One vote per phone.",
+  title: { absolute: TITLE },
+  description: ABOUT,
+  applicationName: null,
+  keywords: null,
+  alternates: null,
+  openGraph: { type: "website", title: TITLE, description: ABOUT },
+  twitter: { card: "summary", title: TITLE, description: ABOUT },
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: "#f5f7f7" };
 
 const hours = (o: Option) => `${o.from} – ${o.to} am`;
 
@@ -93,37 +101,16 @@ export default async function VotePage({
   const choosing = !poll.closed && (!mine || sp.change === "1");
   const leader = poll.options.find((o) => o.id === poll.leader);
   const chosen = poll.options.find((o) => o.id === mine);
-  const share = "PSWS vote: when should the water come, 9 to 10 am or 10 to 11 am? Tap to vote:";
+  const share = "Vote: when should the water come, 9 to 10 am or 10 to 11 am? Tap to vote:";
 
   return (
     <main className={`${v.page} ${baloo.variable} ${mukta.variable}`}>
-      <header className={v.hero}>
-        <Image
-          src="/images/hero/hero-right.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className={v.heroPhoto}
-        />
-        <div className="jali-band" />
-        <div className={v.heroText}>
-          <div className={v.society}>
-            <span className={v.sealChip}>
-              <Seal size={40} />
-            </span>
-            <p>
-              <span className={v.label}>Members&apos; vote</span>
-              <span className={v.societyName}>{SOCIETY.name}</span>
-            </p>
-          </div>
+      <div className={v.col}>
+        <header className={v.head}>
+          <p className={v.label}>Members&apos; vote</p>
           <h1 className={v.title}>When should the water come?</h1>
           <p className={v.hi}>Paani kab aaye? Subah ka samay chuniye.</p>
-        </div>
-        <div className="arcade-band" />
-      </header>
-
-      <div className={v.col}>
+        </header>
 
         {choosing ? (
           <>
@@ -203,14 +190,6 @@ export default async function VotePage({
           </>
         )}
       </div>
-
-      <footer className={v.foot}>
-        <div className="jali-band" />
-        <p>
-          {SOCIETY.name} · Reg. {SOCIETY.registrationNo} · Est. {SOCIETY.foundedYear}
-        </p>
-        <p className={v.marathi}>{SOCIETY.nameMarathi}</p>
-      </footer>
     </main>
   );
 }
