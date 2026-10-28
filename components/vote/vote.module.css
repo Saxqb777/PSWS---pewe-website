@@ -14,9 +14,8 @@
   --water-2: #4fb0d3;
   --water-deep: #145b80;
   --lead: #0f8a6b;
-  --serif: var(--font-newsreader), "Newsreader", Georgia, serif;
-  --sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
-  --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --display: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --sans: var(--font-mukta), "Mukta", system-ui, sans-serif;
 
   min-height: 100dvh;
   padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px));
@@ -61,18 +60,17 @@
 
 .title {
   margin: 8px 0 4px;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: clamp(32px, 8.5vw, 44px);
-  font-weight: 400;
-  line-height: 1.08;
+  font-weight: 700;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
 .hi {
   margin: 0;
-  font-family: var(--serif);
-  font-style: italic;
   font-size: 18px;
+  font-weight: 500;
   color: var(--ink-2);
 }
 
@@ -136,9 +134,9 @@
 }
 
 .optionHours {
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: clamp(44px, 13vw, 60px);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1;
   font-variant-numeric: lining-nums;
 }
@@ -202,8 +200,9 @@
 
 .thanksTitle {
   margin: 0;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 24px;
+  font-weight: 700;
   line-height: 1.15;
 }
 
@@ -228,8 +227,9 @@
 
 .verdictText {
   margin: 4px 0 0;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 26px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -289,9 +289,9 @@
   inset: 0;
   display: grid;
   place-items: center;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 40px;
-  font-weight: 500;
+  font-weight: 800;
   color: var(--ink);
   text-shadow: 0 1px 0 var(--card);
   font-variant-numeric: tabular-nums lining-nums;
@@ -305,8 +305,9 @@
 
 .tankHours {
   margin: 10px 0 0;
-  font-family: var(--serif);
+  font-family: var(--display);
   font-size: 26px;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -318,8 +319,8 @@
 
 .tankCount {
   margin: 4px 0 0;
-  font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
   color: var(--ink-2);
 }
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Baloo_2, Mukta } from "next/font/google";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -6,6 +7,10 @@ import { VOTER_COOKIE, getPoll, myChoice, type Option, type Poll } from "@/lib/v
 import { ShareVote, StayLive } from "@/components/vote/live";
 import v from "@/components/vote/vote.module.css";
 import { vote } from "./actions";
+
+/** Rounded and friendly for the question and the hours, plain and clear for the rest. */
+const baloo = Baloo_2({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-baloo", display: "swap" });
+const mukta = Mukta({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-mukta", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Vote: when should the water come?",
@@ -61,7 +66,7 @@ export default async function VotePage({
   const share = "PSWS vote: when should the water come, 9 to 10 am or 10 to 11 am? Tap to vote:";
 
   return (
-    <main className={v.page}>
+    <main className={`${v.page} ${baloo.variable} ${mukta.variable}`}>
       <div className={v.col}>
         <p className={v.eyebrow}>Pewe Social Welfare Society · Members&apos; vote</p>
         <h1 className={v.title}>When should the water come?</h1>
