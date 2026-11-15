@@ -85,11 +85,14 @@ export function MobileMenu({
   name,
   needsMe = 0,
   portal = null,
+  myPortal = false,
 }: {
   admin: boolean;
   name: string;
   needsMe?: number;
   portal?: number | null;
+  /** a link to their own member's page, which a computer shows in the header instead */
+  myPortal?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
@@ -114,7 +117,15 @@ export function MobileMenu({
       </button>
       {open && (
         <div id="erp-menu" className={styles.menuSheet}>
-          <p className={styles.menuWho}>Signed in as {name}</p>
+          <p className={styles.menuWho}>
+            Signed in as {name}
+            {myPortal && (
+              <>
+                {" · "}
+                <Link href="/erp/me">My portal</Link>
+              </>
+            )}
+          </p>
           <Nav admin={admin} needsMe={needsMe} portal={portal} />
         </div>
       )}

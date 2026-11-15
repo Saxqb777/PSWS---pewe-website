@@ -35,7 +35,13 @@ export default async function OfficeLayout({ children }: { children: React.React
             {u.post ? ` · ${u.post}` : ""}
           </Link>
         )}
-        <MobileMenu admin={admin} name={u.name} needsMe={needsMe} portal={portal} />
+        <MobileMenu
+          admin={admin}
+          name={u.name}
+          needsMe={needsMe}
+          portal={portal}
+          myPortal={portal !== null && u.phone !== OWNER_PHONE}
+        />
       </header>
       <div className={styles.frame}>
         <aside className={styles.rail}>
