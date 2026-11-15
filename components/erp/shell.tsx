@@ -7,7 +7,7 @@ import styles from "./erp.module.css";
 
 /** The office's menu: a rail on a computer, a sheet behind a button on a phone. */
 
-const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean }[][] = [
+const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean; owner?: boolean }[][] = [
   [
     { href: "/erp", label: "Home" },
     { href: "/erp/money", label: "Money" },
@@ -29,6 +29,7 @@ const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean }
   [
     { href: "/erp/people", label: "People with access", admin: true },
     { href: "/erp/account", label: "My account" },
+    { href: "/erp/control", label: "Control room", owner: true },
   ],
 ];
 
@@ -40,11 +41,14 @@ export function Nav({
   admin,
   needsMe = 0,
   portal = null,
+  owner = false,
 }: {
   admin: boolean;
   needsMe?: number;
   /** with the members' portal on: how much there is for the office to do there */
   portal?: number | null;
+  /** the website owner, who alone has the control room */
+  owner?: boolean;
 }) {
   const path = usePathname();
   return (
@@ -53,7 +57,7 @@ export function Nav({
         <div key={i}>
           {i > 0 && <div className={styles.navGroup} />}
           {g
-            .filter((l) => (admin || !l.admin) && (portal !== null || !l.portal))
+            .filter((l) => (admin || !l.admin) && (portal !== null || !l.portal) && (owner || !l.owner))
             .map((l) => (
               <Link
                 key={l.href}
@@ -86,6 +90,7 @@ export function MobileMenu({
   needsMe = 0,
   portal = null,
   myPortal = false,
+  owner = false,
 }: {
   admin: boolean;
   name: string;
@@ -93,6 +98,7 @@ export function MobileMenu({
   portal?: number | null;
   /** a link to their own member's page, which a computer shows in the header instead */
   myPortal?: boolean;
+  owner?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
@@ -126,7 +132,7 @@ export function MobileMenu({
               </>
             )}
           </p>
-          <Nav admin={admin} needsMe={needsMe} portal={portal} />
+          <Nav admin={admin} needsMe={needsMe} portal={portal} owner={owner} />
         </div>
       )}
     </>

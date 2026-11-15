@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { changePassword, checkPassword, passwordProblem, requireMember } from "@/lib/erp/auth";
+import { actingMember, changePassword, checkPassword, passwordProblem } from "@/lib/erp/auth";
 import { addAsk, addMessage, addPledge, getAsk, isPublicKind, withdrawAsk, withdrawPledge } from "@/lib/erp/portal";
 import { ASK_KINDS, HEADS, METHODS, clean, cleanLong, isDate, isKey, todayIST, toPaise, type Head } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
@@ -10,7 +10,7 @@ import type { FormState } from "@/lib/erp/form-state";
 /** What a member does on their own portal. */
 
 export async function postAsk(_: FormState, data: FormData): Promise<FormState> {
-  const u = await requireMember();
+  const u = await actingMember();
   const errors: Record<string, string> = {};
   const kind = data.get("kind");
   if (!isKey(ASK_KINDS, kind)) errors.kind = "Pick what it is. (Kya chahiye?)";
@@ -47,7 +47,7 @@ export async function postAsk(_: FormState, data: FormData): Promise<FormState> 
 
 /** "I have sent it": for an ask, or for a fund. */
 export async function sendPledge(askId: number | null, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireMember();
+  const u = await actingMember();
   const errors: Record<string, string> = {};
   let head: Head = "donation";
   if (askId) {
@@ -93,19 +93,19 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
 }
 
 export async function takeBackAsk(id: number) {
-  const u = await requireMember();
+  const u = await actingMember();
   await withdrawAsk(u, id);
   revalidatePath(`/erp/me/asks/${id}`);
 }
 
 export async function takeBackPledge(id: number) {
-  const u = await requireMember();
+  const u = await actingMember();
   await withdrawPledge(u, id);
   revalidatePath("/erp/me/passbook");
 }
 
 export async function messageOffice(_: FormState, data: FormData): Promise<FormState> {
-  const u = await requireMember();
+  const u = await actingMember();
   const body = cleanLong(data.get("body"), 1000);
   if (!body) return { errors: { body: "Type your message." } };
   await addMessage(u, body);
@@ -113,7 +113,7 @@ export async function messageOffice(_: FormState, data: FormData): Promise<FormS
 }
 
 export async function changePortalPassword(_: FormState, data: FormData): Promise<FormState> {
-  const u = await requireMember();
+  const u = await actingMember();
   const current = String(data.get("current") ?? "");
   const password = String(data.get("password") ?? "");
   const again = String(data.get("again") ?? "");

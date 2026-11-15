@@ -100,17 +100,62 @@ export async function requireUser(need: Role = "viewer"): Promise<User> {
 }
 
 /**
- * For every portal page and action: signed in, as anyone with a PSWS number.
- * The website's owner looks over the office and has no portal of their own.
+ * For every portal page: signed in, as anyone with a PSWS number.
+ * The website's owner has no portal of their own, but can look at anyone's
+ * from the control room, to help them: they then see that person's pages.
  */
 export async function requireMember(): Promise<User & { member_no: string }> {
   // who it is first: reading the cookie keeps these pages from being built once, ahead of time
   const u = await currentUser();
   if (!portalOn()) notFound();
   if (!u) redirect("/erp/login");
-  if (u.phone === OWNER_PHONE) redirect("/erp");
+  if (u.phone === OWNER_PHONE) {
+    const them = await lookingAt(u);
+    if (!them) redirect("/erp/control");
+    // only looking: a number is never given out on their behalf
+    return { ...them, member_no: them.member_no ?? "No number yet" };
+  }
   const member_no = u.member_no ?? (await assignMemberNo(u.id));
   return { ...u, member_no };
+}
+
+/** For every portal action: the member themselves. The owner, only looking, can do nothing in their name. */
+export async function actingMember(): Promise<User & { member_no: string }> {
+  const u = await currentUser();
+  if (u?.phone === OWNER_PHONE) redirect("/erp/me?lookonly=1");
+  return requireMember();
+}
+
+/** For the control room: only the website owner. For anyone else it is not there at all. */
+export async function requireOwner(): Promise<User> {
+  const u = await requireUser("admin");
+  if (u.phone !== OWNER_PHONE) notFound();
+  return u;
+}
+
+/* ------------------------------------------------------------ the owner, looking at someone's portal */
+
+export const LOOK_COOKIE = "psws_look";
+
+/** Whose portal the owner is looking at on this browser, or null. Anyone else's cookie counts for nothing. */
+export async function lookingAt(u: User | null = null): Promise<User | null> {
+  const me = u ?? (await currentUser());
+  if (me?.phone !== OWNER_PHONE) return null;
+  const id = Number((await cookies()).get(LOOK_COOKIE)?.value);
+  if (!Number.isSafeInteger(id) || id <= 0) return null;
+  const rows = await db()`
+    SELECT id, name, phone, role, post, member_no FROM erp_user WHERE id = ${id} AND phone <> ${OWNER_PHONE}`;
+  const r = rows[0];
+  return r
+    ? {
+        id: num(r.id),
+        name: String(r.name),
+        phone: String(r.phone),
+        role: r.role as Role,
+        post: (r.post as string) ?? null,
+        member_no: (r.member_no as string) ?? null,
+      }
+    : null;
 }
 
 /** Where someone lands after signing in. */

@@ -41,11 +41,12 @@ export default async function OfficeLayout({ children }: { children: React.React
           needsMe={needsMe}
           portal={portal}
           myPortal={portal !== null && u.phone !== OWNER_PHONE}
+          owner={u.phone === OWNER_PHONE}
         />
       </header>
       <div className={styles.frame}>
         <aside className={styles.rail}>
-          <Nav admin={admin} needsMe={needsMe} portal={portal} />
+          <Nav admin={admin} needsMe={needsMe} portal={portal} owner={u.phone === OWNER_PHONE} />
         </aside>
         <main className={styles.main}>{children}</main>
       </div>
