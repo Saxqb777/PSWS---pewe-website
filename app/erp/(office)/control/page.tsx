@@ -6,7 +6,7 @@ import { showPhone, showWhen } from "@/lib/erp/labels";
 import { ErpForm, Field, Submit } from "@/components/erp/form";
 import { PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
-import { handOverAction, takeBackAction, workAsAccountantAction } from "./actions";
+import { accountantLinkAction, handOverAction, takeBackAction, workAsAccountantAction } from "./actions";
 
 export const metadata = { title: "Control room" };
 
@@ -153,14 +153,26 @@ export default async function ControlRoom({
               </ErpForm>
             </>
           ) : (
-            <ErpForm
-              action={takeBackAction}
-              confirm={`Take the Accountant's account back from ${acc.holder_name}? It is signed out everywhere.`}
-            >
-              <div className={styles.actions}>
-                <Submit quiet>Take it back</Submit>
-              </div>
-            </ErpForm>
+            <>
+              <ErpForm action={accountantLinkAction}>
+                <p className={styles.note} style={{ margin: "0 0 10px" }}>
+                  {acc.has_password
+                    ? `If ${acc.holder_name} forgot the password, make a new link. The password they have now keeps working until they use it.`
+                    : `${acc.holder_name} has not chosen the password yet. Lost the link, or it ran out? Make it again; the old one stops working.`}
+                </p>
+                <div className={styles.actions}>
+                  <Submit>{acc.has_password ? "Make a new password link" : `Show ${acc.holder_name.split(" ")[0]}'s link again`}</Submit>
+                </div>
+              </ErpForm>
+              <ErpForm
+                action={takeBackAction}
+                confirm={`Take the Accountant's account back from ${acc.holder_name}? It is signed out everywhere.`}
+              >
+                <div className={styles.actions}>
+                  <Submit quiet>Take it back</Submit>
+                </div>
+              </ErpForm>
+            </>
           )}
         </section>
       )}

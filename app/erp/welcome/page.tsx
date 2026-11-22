@@ -18,8 +18,12 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         </p>
         {invite ? (
           <>
-            <h1 className={styles.doorTitle}>Welcome, {invite.name}</h1>
-            <p className={styles.sub}>Choose your password. Only you will know it.</p>
+            <h1 className={styles.doorTitle}>Welcome, {invite.accountant ? (invite.holder ?? "Accountant") : invite.name}</h1>
+            <p className={styles.sub}>
+              {invite.accountant
+                ? "You are the PSWS Accountant. Choose the Accountant's password. Only you will know it."
+                : "Choose your password. Only you will know it."}
+            </p>
             <ErpForm action={setPassword}>
               <input type="hidden" name="token" value={String(t)} />
               <Field label="New password" hint="Kam se kam 8 akshar" name="password">
@@ -30,7 +34,11 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
               </Field>
               <Submit>Save and open the office</Submit>
             </ErpForm>
-            <p className={styles.doorNote}>From now on you sign in with your mobile number and this password.</p>
+            <p className={styles.doorNote}>
+              {invite.accountant
+                ? "From now on, to work as the Accountant, sign in with the word accountant and this password."
+                : "From now on you sign in with your mobile number and this password."}
+            </p>
           </>
         ) : (
           <>

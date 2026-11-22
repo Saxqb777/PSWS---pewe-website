@@ -347,12 +347,18 @@ export async function makeInvite(userId: number, by: number): Promise<string> {
   return token;
 }
 
-export async function readInvite(token: string): Promise<{ userId: number; name: string } | null> {
+export async function readInvite(
+  token: string,
+): Promise<{ userId: number; name: string; accountant: boolean; holder: string | null } | null> {
   if (!token) return null;
   const rows = await db()`
-    SELECT u.id, u.name FROM erp_invite i JOIN erp_user u ON u.id = i.user_id
+    SELECT u.id, u.name, u.role, h.name AS holder FROM erp_invite i JOIN erp_user u ON u.id = i.user_id
+      LEFT JOIN erp_user h ON h.id = u.held_by AND h.phone <> ${OWNER_PHONE}
     WHERE i.token_hash = ${sha(token)} AND i.used_at IS NULL AND i.expires_at > now() AND u.active`;
-  return rows[0] ? { userId: num(rows[0].id), name: String(rows[0].name) } : null;
+  const r = rows[0];
+  return r
+    ? { userId: num(r.id), name: String(r.name), accountant: r.role === "accountant", holder: (r.holder as string) ?? null }
+    : null;
 }
 
 export async function redeemInvite(token: string, password: string): Promise<boolean> {

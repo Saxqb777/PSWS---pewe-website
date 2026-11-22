@@ -25,6 +25,7 @@ import {
   unlock,
 } from "@/lib/erp/control";
 import { clean, normalPhone } from "@/lib/erp/labels";
+import { logChange } from "@/lib/erp/db";
 import type { FormState } from "@/lib/erp/form-state";
 
 /** The control room's fixes: only the website owner, and every one written to the history. */
@@ -128,6 +129,22 @@ export async function backToOwnerAction() {
   redirect("/erp/control");
 }
 
+/** The message that goes with the Accountant's link, on WhatsApp. */
+async function accountantMessage(name: string, token: string) {
+  const origin = await siteOrigin();
+  const url = `${origin}/erp/welcome?t=${token}`;
+  const text = [
+    `Hello ${name}, you are now the PSWS Accountant.`,
+    "",
+    "Open this link to choose the Accountant's password. It works once, for 7 days:",
+    url,
+    "",
+    `After that, sign in at ${origin}/erp/login with the word "accountant" and that password.`,
+    "Only the Accountant records money in and out, and confirms members' gifts against the bank.",
+  ].join("\n");
+  return { url, text };
+}
+
 export async function handOverAction(_: FormState, data: FormData): Promise<FormState> {
   const u = await requireOwner();
   const toId = Number(data.get("to"));
@@ -136,21 +153,25 @@ export async function handOverAction(_: FormState, data: FormData): Promise<Form
   const { id, token } = await handOverAccountant(u, to.id);
   await noteHandOver(u, id, to.name);
   const holder = await getAccountant();
-  const origin = await siteOrigin();
-  const url = `${origin}/erp/welcome?t=${token}`;
-  const text = [
-    `Hello ${to.name}, you are now the PSWS Accountant.`,
-    "",
-    "Open this link to choose the Accountant's password. It works once, for 7 days:",
-    url,
-    "",
-    `After that, sign in at ${origin}/erp/login with the word "accountant" and that password.`,
-    "Only the Accountant records money in and out, and confirms members' gifts against the bank.",
-  ].join("\n");
-  revalidatePath("/erp/control");
+  const { url, text } = await accountantMessage(to.name, token!);
+  // no page refresh here: it would put "Take it back" in this form's place, and the link with it
   return {
-    done: `${to.name} is now the PSWS Accountant. Send them this link to choose its password.`,
+    done: `${to.name} is now the PSWS Accountant. Send them this link to choose its password. If you lose it, open the control room again and make it again.`,
     share: { url, text, phone: holder?.holder_phone ?? null },
+  };
+}
+
+/** The link again, for whoever holds the Accountant: when it was lost, ran out, or they forgot the password. The old link stops working. */
+export async function accountantLinkAction(_: FormState): Promise<FormState> {
+  const u = await requireOwner();
+  const acc = await getAccountant();
+  if (!acc?.holder_name) return { error: "You hold the Accountant's account yourself. Hand it over first." };
+  const token = await makeInvite(acc.id, u.id);
+  await logChange(u.id, "access", "person", acc.id, `New link for ${acc.holder_name} to choose the PSWS Accountant's password`);
+  const { url, text } = await accountantMessage(acc.holder_name, token);
+  return {
+    done: `A new link for ${acc.holder_name}. The old one no longer works.`,
+    share: { url, text, phone: acc.holder_phone },
   };
 }
 
