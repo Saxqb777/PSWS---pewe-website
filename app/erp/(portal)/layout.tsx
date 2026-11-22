@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { isDemo, lookingAt, requireMember } from "@/lib/erp/auth";
 import { TabBar } from "@/components/erp/portal-client";
@@ -5,7 +6,14 @@ import { DemoTour } from "@/components/erp/demo-tour";
 import p from "@/components/erp/portal.module.css";
 import { stopLooking } from "../(office)/control/actions";
 
-export const metadata = { title: { default: "My PSWS", template: "%s · My PSWS" } };
+export const metadata: Metadata = {
+  title: { default: "My PSWS", template: "%s · My PSWS" },
+  manifest: "/erp/app.webmanifest",
+  appleWebApp: { capable: true, title: "PSWS", statusBarStyle: "default" },
+  icons: { apple: "/erp/icons/apple-180.png" },
+};
+
+export const viewport: Viewport = { themeColor: "#1f4d35" };
 
 /**
  * The frame round every page of a member's own portal. The office's people
@@ -14,6 +22,7 @@ export const metadata = { title: { default: "My PSWS", template: "%s · My PSWS"
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const u = await requireMember();
   const looking = !!(await lookingAt());
+  const demo = await isDemo();
   return (
     <>
       <header className={p.top}>
@@ -34,7 +43,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <button type="submit">Stop looking</button>
         </form>
       )}
-      {(await isDemo()) && (
+      {demo && (
         <p className={p.demo}>
           Demo: sample people and sample money, nothing here is real.{" "}
           <Link href="/erp/login">Be someone else</Link>

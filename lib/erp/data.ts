@@ -7,6 +7,8 @@ import {
   KINDS,
   METHODS,
   PURPOSES,
+  fromAbroad,
+  howPaid,
   labelOf,
   fyOf,
   fyRange,
@@ -46,7 +48,16 @@ export interface MoneyIn {
   head: Head;
   head_other: string | null;
   method: Method;
+  method_other: string | null;
+  bank_name: string | null;
   reference: string | null;
+  /** empty: India and rupees */
+  country: string | null;
+  currency: string | null;
+  sent_amount: number | null;
+  /** a member's collection: the people it came from, by name */
+  givers: string[] | null;
+  givers_hidden: boolean;
   note: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
@@ -63,7 +74,12 @@ export interface MoneyInFields {
   head: Head;
   head_other: string | null;
   method: Method;
+  method_other?: string | null;
+  bank_name?: string | null;
   reference: string | null;
+  country?: string | null;
+  currency?: string | null;
+  sent_amount?: number | null;
   note: string | null;
   /** with the portal on: the member who gave it, and the ask it was for */
   member_id?: number | null;
@@ -72,46 +88,35 @@ export interface MoneyInFields {
   collected_by?: number | null;
   people?: number | null;
   givers_note?: string | null;
+  givers?: string[] | null;
+  givers_hidden?: boolean;
   name_hidden?: boolean;
 }
 
 const inSummary = (no: string, f: MoneyInFields) =>
-  `Receipt ${no}: ${inr(f.amount_paise)} from ${f.from_name}, ${labelOf(HEADS, f.head, f.head_other)}, ${METHODS[f.method].en}`;
+  `Receipt ${no}: ${inr(f.amount_paise)} from ${f.from_name}, ${labelOf(HEADS, f.head, f.head_other)}, ${howPaid(f.method, f.method_other, f.bank_name)}` +
+  (fromAbroad(f.country ?? null, f.currency ?? null, f.sent_amount ?? null) ? ` (${fromAbroad(f.country ?? null, f.currency ?? null, f.sent_amount ?? null)})` : "");
 
 export async function addMoneyIn(u: User, f: MoneyInFields): Promise<{ id: number; receipt_no: string }> {
   const fy = fyOf(f.on_date);
-  // the members' portal's extra details are written only when there are some, so the office alone needs none of its columns
-  const portal = f.collected_by != null || f.people != null || f.givers_note != null || f.name_hidden != null;
-  const rows = portal
-    ? await db()`
-        WITH n AS (
-          INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
-          ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
-          RETURNING last_no
-        )
-        INSERT INTO erp_money_in
-          (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
-           member_id, ask_id, collected_by, people, givers_note, name_hidden, created_by)
-        SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
-               ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
-               ${f.member_id ?? null}, ${f.ask_id ?? null}, ${f.collected_by ?? null}, ${f.people ?? null},
-               ${f.givers_note ?? null}, ${f.name_hidden ?? false}, ${u.id}
-        FROM n
-        RETURNING id, receipt_no`
-    : await db()`
-        WITH n AS (
-          INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
-          ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
-          RETURNING last_no
-        )
-        INSERT INTO erp_money_in
-          (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, reference, note,
-           member_id, ask_id, created_by)
-        SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
-               ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.reference}, ${f.note},
-               ${f.member_id ?? null}, ${f.ask_id ?? null}, ${u.id}
-        FROM n
-        RETURNING id, receipt_no`;
+  const givers = f.givers?.length ? f.givers : null;
+  const rows = await db()`
+    WITH n AS (
+      INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fy}, 1)
+      ON CONFLICT (kind, fy) DO UPDATE SET last_no = erp_counter.last_no + 1
+      RETURNING last_no
+    )
+    INSERT INTO erp_money_in
+      (receipt_no, fy, on_date, from_name, from_phone, from_place, amount_paise, head, head_other, method, method_other,
+       bank_name, reference, country, currency, sent_amount, note,
+       member_id, ask_id, collected_by, people, givers_note, givers, givers_hidden, name_hidden, created_by)
+    SELECT 'R/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.from_name}, ${f.from_phone},
+           ${f.from_place}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.method_other ?? null},
+           ${f.bank_name ?? null}, ${f.reference}, ${f.country ?? null}, ${f.currency ?? null}, ${f.sent_amount ?? null}, ${f.note},
+           ${f.member_id ?? null}, ${f.ask_id ?? null}, ${f.collected_by ?? null}, ${f.people ?? null},
+           ${f.givers_note ?? null}, ${givers}, ${f.givers_hidden ?? false}, ${f.name_hidden ?? false}, ${u.id}
+    FROM n
+    RETURNING id, receipt_no`;
   const r = { id: num(rows[0].id), receipt_no: String(rows[0].receipt_no) };
   await logChange(u.id, "added", "money_in", r.id, inSummary(r.receipt_no, f));
   return r;
@@ -121,7 +126,8 @@ export async function updateMoneyIn(u: User, id: number, f: MoneyInFields) {
   const rows = await db()`
     UPDATE erp_money_in SET on_date = ${f.on_date}, from_name = ${f.from_name}, from_phone = ${f.from_phone},
       from_place = ${f.from_place}, amount_paise = ${f.amount_paise}, head = ${f.head}, head_other = ${f.head_other},
-      method = ${f.method},
+      method = ${f.method}, method_other = ${f.method_other ?? null}, bank_name = ${f.bank_name ?? null},
+      country = ${f.country ?? null}, currency = ${f.currency ?? null}, sent_amount = ${f.sent_amount ?? null},
       reference = ${f.reference}, note = ${f.note}, updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id} AND cancelled_at IS NULL
     RETURNING receipt_no`;
@@ -140,10 +146,20 @@ export async function cancelMoneyIn(u: User, id: number, reason: string) {
 export async function getMoneyIn(id: number): Promise<MoneyIn | null> {
   const rows = await db()`
     SELECT m.id, m.receipt_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.from_name, m.from_phone, m.from_place,
-           m.amount_paise, m.head, m.head_other, m.method, m.reference, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
+           m.amount_paise, m.head, m.head_other, m.method, m.method_other, m.bank_name, m.reference, m.country, m.currency,
+           m.sent_amount, m.givers, m.givers_hidden, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
            CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_money_in m LEFT JOIN erp_user u ON u.id = m.created_by WHERE m.id = ${id}`;
-  return rows[0] ? ({ ...rows[0], id: num(rows[0].id), amount_paise: num(rows[0].amount_paise) } as MoneyIn) : null;
+  const r = rows[0];
+  return r
+    ? ({
+        ...r,
+        id: num(r.id),
+        amount_paise: num(r.amount_paise),
+        sent_amount: r.sent_amount == null ? null : Number(r.sent_amount),
+        givers: (r.givers as string[] | null) ?? null,
+      } as MoneyIn)
+    : null;
 }
 
 /* ================================================================== money out */
@@ -160,6 +176,8 @@ export interface MoneyOut {
   purpose: Purpose;
   purpose_other: string | null;
   method: Method;
+  method_other: string | null;
+  bank_name: string | null;
   reference: string | null;
   family_id: number | null;
   family_name: string | null;
@@ -183,6 +201,8 @@ export interface MoneyOutFields {
   purpose: Purpose;
   purpose_other: string | null;
   method: Method;
+  method_other?: string | null;
+  bank_name?: string | null;
   reference: string | null;
   family_id: number | null;
   request_id: number | null;
@@ -192,8 +212,17 @@ export interface MoneyOutFields {
 
 const outSummary = (
   no: string,
-  f: { paid_to: string; amount_paise: number; purpose: Purpose; purpose_other?: string | null; method: Method },
-) => `Payment ${no}: ${inr(f.amount_paise)} to ${f.paid_to}, ${labelOf(PURPOSES, f.purpose, f.purpose_other)}, ${METHODS[f.method].en}`;
+  f: {
+    paid_to: string;
+    amount_paise: number;
+    purpose: Purpose;
+    purpose_other?: string | null;
+    method: Method;
+    method_other?: string | null;
+    bank_name?: string | null;
+  },
+) =>
+  `Payment ${no}: ${inr(f.amount_paise)} to ${f.paid_to}, ${labelOf(PURPOSES, f.purpose, f.purpose_other)}, ${howPaid(f.method, f.method_other, f.bank_name)}`;
 
 export async function addMoneyOut(u: User, f: MoneyOutFields): Promise<{ id: number; voucher_no: string }> {
   const fy = fyOf(f.on_date);
@@ -204,10 +233,11 @@ export async function addMoneyOut(u: User, f: MoneyOutFields): Promise<{ id: num
       RETURNING last_no
     )
     INSERT INTO erp_money_out
-      (voucher_no, fy, on_date, paid_to, amount_paise, head, head_other, purpose, purpose_other, method, reference,
-       family_id, request_id, work_id, note, created_by)
+      (voucher_no, fy, on_date, paid_to, amount_paise, head, head_other, purpose, purpose_other, method, method_other,
+       bank_name, reference, family_id, request_id, work_id, note, created_by)
     SELECT 'P/' || ${fy} || '/' || lpad(n.last_no::text, 4, '0'), ${fy}, ${f.on_date}, ${f.paid_to}, ${f.amount_paise},
-           ${f.head}, ${f.head_other}, ${f.purpose}, ${f.purpose_other}, ${f.method}, ${f.reference}, ${f.family_id},
+           ${f.head}, ${f.head_other}, ${f.purpose}, ${f.purpose_other}, ${f.method}, ${f.method_other ?? null},
+           ${f.bank_name ?? null}, ${f.reference}, ${f.family_id},
            ${f.request_id}, ${f.work_id}, ${f.note}, ${u.id}
     FROM n
     RETURNING id, voucher_no`;
@@ -224,7 +254,7 @@ export async function updateMoneyOut(u: User, id: number, f: MoneyOutFields) {
   const rows = await db()`
     UPDATE erp_money_out SET on_date = ${f.on_date}, paid_to = ${f.paid_to}, amount_paise = ${f.amount_paise},
       head = ${f.head}, head_other = ${f.head_other}, purpose = ${f.purpose}, purpose_other = ${f.purpose_other},
-      method = ${f.method}, reference = ${f.reference},
+      method = ${f.method}, method_other = ${f.method_other ?? null}, bank_name = ${f.bank_name ?? null}, reference = ${f.reference},
       family_id = ${f.family_id}, request_id = ${f.request_id}, work_id = ${f.work_id}, note = ${f.note},
       updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id} AND cancelled_at IS NULL
@@ -244,7 +274,8 @@ export async function cancelMoneyOut(u: User, id: number, reason: string) {
 export async function getMoneyOut(id: number): Promise<MoneyOut | null> {
   const rows = await db()`
     SELECT m.id, m.voucher_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.paid_to, m.amount_paise, m.head,
-           m.head_other, m.purpose, m.purpose_other, m.method, m.reference, m.family_id, f.name AS family_name, m.request_id, m.work_id,
+           m.head_other, m.purpose, m.purpose_other, m.method, m.method_other, m.bank_name, m.reference, m.family_id,
+           f.name AS family_name, m.request_id, m.work_id,
            w.name AS work_name, m.stipend_month, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
            CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_money_out m
@@ -897,7 +928,7 @@ export async function listPeople(): Promise<Person[]> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
            first_email IS NOT NULL AS has_first_email, approver, last_login_at
-    FROM erp_user WHERE phone <> 'owner' AND role <> 'member'
+    FROM erp_user WHERE phone <> 'owner' AND role NOT IN ('member', 'accountant')
     ORDER BY active DESC, array_position(ARRAY['admin', 'editor', 'viewer'], role), name`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Person);
 }
@@ -906,7 +937,7 @@ export async function getPerson(id: number): Promise<Person | null> {
   const rows = await db()`
     SELECT id, name, phone, role, post, active, password_hash IS NOT NULL AS has_password,
            first_email IS NOT NULL AS has_first_email, approver, last_login_at
-    FROM erp_user WHERE id = ${id} AND phone <> 'owner'`;
+    FROM erp_user WHERE id = ${id} AND phone <> 'owner' AND role <> 'accountant'`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Person) : null;
 }
 
@@ -955,8 +986,12 @@ export interface HistoryLine {
 
 export async function history(limit = 300, entity: string | null = null): Promise<HistoryLine[]> {
   const rows = await db()`
-    SELECT a.id, a.at, CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS who, a.action, a.entity, a.entity_id, a.summary
-    FROM erp_audit a LEFT JOIN erp_user u ON u.id = a.user_id
+    SELECT a.id, a.at,
+           CASE WHEN u.phone = 'owner' THEN 'Office'
+                WHEN h.id IS NOT NULL THEN u.name || ' (held by ' || CASE WHEN h.phone = 'owner' THEN 'the website owner' ELSE h.name END || ')'
+                ELSE u.name END AS who,
+           a.action, a.entity, a.entity_id, a.summary
+    FROM erp_audit a LEFT JOIN erp_user u ON u.id = a.user_id LEFT JOIN erp_user h ON h.id = a.held_by
     WHERE (${entity}::text IS NULL OR a.entity = ${entity})
       -- the website owner's private-link sign-ins are not part of the office's record
       AND NOT (coalesce(u.phone, '') = 'owner' AND a.summary = 'Signed in with the private link')
@@ -985,19 +1020,25 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "money-in": {
       const rows = await db()`
         SELECT receipt_no, to_char(on_date, 'YYYY-MM-DD') AS d, from_name, from_place, from_phone, amount_paise, head, head_other, method,
+               method_other, bank_name, country, currency, sent_amount, givers,
                reference, note, CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS entered_by, cancelled_at IS NOT NULL AS cancelled, cancel_reason
         FROM erp_money_in i LEFT JOIN erp_user u ON u.id = i.created_by
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, receipt_no`;
       return {
-        columns: ["Receipt no", "Date", "From", "Place", "Mobile", "Amount (Rs)", "For", "How", "Number", "Note", "Entered by", "Cancelled", "Why cancelled"],
+        columns: ["Receipt no", "Date", "From", "Place", "Mobile", "Amount (Rs)", "For", "How", "Number", "Sent from", "Collected from",
+          "Note", "Entered by", "Cancelled", "Why cancelled"],
         rows: rows.map((r) => [r.receipt_no, r.d, r.from_name, r.from_place, csvPhone(r.from_phone), rupees(r.amount_paise),
-          labelOf(HEADS, r.head as string, r.head_other as string | null), METHODS[r.method as Method]?.en ?? r.method, r.reference, r.note, r.entered_by,
+          labelOf(HEADS, r.head as string, r.head_other as string | null),
+          howPaid(r.method as Method, r.method_other as string | null, r.bank_name as string | null), r.reference,
+          fromAbroad(r.country as string | null, r.currency as string | null, r.sent_amount as string | null) || null,
+          ((r.givers as string[] | null) ?? []).join(", ") || null, r.note, r.entered_by,
           r.cancelled ? "Yes" : "", r.cancel_reason]),
       };
     }
     case "money-out": {
       const rows = await db()`
-        SELECT voucher_no, to_char(on_date, 'YYYY-MM-DD') AS d, paid_to, amount_paise, purpose, o.purpose_other, head, o.head_other, method, reference,
+        SELECT voucher_no, to_char(on_date, 'YYYY-MM-DD') AS d, paid_to, amount_paise, purpose, o.purpose_other, head, o.head_other, method,
+               o.method_other, o.bank_name, reference,
                f.name AS family, w.name AS work, stipend_month, note,
                CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS entered_by,
                o.cancelled_at IS NOT NULL AS cancelled, cancel_reason
@@ -1007,7 +1048,8 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
       return {
         columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Number", "Family", "Work", "Monthly help for", "Note", "Entered by", "Cancelled", "Why cancelled"],
         rows: rows.map((r) => [r.voucher_no, r.d, r.paid_to, rupees(r.amount_paise), labelOf(PURPOSES, r.purpose as string, r.purpose_other as string | null),
-          labelOf(HEADS, r.head as string, r.head_other as string | null), METHODS[r.method as Method]?.en ?? r.method, r.reference, r.family, r.work,
+          labelOf(HEADS, r.head as string, r.head_other as string | null),
+          howPaid(r.method as Method, r.method_other as string | null, r.bank_name as string | null), r.reference, r.family, r.work,
           r.stipend_month, r.note, r.entered_by, r.cancelled ? "Yes" : "", r.cancel_reason]),
       };
     }

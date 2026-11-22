@@ -6,7 +6,9 @@ import { askApproval } from "@/lib/erp/books";
 import { db, logChange } from "@/lib/erp/db";
 import { revalidatePath } from "next/cache";
 import { addMeeting, addMember, getMeeting, getMember, updateMeeting, updateMember } from "@/lib/erp/data";
-import { clean, cleanLong, isDate, normalPhone } from "@/lib/erp/labels";
+import { clean, cleanLong, isDate, normalPhone, showDay } from "@/lib/erp/labels";
+import { portalOn } from "@/lib/erp/flags";
+import { addFeed } from "@/lib/erp/portal";
 import type { FormState } from "@/lib/erp/form-state";
 
 /** Members of the Society, and the meetings and notices of its committee. */
@@ -50,14 +52,26 @@ export async function saveMeeting(id: number | null, _: FormState, data: FormDat
   const title = clean(data.get("title"), 200);
   if (!title) errors.title = "Give it a short title.";
   if (Object.keys(errors).length) return { errors };
-  const f = { kind: kind!, on_date, title: title!, body: cleanLong(data.get("body"), 20000), for_website: false };
+  const for_website = data.get("for_members") === "on";
+  const f = { kind: kind!, on_date, title: title!, body: cleanLong(data.get("body"), 20000), for_website };
   if (id) {
-    if (!(await getMeeting(id))) return { error: "This entry is not in the office any more." };
+    const was = await getMeeting(id);
+    if (!was) return { error: "This entry is not in the office any more." };
     await updateMeeting(u, id, f);
+    if (for_website && !was.for_website) await tellMembers(f);
+    revalidatePath("/erp/me", "layout");
     redirect(`/erp/meetings/${id}?saved=1`);
   }
   const newId = await addMeeting(u, f);
+  if (for_website) await tellMembers(f);
+  revalidatePath("/erp/me", "layout");
   redirect(`/erp/meetings/${newId}?new=1`);
+}
+
+/** A line on every member's home screen, the first time something is shared with them. */
+async function tellMembers(f: { kind: "meeting" | "notice"; title: string; on_date: string }) {
+  if (!portalOn()) return;
+  await addFeed("notice", null, f.kind === "notice" ? `Notice from the office: ${f.title}` : `Meeting on ${showDay(f.on_date)}: ${f.title}`);
 }
 
 /** Removing needs the approvers; bringing back does not. */

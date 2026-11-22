@@ -3,8 +3,27 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { LOOK_COOKIE, makeInvite, requireOwner, siteOrigin } from "@/lib/erp/auth";
-import { activeAdmins, clearPassword, getAccount, noteLooking, setActive, setContact, unlock } from "@/lib/erp/control";
+import {
+  LOOK_COOKIE,
+  backToOwner,
+  handOverAccountant,
+  makeInvite,
+  requireOwner,
+  siteOrigin,
+  workAsAccountant,
+} from "@/lib/erp/auth";
+import {
+  activeAdmins,
+  clearPassword,
+  getAccount,
+  getAccountant,
+  noteHandOver,
+  noteLooking,
+  officePeople,
+  setActive,
+  setContact,
+  unlock,
+} from "@/lib/erp/control";
 import { clean, normalPhone } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
 
@@ -93,4 +112,52 @@ export async function activeAction(id: number, _: FormState): Promise<FormState>
   await setActive(u, a, on);
   done(id);
   return { done: on ? `${a.name} can sign in again.` : `${a.name} can no longer sign in, and has been signed out.` };
+}
+
+/* ------------------------------------------------------------ the PSWS Accountant */
+
+/** While you hold it: work as the Accountant on this browser, and come back with one tap. */
+export async function workAsAccountantAction() {
+  const u = await requireOwner();
+  if (!(await workAsAccountant(u))) redirect("/erp/control?accountant=held");
+  redirect("/erp/money");
+}
+
+export async function backToOwnerAction() {
+  if (!(await backToOwner())) redirect("/erp/login");
+  redirect("/erp/control");
+}
+
+export async function handOverAction(_: FormState, data: FormData): Promise<FormState> {
+  const u = await requireOwner();
+  const toId = Number(data.get("to"));
+  const to = (await officePeople()).find((p) => p.id === toId);
+  if (!to) return { errors: { to: "Pick who will be the Accountant." } };
+  const { id, token } = await handOverAccountant(u, to.id);
+  await noteHandOver(u, id, to.name);
+  const holder = await getAccountant();
+  const origin = await siteOrigin();
+  const url = `${origin}/erp/welcome?t=${token}`;
+  const text = [
+    `Hello ${to.name}, you are now the PSWS Accountant.`,
+    "",
+    "Open this link to choose the Accountant's password. It works once, for 7 days:",
+    url,
+    "",
+    `After that, sign in at ${origin}/erp/login with the word "accountant" and that password.`,
+    "Only the Accountant records money in and out, and confirms members' gifts against the bank.",
+  ].join("\n");
+  revalidatePath("/erp/control");
+  return {
+    done: `${to.name} is now the PSWS Accountant. Send them this link to choose its password.`,
+    share: { url, text, phone: holder?.holder_phone ?? null },
+  };
+}
+
+export async function takeBackAction(_: FormState): Promise<FormState> {
+  const u = await requireOwner();
+  const { id } = await handOverAccountant(u, null);
+  await noteHandOver(u, id, null);
+  revalidatePath("/erp/control");
+  return { done: "You hold the Accountant's account again. Its password is cleared and it is signed out everywhere." };
 }

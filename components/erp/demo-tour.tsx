@@ -12,17 +12,18 @@ export async function DemoTour({ bottom = 16 }: { bottom?: number }) {
   if (!(await isDemo())) return null;
   const [u, people, asks] = await Promise.all([
     currentUser(),
-    db()`SELECT id, name FROM erp_user WHERE active AND phone <> 'owner'`,
+    db()`SELECT id, name, role FROM erp_user WHERE active AND phone <> 'owner'`,
     db()`SELECT id, title FROM erp_ask`,
   ]);
-  // sample people by first name: "Ayaan (sample)" → Ayaan
+  // sample people by first name: "Ayaan (sample)" → Ayaan; the PSWS Accountant → Accountant
+  const first = (name: string, role: string) => (role === "accountant" ? "Accountant" : name.split(" ")[0]);
   const who: Record<string, number> = {};
-  for (const r of people) who[String(r.name).split(" ")[0]] = num(r.id);
+  for (const r of people) who[first(String(r.name), String(r.role))] = num(r.id);
   const ask = (start: string) => num(asks.find((a) => String(a.title).startsWith(start))?.id ?? 0);
   return (
     <Suspense fallback={null}>
       <TourFloat
-        me={u ? String(u.name).split(" ")[0] : null}
+        me={u ? first(u.name, u.role) : null}
         people={who}
         hospital={ask("Hospital costs")}
         tank={ask("Water tank")}

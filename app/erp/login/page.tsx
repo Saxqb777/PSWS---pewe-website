@@ -9,6 +9,7 @@ import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 import { demoAs, firstTime, signIn } from "../actions";
 import { DemoTour } from "@/components/erp/demo-tour";
+import { getAccountant } from "@/lib/erp/control";
 
 export const metadata = { title: "Sign in" };
 
@@ -22,6 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const empty = !(await hasAnyone());
   const portal = portalOn();
   const samples = demo ? (await listPortalMembers()).filter((m) => m.active) : [];
+  const accountant = demo ? await getAccountant() : null;
   return (
     <main className={styles.door}>
       <div className={styles.doorBox}>
@@ -65,6 +67,25 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 ))}
               </div>
             ))}
+            {accountant && (
+              <div className={p.who}>
+                <p className={styles.label} style={{ margin: "8px 0 0" }}>
+                  The money
+                </p>
+                <form action={demoAs}>
+                  <input type="hidden" name="id" value={accountant.id} />
+                  <input type="hidden" name="next" value="/erp/portal" />
+                  <button type="submit" className={p.whoBtn}>
+                    <span>
+                      PSWS Accountant
+                      <small>
+                        The bank and every receipt{accountant.holder_name ? `, held by ${accountant.holder_name}` : ""}
+                      </small>
+                    </span>
+                  </button>
+                </form>
+              </div>
+            )}
           </section>
         )}
 

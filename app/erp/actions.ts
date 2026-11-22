@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import {
+  ACCOUNTANT_PHONE,
   changePassword,
   checkPassword,
   createFirstAdmin,
@@ -23,9 +24,11 @@ import type { FormState } from "@/lib/erp/form-state";
 /** Signing in, setting a password, and setting the office up the first time. */
 
 export async function signIn(_: FormState, data: FormData): Promise<FormState> {
+  // the PSWS Accountant's account signs in with the word "accountant", not a number
+  const accountant = /^\s*(psws\s*)?accountant\s*$/i.test(String(data.get("phone") ?? ""));
   // with the portal on, the same box takes a PSWS number or a mobile number
-  const memberNo = portalOn() ? normalMemberNo(data.get("phone")) : null;
-  const phone = memberNo ? null : normalPhone(data.get("phone"));
+  const memberNo = portalOn() && !accountant ? normalMemberNo(data.get("phone")) : null;
+  const phone = accountant ? ACCOUNTANT_PHONE : memberNo ? null : normalPhone(data.get("phone"));
   const password = String(data.get("password") ?? "");
   const errors: Record<string, string> = {};
   if (!memberNo && !phone)

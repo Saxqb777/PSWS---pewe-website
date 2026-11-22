@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { listMoney, listRequests, stipendLines, totals } from "@/lib/erp/data";
-import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST, labelOf } from "@/lib/erp/labels";
+import { KINDS, canDo, fyOf, fyRange, inr, showDate, showDay, showMonth, thisMonthIST, todayIST, labelOf, handlesMoney } from "@/lib/erp/labels";
 import { Empty, MoneyList, Section } from "@/components/erp/ui";
 import { ACTION_LABEL, approvalsForMe, fundBalances, getOpening, placeBalances } from "@/lib/erp/books";
 import { portalOn } from "@/lib/erp/flags";
@@ -32,6 +32,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
   ]);
   const zakat = funds.find((f) => f.head === "zakat");
   const editor = canDo(u.role, "editor");
+  const money = handlesMoney(u.role);
   const paid = stipends.filter((s) => s.paid_voucher).length;
   const toPay = stipends.length - paid;
 
@@ -69,6 +70,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
 
       {editor && (
         <nav aria-label="Add" className={styles.home}>
+          {money && (
           <div className={styles.big}>
             <Link href="/erp/money/in/new" className={styles.act}>
               <span className={`${styles.actSign} ${styles.in}`} aria-hidden="true">
@@ -89,14 +91,17 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
               </span>
             </Link>
           </div>
+          )}
           <ul className={styles.more}>
-            <li>
-              <Link href="/erp/money/out/new?for=family">
-                <span>
-                  Family helped<small>Madad</small>
-                </span>
-              </Link>
-            </li>
+            {money && (
+              <li>
+                <Link href="/erp/money/out/new?for=family">
+                  <span>
+                    Family helped<small>Madad</small>
+                  </span>
+                </Link>
+              </li>
+            )}
             <li>
               <Link href="/erp/works">
                 <span>
@@ -192,8 +197,8 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
               <span>
                 {monthName}: <b>{paid} of {stipends.length}</b> paid
               </span>
-              <Link href="/erp/stipends" className={toPay && editor ? styles.btn : styles.btnQuiet}>
-                {toPay && editor ? `Pay ${toPay}` : "Open"}
+              <Link href="/erp/stipends" className={toPay && money ? styles.btn : styles.btnQuiet}>
+                {toPay && money ? `Pay ${toPay}` : "Open"}
               </Link>
             </div>
           ) : (
@@ -232,7 +237,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
       ) : (
         <Empty
           action={
-            editor ? (
+            money ? (
               <Link href="/erp/money/in/new" className={styles.btn}>
                 Add the first receipt
               </Link>

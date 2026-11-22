@@ -10,6 +10,7 @@ import styles from "./erp.module.css";
 const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean; owner?: boolean }[][] = [
   [
     { href: "/erp", label: "Home" },
+    { href: "/erp/dashboard", label: "Dashboard" },
     { href: "/erp/money", label: "Money" },
     { href: "/erp/accounts", label: "Accounts" },
     { href: "/erp/families", label: "Families" },

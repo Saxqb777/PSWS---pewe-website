@@ -109,6 +109,8 @@ export async function requireMember(): Promise<User & { member_no: string }> {
   const u = await currentUser();
   if (!portalOn()) notFound();
   if (!u) redirect("/erp/login");
+  // the Accountant's account is for the books: it has no portal and gives nothing
+  if (u.role === "accountant") redirect("/erp");
   if (u.phone === OWNER_PHONE) {
     const them = await lookingAt(u);
     if (!them) redirect("/erp/control");
@@ -126,11 +128,78 @@ export async function actingMember(): Promise<User & { member_no: string }> {
   return requireMember();
 }
 
+/** For everything that adds or changes money: only the PSWS Accountant. Everyone else sees the money. */
+export async function requireAccountant(): Promise<User> {
+  const u = await requireUser();
+  if (u.role !== "accountant") redirect("/erp/money?accountant=1");
+  return u;
+}
+
 /** For the control room: only the website owner. For anyone else it is not there at all. */
 export async function requireOwner(): Promise<User> {
   const u = await requireUser("admin");
   if (u.phone !== OWNER_PHONE) notFound();
   return u;
+}
+
+/* ------------------------------------------------------------ the owner, working as the Accountant */
+
+/** The owner's own session, kept aside while they work as the Accountant, so one tap brings them back. */
+const OWNER_BACK_COOKIE = "psws_owner_back";
+
+const sessionCookie = (expires: Date) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/erp",
+  expires,
+});
+
+/** While the owner holds the Accountant's account, they can work as it without its password. */
+export async function workAsAccountant(owner: User): Promise<boolean> {
+  if (owner.phone !== OWNER_PHONE) return false;
+  const jar = await cookies();
+  const ownerToken = jar.get(SESSION_COOKIE)?.value;
+  const rows = await db()`SELECT id, held_by, active FROM erp_user WHERE phone = ${ACCOUNTANT_PHONE}`;
+  const acc = rows[0];
+  if (!ownerToken || !acc?.active || (acc.held_by != null && num(acc.held_by) !== owner.id)) return false;
+  await startSession(num(acc.id));
+  jar.set(OWNER_BACK_COOKIE, ownerToken, sessionCookie(new Date(Date.now() + SESSION_DAYS * 864e5)));
+  return true;
+}
+
+/** Is the owner's own session waiting behind this one? */
+export async function ownerBehind(): Promise<boolean> {
+  const back = (await cookies()).get(OWNER_BACK_COOKIE)?.value;
+  if (!back) return false;
+  const rows = await db()`
+    SELECT 1 FROM erp_session s JOIN erp_user u ON u.id = s.user_id
+    WHERE s.token_hash = ${sha(back)} AND s.expires_at > now() AND u.active AND u.phone = ${OWNER_PHONE}`;
+  return !!rows[0];
+}
+
+/** Back from the Accountant's account to the owner's own: the Accountant's session ends. */
+export async function backToOwner(): Promise<boolean> {
+  if (!(await ownerBehind())) return false;
+  const jar = await cookies();
+  const back = jar.get(OWNER_BACK_COOKIE)!.value;
+  const now = jar.get(SESSION_COOKIE)?.value;
+  if (now) await db()`DELETE FROM erp_session WHERE token_hash = ${sha(now)}`;
+  const rows = await db()`SELECT expires_at FROM erp_session WHERE token_hash = ${sha(back)}`;
+  jar.set(SESSION_COOKIE, back, sessionCookie(new Date(rows[0].expires_at as string)));
+  jar.delete({ name: OWNER_BACK_COOKIE, path: "/erp" });
+  return true;
+}
+
+/** Hand the Accountant's account to someone (or back to the owner, with null): its password is cleared and it is signed out. */
+export async function handOverAccountant(by: User, toUserId: number | null): Promise<{ id: number; token: string | null }> {
+  const rows = await db()`
+    UPDATE erp_user SET held_by = ${toUserId}, held_since = now(), password_hash = NULL, failed_logins = 0, locked_until = NULL
+    WHERE phone = ${ACCOUNTANT_PHONE} RETURNING id`;
+  const id = num(rows[0].id);
+  await db()`DELETE FROM erp_session WHERE user_id = ${id}`;
+  // the new holder chooses the account's password with a link, as anyone new in the office does
+  return { id, token: toUserId ? await makeInvite(id, by.id) : null };
 }
 
 /* ------------------------------------------------------------ the owner, looking at someone's portal */
@@ -358,6 +427,8 @@ export async function createFirstAdmin(name: string, phone: string, post: string
  * ERP_OWNER_KEY in Vercel switches the link off.
  */
 export const OWNER_PHONE = "owner";
+/** The PSWS Accountant's account: one for the job, signed in to with the word "accountant". */
+export const ACCOUNTANT_PHONE = "accountant";
 const OWNER_DIGEST = "0830b63bec76e8cea778cdc3c7ff6988c2877eb9bc8aa87126bff0cbfecef53f";
 
 function ownerKeyOk(key: string): boolean {

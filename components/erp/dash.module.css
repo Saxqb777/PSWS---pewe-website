@@ -1,0 +1,414 @@
+/*
+ * The dashboard. The office's own paper and ink; money in wears the office's
+ * green and money out its rust, as everywhere else in the books. Figures are
+ * in the office's sans; only page titles keep the serif.
+ */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* on a phone, two side by side and the third across the width */
+@media (max-width: 559px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stats > :nth-child(3):last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 14px 12px;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+
+.statLink:hover {
+  border-color: var(--rule-strong);
+}
+
+.statLink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.statValue {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.statNote {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.todo {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.todo li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.todo a {
+  display: block;
+  padding: 12px 2px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.todo a:hover {
+  background: var(--paper-2);
+}
+
+.todo b {
+  display: inline-block;
+  min-width: 28px;
+  font-size: 17px;
+}
+
+.empty {
+  margin: 0 0 8px;
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------ meters */
+
+.meters {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.meterName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.meterName a {
+  color: var(--ink);
+}
+
+.meterFigure {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 14px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.track {
+  grid-column: 1 / -1;
+  display: block;
+  height: 8px;
+  background: var(--in-tint);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.track > span {
+  display: block;
+  height: 100%;
+  background: var(--in);
+  border-radius: 4px;
+}
+
+.trackOut {
+  background: var(--out-tint);
+}
+
+.trackOut > span {
+  background: var(--out);
+}
+
+/* ------------------------------------------------------------ the year filter */
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 34px 0 14px;
+  padding-top: 18px;
+  border-top: 3px double var(--rule-strong);
+}
+
+.filter > span {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.filter nav {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ the month chart */
+
+.chart {
+  position: relative;
+  margin: 0 0 6px;
+  padding: 12px 12px 4px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  min-height: 280px;
+}
+
+.chart svg {
+  display: block;
+  overflow: visible;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.keyIn,
+.keyOut {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--in);
+}
+
+.keyOut {
+  background: var(--out);
+}
+
+.grid {
+  stroke: rgba(24, 32, 29, 0.09);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.base {
+  stroke: rgba(24, 32, 29, 0.45);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.tick,
+.tickLater {
+  font-size: 11px;
+  fill: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.tickLater {
+  fill: rgba(24, 32, 29, 0.28);
+}
+
+.peak {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink-2);
+}
+
+.in {
+  fill: var(--in);
+  background: var(--in);
+}
+
+.out {
+  fill: var(--out);
+  background: var(--out);
+}
+
+.month {
+  outline: none;
+  transition: opacity 120ms;
+}
+
+.month:focus-visible rect {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.tip {
+  position: absolute;
+  top: 34px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(24, 32, 29, 0.12);
+  pointer-events: none;
+}
+
+.tipHead {
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.tipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tipRow b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.lineIn,
+.lineOut {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  background: var(--in);
+}
+
+.lineOut {
+  background: var(--out);
+}
+
+.tipNet {
+  margin-top: 4px;
+  padding-top: 4px;
+  font-size: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.table {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.table summary {
+  padding: 6px 0;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 6px 4px;
+  text-align: right;
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th:first-child {
+  text-align: left;
+  font-weight: 400;
+}
+
+.table thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------ ranked bars */
+
+.ranked {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.ranked li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rankName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rankFigure {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.rankFigure small {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.rankBar {
+  grid-column: 1 / -1;
+  display: block;
+  height: 10px;
+}
+
+.rankBar > span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+}
+
+.foot {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .month {
+    transition: none;
+  }
+}

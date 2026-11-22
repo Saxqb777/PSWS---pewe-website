@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/erp/auth";
-import { ASK_YES_NEEDED, askCollectors, getAsk, isPublicKind, memberMaySee, myPledges } from "@/lib/erp/portal";
+import { ASK_YES_NEEDED, askCollectors, getAsk, isPublicKind, memberMaySee, myPledges, pledgeAmount } from "@/lib/erp/portal";
 import { ASK_KINDS, canDo, inr, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskStatus, H2, PledgeStatus, Raised } from "@/components/erp/portal-ui";
 import { AutoRefresh, ShareAsk } from "@/components/erp/portal-client";
-import { GiveForm } from "@/components/erp/portal-forms";
+import { GiveForm, PhotoForm } from "@/components/erp/portal-forms";
+import { AskPhotos } from "@/components/erp/ask-photos";
+import { askPhotos } from "@/lib/erp/files";
 import { PayTo } from "@/components/erp/pay-to";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
-import { sendPledge, takeBackAsk } from "../../actions";
+import { addOwnPhoto, removeOwnPhoto, sendPledge, takeBackAsk } from "../../actions";
 
 export const metadata = { title: "Ask" };
 
@@ -27,7 +29,9 @@ export default async function AskPage({
   const office = u.role !== "member" && canDo(u.role, "editor");
   if (!a || !memberMaySee(a, u.id, office)) notFound();
   const sp = await searchParams;
-  const [pledges, collectors] = await Promise.all([myPledges(u.id), askCollectors(a.id)]);
+  const [pledges, collectors, photos] = await Promise.all([myPledges(u.id), askCollectors(a.id), askPhotos(a.id)]);
+  const asker = a.asked_by === u.id;
+  const canAddPhoto = asker && (a.status === "waiting" || a.status === "live" || a.status === "closed");
   const mine = pledges.filter((x) => x.ask_id === a.id);
   const open = a.status === "live" && isPublicKind(a.kind);
   const ended = open && a.closes_on && a.closes_on < new Date().toISOString().slice(0, 10);
@@ -57,7 +61,7 @@ export default async function AskPage({
       )}
       {sp.gave && (
         <p className={styles.formDone}>
-          Thank you. The Treasurer checks the bank and makes your receipt; then it counts here and goes in your passbook.
+          Thank you. The PSWS Accountant checks the bank and makes your receipt; then it counts here and goes in your passbook.
         </p>
       )}
 
@@ -83,7 +87,10 @@ export default async function AskPage({
                 <span className={p.itemTitle}>{c.name}</span>
                 <span className={p.itemAmt}>{inr(c.amount_paise)}</span>
                 {c.people > 0 && (
-                  <span className={p.itemMeta}>From {c.people === 1 ? "1 person" : `${c.people} people`}</span>
+                  <span className={p.itemMeta}>
+                    From {c.people === 1 ? "1 person" : `${c.people} people`}
+                    {c.names.length > 0 && `: ${c.names.join(", ")}`}
+                  </span>
                 )}
               </li>
             ))}
@@ -118,6 +125,17 @@ export default async function AskPage({
         </p>
       )}
 
+      {(photos.length > 0 || canAddPhoto) && (
+        <>
+          <H2>Photos</H2>
+          <AskPhotos
+            photos={photos}
+            removeFor={(ph) => (ph.uploaded_by === u.id ? removeOwnPhoto.bind(null, a.id, ph.id) : null)}
+          />
+          {canAddPhoto && <PhotoForm action={addOwnPhoto.bind(null, a.id)} />}
+        </>
+      )}
+
       {mine.length > 0 && (
         <>
           <H2>What I sent</H2>
@@ -129,9 +147,15 @@ export default async function AskPage({
                   {x.collected ? ` · collected${x.people ? ` from ${x.people}` : ""}` : ""}
                   <PledgeStatus status={x.status} />
                 </span>
-                <span className={p.itemAmt}>{inr(x.amount_paise)}</span>
+                <span className={p.itemAmt}>{pledgeAmount(x)}</span>
                 <span className={p.itemMeta}>
-                  {x.receipt_no ? `Receipt ${x.receipt_no}` : x.check_note ? `Treasurer: ${x.check_note}` : "The Treasurer is checking"}
+                  {x.receipt_no && x.money_in_id ? (
+                    <Link href={`/erp/me/receipt/${x.money_in_id}`}>Receipt {x.receipt_no}</Link>
+                  ) : x.check_note ? (
+                    `Accountant: ${x.check_note}`
+                  ) : (
+                    "The Accountant is checking"
+                  )}
                 </span>
               </li>
             ))}

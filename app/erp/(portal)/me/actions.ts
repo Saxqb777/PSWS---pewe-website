@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actingMember, changePassword, checkPassword, passwordProblem } from "@/lib/erp/auth";
-import { addAsk, addMessage, addPledge, getAsk, isPublicKind, withdrawAsk, withdrawPledge } from "@/lib/erp/portal";
+import { addAsk, addMessage, addPledge, getAsk, isPublicKind, notePhoto, replyToMeeting, withdrawAsk, withdrawPledge } from "@/lib/erp/portal";
 import { ASK_KINDS, HEADS, METHODS, clean, cleanLong, isDate, isKey, todayIST, toPaise, type Head } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
+import { readDetail, readGivers } from "@/lib/erp/details";
+import { askPhotos, removeAskPhoto, savePicture } from "@/lib/erp/files";
 
 /** What a member does on their own portal. */
 
@@ -50,6 +52,7 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
   const u = await actingMember();
   const errors: Record<string, string> = {};
   let head: Head = "donation";
+  let head_other: string | null = null;
   if (askId) {
     const a = await getAsk(askId);
     if (!a || a.status !== "live" || !isPublicKind(a.kind)) return { error: "This ask is not open any more." };
@@ -58,35 +61,42 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     const h = data.get("head");
     if (!isKey(HEADS, h)) errors.head = "What is it for? (Kis liye?)";
     else head = h as Head;
+    head_other = head === "other" ? clean(data.get("head_other"), 120) : null;
+    if (head === "other" && !head_other) errors.head_other = "Say what it is for. (Kis liye?)";
   }
-  const amount = toPaise(data.get("amount"));
-  if (!amount) errors.amount = "Type the amount in numbers, e.g. 1000.";
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How did you send it?";
+  const detail = readDetail(data, isKey(METHODS, method) ? method : null, errors);
+  // in rupees, or in the currency it was sent in: then the Accountant types the rupees that arrived
+  const amount = detail.currency ? null : toPaise(data.get("amount"));
+  if (!detail.currency && !amount) errors.amount = "Type the amount in numbers, e.g. 1000.";
   const reference = clean(data.get("reference"), 120);
   if ((method === "upi" || method === "bank") && !reference)
-    errors.reference = "Type the number from the payment message, so the Treasurer can find it.";
+    errors.reference = "Type the number from the payment message, so the Accountant can find it.";
   const sent_on = String(data.get("sent_on") ?? "");
   if (!isDate(sent_on) || sent_on > todayIST()) errors.sent_on = "Pick the day you sent it.";
   // money gathered from others: counts for the ask and as their collection, not as their own gift
   const collected = data.get("collected") === "on";
-  const peopleRaw = clean(data.get("people"), 6);
-  const people = peopleRaw ? Number(peopleRaw) : null;
-  if (collected && peopleRaw && !(Number.isInteger(people) && people! > 0 && people! < 10000))
-    errors.people = "How many people gave? A number, e.g. 10.";
+  const g = collected ? readGivers(data, errors) : { people: null, givers: [], givers_hidden: false };
   if (Object.keys(errors).length) return { errors };
+  const proof = await savePicture(u, data.get("proof"), "proof");
+  if (proof && "error" in proof) return { errors: { proof: proof.error } };
   await addPledge(u, {
     ask_id: askId,
-    amount_paise: amount!,
+    amount_paise: amount,
     head,
+    head_other,
     method: method as keyof typeof METHODS,
     reference,
     sent_on,
+    ...detail,
     // names show unless the giver asks to keep theirs hidden
     show_name: data.get("hide_name") !== "on",
     collected,
-    people: collected ? people : null,
-    givers_note: collected ? cleanLong(data.get("givers_note"), 2000) : null,
+    people: g.people,
+    givers: g.givers,
+    givers_hidden: g.givers_hidden,
+    proof_id: proof?.id ?? null,
   });
   const flag = collected ? "gave=1&collected=1" : "gave=1";
   redirect(askId ? `/erp/me/asks/${askId}?${flag}` : `/erp/me/passbook?${flag}`);
@@ -123,4 +133,33 @@ export async function changePortalPassword(_: FormState, data: FormData): Promis
   if (password !== again) return { errors: { again: "The two passwords are not the same." } };
   await changePassword(u.id, password);
   return { done: "Your password is changed. Other phones signed in as you have been signed out." };
+}
+
+/** A photo on your own ask: what is needed, or what it became. */
+export async function addOwnPhoto(askId: number, _: FormState, data: FormData): Promise<FormState> {
+  const u = await actingMember();
+  const a = await getAsk(askId);
+  if (!a || a.asked_by !== u.id || a.status === "withdrawn" || a.status === "declined")
+    return { error: "Photos can be added to your own open ask." };
+  const saved = await savePicture(u, data.get("photo"), "ask_photo", { askId, caption: clean(data.get("caption"), 120) });
+  if (!saved) return { errors: { photo: "Choose a photo first." } };
+  if ("error" in saved) return { errors: { photo: saved.error } };
+  await notePhoto(u, a);
+  revalidatePath(`/erp/me/asks/${askId}`);
+  return { done: "Photo added." };
+}
+
+/** Take off a photo you added yourself. */
+export async function removeOwnPhoto(askId: number, photoId: number) {
+  const u = await actingMember();
+  const mine = (await askPhotos(askId)).find((x) => x.id === photoId && x.uploaded_by === u.id);
+  if (mine) await removeAskPhoto(u, photoId, askId);
+  revalidatePath(`/erp/me/asks/${askId}`);
+}
+
+/** "I'm coming" or "I can't come" to a meeting coming up. It can be changed until the day. */
+export async function replyMeeting(meetingId: number, coming: boolean) {
+  const u = await actingMember();
+  await replyToMeeting(u, meetingId, coming);
+  revalidatePath("/erp/me/notices");
 }

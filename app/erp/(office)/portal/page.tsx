@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { portalOn } from "@/lib/erp/flags";
-import { ASK_YES_NEEDED, asksForApprover, officeAsks, openMessages, pledgesToCheck } from "@/lib/erp/portal";
-import { ASK_KINDS, METHOD_SHORT, inr, showDate, showWhen } from "@/lib/erp/labels";
-import { ErpForm, Field, Submit } from "@/components/erp/form";
+import { ASK_YES_NEEDED, asksForApprover, officeAsks, openMessages, pledgeAmount, pledgesToCheck } from "@/lib/erp/portal";
+import { ASK_KINDS, HEADS, foreign, handlesMoney, howPaid, inr, labelOf, showDate, showWhen } from "@/lib/erp/labels";
+import { AmountInput, ErpForm, Field, Submit } from "@/components/erp/form";
 import { Empty, PageHead, Section } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { foundPayment, messageIsDone, paymentNotFound } from "./actions";
@@ -16,6 +16,7 @@ export default async function OfficePortal({ searchParams }: { searchParams: Pro
   const u = await requireUser("editor");
   if (!portalOn()) notFound();
   const sp = await searchParams;
+  const money = handlesMoney(u.role);
   const [toApprove, toCheck, open, waiting, messages] = await Promise.all([
     asksForApprover(u.id),
     pledgesToCheck(),
@@ -69,37 +70,61 @@ export default async function OfficePortal({ searchParams }: { searchParams: Pro
           {toCheck.map((x) => (
             <div key={x.id} className={styles.card}>
               <p style={{ margin: 0 }}>
-                <b>{inr(x.amount_paise)}</b> from <b>{x.member_name}</b> ({x.member_no}) · {METHOD_SHORT[x.method]}
+                <b>{pledgeAmount(x)}</b> from <b>{x.member_name}</b> ({x.member_no}) ·{" "}
+                {howPaid(x.method, x.method_other, x.bank_name, true)}
                 {x.reference ? ` ${x.reference}` : ""} · sent {showDate(x.sent_on)}
+                {x.country ? ` from ${x.country}` : ""}
               </p>
               <p className={styles.note} style={{ margin: "4px 0 10px" }}>
-                For {x.ask_title ?? "a fund"} · told us {showWhen(x.created_at)}
+                For {x.ask_title ?? labelOf(HEADS, x.head, x.head_other)} · told us {showWhen(x.created_at)}
                 {x.collected && (
                   <>
                     <br />
-                    <b>Collected from {x.people ? `${x.people} people` : "others"}</b>
-                    {x.givers_note ? `: ${x.givers_note}` : ""}
+                    <b>Collected from {x.people ? `${x.people} ${x.people === 1 ? "person" : "people"}` : "others"}</b>
+                    {x.givers?.length ? `: ${x.givers.join(", ")}` : x.givers_note ? `: ${x.givers_note}` : ""}
                   </>
                 )}
               </p>
-              <ErpForm action={foundPayment.bind(null, x.id)}>
-                <div className={styles.actions}>
-                  <Submit>Found it: make the receipt</Submit>
-                </div>
-              </ErpForm>
-              <details style={{ marginTop: 10 }}>
-                <summary className={styles.link} style={{ cursor: "pointer" }}>
-                  Not in the bank?
-                </summary>
-                <ErpForm action={paymentNotFound.bind(null, x.id)}>
-                  <Field label="What should they check?" hint="They see this" name="note" wide>
-                    <input name="note" autoComplete="off" />
-                  </Field>
-                  <div className={styles.actions}>
-                    <Submit quiet>Tell them it is not found</Submit>
-                  </div>
-                </ErpForm>
-              </details>
+              {x.proof_id && (
+                <a href={`/erp/file/${x.proof_id}`} target="_blank" rel="noopener noreferrer" className={styles.proof}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a private picture, served behind the sign-in */}
+                  <img src={`/erp/file/${x.proof_id}`} alt={`Payment screenshot from ${x.member_name}`} loading="lazy" />
+                  <span>Their screenshot · open it full size</span>
+                </a>
+              )}
+              {money ? (
+                <>
+                  <ErpForm action={foundPayment.bind(null, x.id)}>
+                    {x.amount_paise == null && (
+                      <AmountInput
+                        name="rupees"
+                        label="Rupees that arrived"
+                        hint={`For ${foreign(x.sent_amount, x.currency)}, as the bank shows it`}
+                      />
+                    )}
+                    <div className={styles.actions}>
+                      <Submit>Found it: make the receipt</Submit>
+                    </div>
+                  </ErpForm>
+                  <details style={{ marginTop: 10 }}>
+                    <summary className={styles.link} style={{ cursor: "pointer" }}>
+                      Not in the bank?
+                    </summary>
+                    <ErpForm action={paymentNotFound.bind(null, x.id)}>
+                      <Field label="What should they check?" hint="They see this" name="note" wide>
+                        <input name="note" autoComplete="off" />
+                      </Field>
+                      <div className={styles.actions}>
+                        <Submit quiet>Tell them it is not found</Submit>
+                      </div>
+                    </ErpForm>
+                  </details>
+                </>
+              ) : (
+                <p className={styles.note} style={{ margin: 0 }}>
+                  Waiting for the PSWS Accountant to find it in the bank.
+                </p>
+              )}
             </div>
           ))}
         </div>

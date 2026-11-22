@@ -28,6 +28,8 @@ export async function logChange(
   entityId: number | null,
   summary: string,
 ) {
-  await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary)
-             VALUES (${userId}, ${action}, ${entity}, ${entityId}, ${summary})`;
+  // for the PSWS Accountant's account, who held it at the time
+  await db()`INSERT INTO erp_audit (user_id, action, entity, entity_id, summary, held_by)
+             VALUES (${userId}, ${action}, ${entity}, ${entityId}, ${summary},
+                     (SELECT held_by FROM erp_user WHERE id = ${userId} AND role = 'accountant'))`;
 }

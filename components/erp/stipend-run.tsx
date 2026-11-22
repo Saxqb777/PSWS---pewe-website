@@ -122,7 +122,9 @@ export function StipendRun({
             name="method"
             legend="How was it paid?"
             hint="Kaise diya"
-            options={Object.entries(METHODS).map(([value, l]) => ({ value, en: l.en, hi: l.hi }))}
+            options={Object.entries(METHODS)
+              .filter(([value]) => value !== "other")
+              .map(([value, l]) => ({ value, en: l.en, hi: l.hi }))}
             defaultValue="bank"
           />
           <div className={styles.actions}>

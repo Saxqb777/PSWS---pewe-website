@@ -51,7 +51,7 @@ export async function listAccounts(): Promise<Account[]> {
     SELECT id, name, phone, role, post, member_no, lives_in, first_email, approver, active,
            password_hash IS NOT NULL AS has_password, failed_logins, coalesce(locked_until > now(), false) AS locked,
            last_login_at, created_at
-    FROM erp_user WHERE phone <> ${OWNER_PHONE}
+    FROM erp_user WHERE phone <> ${OWNER_PHONE} AND role <> 'accountant'
     ORDER BY role = 'member', name`;
   return rows.map(asAccount);
 }
@@ -61,7 +61,7 @@ export async function getAccount(id: number): Promise<Account | null> {
     SELECT id, name, phone, role, post, member_no, lives_in, first_email, approver, active,
            password_hash IS NOT NULL AS has_password, failed_logins, coalesce(locked_until > now(), false) AS locked,
            last_login_at, created_at
-    FROM erp_user WHERE id = ${id} AND phone <> ${OWNER_PHONE}`;
+    FROM erp_user WHERE id = ${id} AND phone <> ${OWNER_PHONE} AND role <> 'accountant'`;
   return rows[0] ? asAccount(rows[0]) : null;
 }
 
@@ -104,4 +104,55 @@ export async function noteLooking(by: User, a: Account) {
 export async function activeAdmins(): Promise<number> {
   const rows = await db()`SELECT count(*) AS n FROM erp_user WHERE role = 'admin' AND active AND phone <> ${OWNER_PHONE}`;
   return num(rows[0].n);
+}
+
+/* ------------------------------------------------------------ the PSWS Accountant */
+
+export interface Accountant {
+  id: number;
+  /** who holds it now: null for the website owner */
+  holder_id: number | null;
+  holder_name: string | null;
+  holder_phone: string | null;
+  held_since: string | null;
+  has_password: boolean;
+  last_login_at: string | null;
+}
+
+export async function getAccountant(): Promise<Accountant | null> {
+  const rows = await db()`
+    SELECT a.id, a.held_by, h.name AS holder_name, h.phone AS holder_phone, a.held_since,
+           a.password_hash IS NOT NULL AS has_password, a.last_login_at
+    FROM erp_user a LEFT JOIN erp_user h ON h.id = a.held_by AND h.phone <> ${OWNER_PHONE}
+    WHERE a.phone = 'accountant'`;
+  const r = rows[0];
+  return r
+    ? {
+        id: num(r.id),
+        holder_id: r.holder_name ? num(r.held_by) : null,
+        holder_name: (r.holder_name as string) ?? null,
+        holder_phone: (r.holder_phone as string) ?? null,
+        held_since: (r.held_since as string) ?? null,
+        has_password: !!r.has_password,
+        last_login_at: (r.last_login_at as string) ?? null,
+      }
+    : null;
+}
+
+/** Office people who can be handed the Accountant's account. */
+export async function officePeople(): Promise<{ id: number; name: string; post: string | null }[]> {
+  const rows = await db()`
+    SELECT id, name, post FROM erp_user
+    WHERE active AND phone <> ${OWNER_PHONE} AND role NOT IN ('member', 'accountant') ORDER BY name`;
+  return rows.map((r) => ({ id: num(r.id), name: String(r.name), post: (r.post as string) ?? null }));
+}
+
+export async function noteHandOver(by: User, accountantId: number, toName: string | null) {
+  await logChange(
+    by.id,
+    "access",
+    "person",
+    accountantId,
+    toName ? `PSWS Accountant handed over to ${toName}` : "PSWS Accountant taken back by the website owner",
+  );
 }

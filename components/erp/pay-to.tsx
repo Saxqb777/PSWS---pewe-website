@@ -16,7 +16,7 @@ export async function PayTo() {
         {demo ? (
           <>
             <p>
-              <b>In the real portal, PSWS&apos;s own UPI ID and QR code show here.</b>
+              <b>In the real portal, members pay PSWS the usual way, then record it here.</b>
             </p>
             <p>In this demo, do not send any money. Just fill in the form below as if you had paid.</p>
           </>
@@ -27,13 +27,13 @@ export async function PayTo() {
             <p>Only to this PSWS account. Never to a person, whoever asks.</p>
           </>
         ) : (
-          <p>Ask the Treasurer for PSWS&apos;s UPI ID or bank details. Pay only into PSWS&apos;s own account, never to a person.</p>
+          <p>Ask the office for PSWS&apos;s bank details if you need them. Pay only into PSWS&apos;s own account, never to a person.</p>
         )}
       </div>
       <ol className={p.steps}>
-        <li>Pay PSWS from your own phone.</li>
-        <li>Then tell us below, with the number from the payment message.</li>
-        <li>The Treasurer finds it in the bank and your receipt is made. Only then does it count.</li>
+        <li>Pay PSWS the usual way: GPay, bank transfer, cash or cheque.</li>
+        <li>Then tell us below, with the number from the payment message, and a screenshot if you have one.</li>
+        <li>The PSWS Accountant finds it in the bank and your receipt is made. Only then does it count.</li>
       </ol>
     </>
   );

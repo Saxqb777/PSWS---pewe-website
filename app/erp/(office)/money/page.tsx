@@ -2,13 +2,13 @@ import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { knownYears, listMoney } from "@/lib/erp/data";
 import { getOpening, listCorrections, listMonths, placeBalances } from "@/lib/erp/books";
-import { canDo, clean, fyMonths, fyOf, inr, showMonth, todayIST } from "@/lib/erp/labels";
+import { clean, fyMonths, fyOf, inr, showMonth, todayIST, handlesMoney } from "@/lib/erp/labels";
 import { Empty, MoneyList, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Money" };
 
-type Search = { fy?: string; month?: string; dir?: string; q?: string };
+type Search = { fy?: string; month?: string; dir?: string; q?: string; accountant?: string };
 
 export default async function MoneyPage({ searchParams }: { searchParams: Promise<Search> }) {
   const u = await requireUser();
@@ -38,11 +38,11 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
     return `/erp/money?${p}`;
   };
   const exportQs = new URLSearchParams({ fy, ...(month ? { month } : {}) });
-  const editor = canDo(u.role, "editor");
+  const editor = handlesMoney(u.role);
 
   return (
     <>
-      <PageHead title="Money">
+      <PageHead title="Money" sub={editor ? undefined : "Only the PSWS Accountant records money. Everyone in the office sees it here."}>
         {editor && (
           <>
             <Link href="/erp/money/in/new" className={styles.btn}>
@@ -54,6 +54,10 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
           </>
         )}
       </PageHead>
+
+      {sp.accountant === "1" && !editor && (
+        <p className={styles.formError}>Only the PSWS Accountant records and changes money. It is all here for you to see.</p>
+      )}
 
       <nav className={styles.tabs} aria-label="Show">
         {(

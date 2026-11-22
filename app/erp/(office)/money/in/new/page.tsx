@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import { knownNames } from "@/lib/erp/data";
 import { todayIST } from "@/lib/erp/labels";
 import { MoneyInForm } from "@/components/erp/money-forms";
@@ -10,7 +10,7 @@ import { publicAsks } from "@/lib/erp/portal";
 export const metadata = { title: "Money received" };
 
 export default async function NewMoneyIn() {
-  await requireUser("editor");
+  await requireAccountant();
   const [names, asks] = await Promise.all([knownNames("in"), portalOn() ? publicAsks("live") : Promise.resolve(null)]);
   return (
     <>

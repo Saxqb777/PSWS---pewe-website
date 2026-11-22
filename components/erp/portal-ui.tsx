@@ -31,7 +31,7 @@ export function MemberCard({
   );
 }
 
-/** How far an ask has got: the green is in the bank, the hatched part is waiting for the Treasurer to find it. */
+/** How far an ask has got: the green is in the bank, the hatched part is waiting for the Accountant to find it. */
 export function Meter({ raised, waiting, target }: { raised: number; waiting: number; target: number | null }) {
   const full = Math.max(target ?? 0, raised + waiting, 1);
   const r = Math.min(100, (raised / full) * 100);
@@ -134,7 +134,13 @@ export function Passbook({ lines }: { lines: PassLine[] }) {
           <tr key={`${l.dir}${l.id}`}>
             <td className={p.date}>{passDate(l.on_date)}</td>
             <td>
-              {l.what}
+              {l.dir === "gave" ? (
+                <Link href={`/erp/me/receipt/${l.id}`} className={p.passLink}>
+                  {l.what}
+                </Link>
+              ) : (
+                l.what
+              )}
               <small>{l.no}</small>
             </td>
             <td className={p.amt}>{l.dir === "gave" ? money(l.amount_paise) : ""}</td>

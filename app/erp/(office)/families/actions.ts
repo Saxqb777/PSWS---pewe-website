@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant, requireUser } from "@/lib/erp/auth";
 import { askApproval, closedMessage, fundBalances, getOpening } from "@/lib/erp/books";
 import { db, logChange } from "@/lib/erp/db";
 import { addFamily, addRequest, decideRequest, getFamily, getRequest, payStipends, updateFamily, type FamilyFields } from "@/lib/erp/data";
@@ -110,7 +110,7 @@ export async function decideFamilyRequest(requestId: number, _: FormState, data:
 }
 
 export async function runStipends(month: string, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const errors: Record<string, string> = {};
   if (!/^\d{4}-\d{2}$/.test(month)) return { error: "Pick the month first." };
   const on_date = String(data.get("on_date") ?? "");

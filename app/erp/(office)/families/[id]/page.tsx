@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getFamily, listRequests, paymentsFor } from "@/lib/erp/data";
-import { KINDS, STATUSES, canDo, inr, showDate, showPhone, labelOf } from "@/lib/erp/labels";
+import { KINDS, STATUSES, canDo, inr, showDate, showPhone, labelOf, handlesMoney } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { DecideForm, RequestForm } from "@/components/erp/forms";
 import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
@@ -29,12 +29,13 @@ export default async function FamilyPage({
   const [requests, payments] = await Promise.all([listRequests({ familyId: f.id }), paymentsFor({ familyId: f.id })]);
   const pending = f.active ? await openApproval(`family:${f.id}`) : null;
   const editor = canDo(u.role, "editor");
+  const money = handlesMoney(u.role);
   const total = payments.filter((p) => !p.cancelled).reduce((s, p) => s + p.amount_paise, 0);
 
   return (
     <>
       <PageHead title={f.name} sub={[f.place, f.active ? null : "Removed"].filter(Boolean).join(" · ") || "Family"} back={{ href: "/erp/families", label: "Families" }}>
-        {editor && f.active && (
+        {money && f.active && (
           <Link href={`/erp/money/out/new?family=${f.id}`} className={styles.btn}>
             Record help given
           </Link>
@@ -87,7 +88,7 @@ export default async function FamilyPage({
                   {r.details && <span className={styles.rowMeta} style={{ whiteSpace: "pre-line" }}>{r.details}</span>}
                   {r.decision_note && <span className={styles.rowMeta}>Note: {r.decision_note}</span>}
                 </span>
-                {editor && r.status === "approved" && r.kind !== "stipend" && (
+                {money && r.status === "approved" && r.kind !== "stipend" && (
                   <Link href={`/erp/money/out/new?request=${r.id}`} className={styles.btnQuiet}>
                     Pay
                   </Link>

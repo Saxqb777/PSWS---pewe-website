@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { TRANSFER_LABEL, getTransfer, openApproval } from "@/lib/erp/books";
-import { inr, rupeesInWords, showDate, showWhen } from "@/lib/erp/labels";
+import { handlesMoney, inr, rupeesInWords, showDate, showWhen } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskBox } from "@/components/erp/cancel-box";
 import { Facts, PageHead, Pending } from "@/components/erp/ui";
@@ -11,7 +11,7 @@ import { askDelete } from "../../actions";
 export const metadata = { title: "Cash and bank" };
 
 export default async function TransferPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const u = await requireUser();
   const id = toId((await params).id);
   const t = id ? await getTransfer(id) : null;
   if (!t) notFound();
@@ -37,7 +37,7 @@ export default async function TransferPage({ params }: { params: Promise<{ id: s
           ]}
         />
       </div>
-      {!t.cancelled_at && !pending && (
+      {!t.cancelled_at && !pending && handlesMoney(u.role) && (
         <AskBox
           action={askDelete.bind(null, "transfer", t.id)}
           title="Delete this"

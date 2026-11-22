@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { requireMember } from "@/lib/erp/auth";
-import { collections, feed, getMe, myPledges, passbook, publicAsks } from "@/lib/erp/portal";
+import { isDemo, lookingAt, requireMember } from "@/lib/erp/auth";
+import { collections, feed, getMe, myPledges, passbook, publicAsks, pledgeAmount } from "@/lib/erp/portal";
 import { listMeetings } from "@/lib/erp/data";
 import { fyOf, inr, showDate, showDay, todayIST } from "@/lib/erp/labels";
 import { AskCard, Feed, H2, MemberCard } from "@/components/erp/portal-ui";
 import { AutoRefresh } from "@/components/erp/portal-client";
+import { InstallCard } from "@/components/erp/install";
+import { WelcomeTour } from "@/components/erp/welcome-tour";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 
@@ -40,14 +42,15 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
       <AutoRefresh every={6000} />
       {sp.welcome && (
         <p className={styles.formDone}>
-          You are in. Your PSWS number is <b>{u.member_no}</b>: next time, sign in with it and your password. On your phone,
-          add this page to the home screen.
+          You are in. Your PSWS number is <b>{u.member_no}</b>: next time, sign in with it and your password.
         </p>
       )}
       <h1 className={p.hello}>
         {greeting()}, {u.name.split(" ")[0]}
       </h1>
       <MemberCard name={u.name} memberNo={u.member_no} since={me?.member_since ?? null} post={u.post} />
+      <InstallCard className={p.install} button={styles.btn} />
+      <WelcomeTour name={u.name} off={(await isDemo()) || !!(await lookingAt())} />
 
       <div className={p.acts}>
         <Link href="/erp/me/give" className={`${p.act} ${p.actMain}`}>
@@ -62,7 +65,7 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
 
       {waiting.length > 0 && (
         <>
-          <H2 link={{ href: "/erp/me/passbook", label: "Passbook" }}>Waiting for the Treasurer</H2>
+          <H2 link={{ href: "/erp/me/passbook", label: "Passbook" }}>Waiting for the Accountant</H2>
           <ul className={p.items}>
             {waiting.map((x) => (
               <li key={x.id}>
@@ -72,10 +75,10 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
                     {x.status === "waiting" ? "Being checked" : "Not found yet"}
                   </span>
                 </span>
-                <span className={p.itemAmt}>{inr(x.amount_paise)}</span>
+                <span className={p.itemAmt}>{pledgeAmount(x)}</span>
                 <span className={p.itemMeta}>
                   You sent it on {showDate(x.sent_on)}
-                  {x.check_note ? `. Treasurer: ${x.check_note}` : ""}
+                  {x.check_note ? `. Accountant: ${x.check_note}` : ""}
                 </span>
               </li>
             ))}

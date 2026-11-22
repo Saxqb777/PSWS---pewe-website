@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getMoneyOut, getRequest } from "@/lib/erp/data";
-import { HEADS, KINDS, METHODS, PURPOSES, canDo, inr, rupeesInWords, showDate, showMonth, showWhen, labelOf } from "@/lib/erp/labels";
+import { HEADS, KINDS, PURPOSES, howPaid, inr, rupeesInWords, showDate, showMonth, showWhen, labelOf, handlesMoney } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskBox } from "@/components/erp/cancel-box";
 import { PrintButton } from "@/components/erp/shell";
@@ -27,7 +27,7 @@ export default async function MoneyOutPage({
   const sp = await searchParams;
   const pending = m.cancelled_at ? null : await openApproval(`money_out:${m.id}`);
   const req = m.request_id ? await getRequest(m.request_id) : null;
-  const editor = canDo(u.role, "editor");
+  const editor = handlesMoney(u.role);
 
   return (
     <>
@@ -79,7 +79,7 @@ export default async function MoneyOutPage({
               ),
             ],
             ["From which money", labelOf(HEADS, m.head, m.head_other)],
-            ["Paid by", METHODS[m.method].en],
+            ["Paid by", howPaid(m.method, m.method_other, m.bank_name)],
             ["Number", m.reference],
             ["Note", m.note],
             ["Entered by", `${m.created_by_name ?? "the office"}, ${showWhen(m.created_at)}`],

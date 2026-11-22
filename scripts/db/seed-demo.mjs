@@ -84,6 +84,14 @@ for (const [i, [name, post, role, approver, lives]] of people.entries()) {
     RETURNING id`;
   id[name.split(" ")[0]] = Number(rows[0].id);
 }
+// the one account that handles money; Imran, the Treasurer, holds it in the demo
+id.Accountant = Number(
+  (
+    await sql`
+      INSERT INTO erp_user (name, phone, role, password_hash, held_by, held_since)
+      VALUES ('PSWS Accountant', 'accountant', 'accountant', ${password}, ${id.Imran}, ${hoursAgo(24 * 190)}) RETURNING id`
+  )[0].id,
+);
 
 /* ------------------------------------------------------------ the books start */
 await sql`
@@ -221,7 +229,7 @@ for (const [ago, from, amount, method, askId, head, collected] of gifts) {
             ${collected ? `Collected by ${who} from ${collected.people} people` : who}, null, ${rs(amount)}, ${head}, ${method},
             ${method === "cash" ? null : `SAMPLE${String(100000 + rno)}`}, ${askId ? "Given through the members' portal" : null},
             ${collected ? null : member}, ${collected ? member : null}, ${collected?.people ?? null}, ${collected?.names ?? null},
-            ${askId}, ${id.Imran}, ${hoursAgo(ago * 24)})`;
+            ${askId}, ${id.Accountant}, ${hoursAgo(ago * 24)})`;
 }
 await sql`INSERT INTO erp_counter (kind, fy, last_no) VALUES ('R', ${fyOf(daysAgo(0))}, ${rno})`;
 
@@ -234,15 +242,15 @@ await sql`
   INSERT INTO erp_money_out (voucher_no, fy, on_date, paid_to, amount_paise, head, purpose, purpose_other, method, reference, note,
                              ask_id, created_by)
   VALUES (${`P/${fyNow}/0001`}, ${fyNow}, ${daysAgo(131)}, 'Guhagar wholesale market (sample)', ${rs(58400)}, 'donation', 'other',
-          'Ration kits for 40 families', 'bank', 'SAMPLE900001', 'For the ration kits collection', ${ration}, ${id.Imran})`;
+          'Ration kits for 40 families', 'bank', 'SAMPLE900001', 'For the ration kits collection', ${ration}, ${id.Accountant})`;
 await sql`
   INSERT INTO erp_money_out (voucher_no, fy, on_date, paid_to, amount_paise, head, purpose, method, reference, note, family_id,
                              created_by)
   VALUES (${`P/${fyNow}/0002`}, ${fyNow}, ${daysAgo(38)}, 'Huda (sample)', ${rs(6000)}, 'zakat', 'medical', 'upi', 'SAMPLE900002',
-          'Hospital bill, Chiplun', ${huda[0].id}, ${id.Imran})`;
+          'Hospital bill, Chiplun', ${huda[0].id}, ${id.Accountant})`;
 await sql`INSERT INTO erp_counter (kind, fy, last_no) VALUES ('P', ${fyNow}, 2)`;
 
-/* ------------------------------------------------------------ "I sent it", waiting for the Treasurer */
+/* ------------------------------------------------------------ "I sent it", waiting for the Accountant */
 await sql`
   INSERT INTO erp_pledge (member_id, ask_id, amount_paise, head, method, reference, sent_on, show_name, created_at)
   VALUES (${id.Junaid}, ${hospital}, ${rs(2000)}, 'zakat', 'upi', '629044172213', ${daysAgo(0)}, true, ${hoursAgo(3)}),
@@ -285,7 +293,7 @@ await sql`
           ${"1. The members' portal: every member's own number and page\n2. The money rules sheet\n3. Water tank for Bhoiwadi"},
           true, ${id.Nadeem}),
          (${daysAgo(130)}, 'notice', 'Ration kits given to 40 families',
-          'Thank you to everyone who gave. The kits were given out before the rains; the bill is with the Treasurer.', true, ${id.Nadeem}),
+          'Thank you to everyone who gave. The kits were given out before the rains; the bill is with the PSWS Accountant.', true, ${id.Nadeem}),
          (${daysAgo(30)}, 'notice', 'Zakat committee visits',
           'The Zakat committee visits families who have asked for help on the first Sunday of every month.', true, ${id.Shakeel})`;
 

@@ -3,72 +3,75 @@
 import { useState } from "react";
 import { ASK_KINDS, HEADS, todayIST, type AskKind } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
-import { AmountInput, Chips, ErpForm, Field, Submit } from "./form";
+import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountBox, CountryField, GiversBox, HowBox, type RefLabels } from "./money-detail";
+import { PictureInput } from "./picture-input";
 import styles from "./erp.module.css";
 
 /** The forms a member fills in on their own portal. */
 
 type Action = (state: FormState, data: FormData) => Promise<FormState>;
 
-const PAID_BY = [
+const PAID_BY: Choice[] = [
   { value: "upi", en: "GPay / PhonePe", hi: "UPI se" },
   { value: "bank", en: "Bank transfer", hi: "Bank se" },
-  { value: "cash", en: "Cash to the Treasurer", hi: "Nakad" },
+  { value: "cash", en: "Cash", hi: "Nakad" },
   { value: "cheque", en: "Cheque", hi: "Cheque" },
+  { value: "other", en: "Other", hi: "Kuch aur" },
 ];
 
-const REF_LABEL: Record<string, [string, string]> = {
+const REFS: RefLabels = {
   upi: ["UPI number", "The 12-digit number in the payment message"],
   bank: ["Bank number (UTR)", "From the bank's message"],
   cash: ["Who did you give it to?", "And where"],
   cheque: ["Cheque number", "And the bank"],
+  other: ["Number or note", "Anything that helps the Accountant find it"],
 };
 
-/** "I sent ₹1,000": after paying PSWS from their own phone, a member says so; the Treasurer finds it and it counts. */
+const FUNDS: Choice[] = (["zakat", "donation", "development", "other"] as const).map((k) => ({
+  value: k,
+  en: HEADS[k].en,
+  hi: HEADS[k].hi,
+}));
+
+/** "I sent ₹1,000": after paying PSWS the usual way, a member says so; the PSWS Accountant finds it and it counts. */
 export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: boolean }) {
-  const [method, setMethod] = useState("upi");
   const [collected, setCollected] = useState(false);
-  const [label, hint] = REF_LABEL[method];
   return (
     <ErpForm action={action}>
-      <label className={styles.check}>
-        <input type="checkbox" name="collected" checked={collected} onChange={(e) => setCollected(e.target.checked)} />
-        <span>
-          <strong>I collected this from others</strong>
-          <span className={styles.hint} style={{ display: "block" }}>
-            Money you gathered from family or friends. It counts as your collection, not your own gift. Doosron se jama kiya.
-          </span>
-        </span>
-      </label>
-      {collected && (
-        <div className={styles.grid}>
-          <Field label="From how many people?" hint="Kitne logon se" name="people">
-            <input name="people" inputMode="numeric" autoComplete="off" placeholder="10" />
-          </Field>
-          <Field label="Their names" hint="Optional. Only the office sees this" name="givers_note" wide>
-            <textarea name="givers_note" rows={3} />
-          </Field>
-        </div>
-      )}
-      <AmountInput name="amount" label={collected ? "How much did you send in all?" : "How much did you send?"} hint="Kitna bheja" />
+      <GiversBox
+        title="I collected this from others"
+        explain="Money you gathered from family or friends. It counts as your collection, not your own gift. Doosron se jama kiya."
+        onToggle={setCollected}
+      />
+      <AmountBox
+        label={collected ? "How much did you send in all?" : "How much did you send?"}
+        hint="Kitna bheja"
+        rupeesToo={false}
+      />
       {chooseFund && (
-        <Chips
+        <ChoiceWithOther
           name="head"
           legend="For"
           hint="Kis cheez ke liye"
-          options={(["zakat", "donation", "development"] as const).map((k) => ({ value: k, en: HEADS[k].en, hi: HEADS[k].hi }))}
+          options={FUNDS}
           defaultValue="donation"
+          otherLabel="What is it for?"
         />
       )}
-      <Chips name="method" legend="How did you send it?" hint="Kaise bheja" options={PAID_BY} value={method} onChange={setMethod} />
+      <HowBox legend="How did you send it?" hint="Kaise bheja" options={PAID_BY} defaultMethod="upi" refs={REFS} />
       <div className={styles.grid}>
-        <Field label={label} hint={hint} name="reference">
-          <input name="reference" autoComplete="off" inputMode={method === "upi" ? "numeric" : "text"} />
-        </Field>
+        <CountryField />
         <Field label="When?" hint="Kab bheja" name="sent_on">
           <input name="sent_on" type="date" defaultValue={todayIST()} max={todayIST()} />
         </Field>
       </div>
+      <PictureInput
+        name="proof"
+        label="Screenshot of the payment"
+        hint="Optional · only you and the Accountant see it"
+        add="Add a screenshot"
+      />
       <label className={styles.check}>
         <input type="checkbox" name="hide_name" />
         <span>
@@ -168,6 +171,26 @@ export function MessageForm({ action }: { action: Action }) {
       </Field>
       <div className={styles.actions}>
         <Submit quiet>Send</Submit>
+      </div>
+    </ErpForm>
+  );
+}
+
+/** A photo on an ask: what is needed, or what the money did. */
+export function PhotoForm({ action, office = false }: { action: Action; office?: boolean }) {
+  return (
+    <ErpForm action={action} resetOnDone>
+      <PictureInput
+        name="photo"
+        label="Add a photo"
+        hint={office ? "e.g. the finished work, or the bill" : "e.g. what needs fixing"}
+        add="Choose a photo"
+      />
+      <Field label="A line about it" hint="Optional" name="caption">
+        <input name="caption" autoComplete="off" maxLength={120} placeholder={office ? "After: the new roof" : "Before: the roof today"} />
+      </Field>
+      <div className={styles.actions}>
+        <Submit quiet>Add the photo</Submit>
       </div>
     </ErpForm>
   );

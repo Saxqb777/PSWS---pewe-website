@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { stipendLines } from "@/lib/erp/data";
-import { canDo, fyMonths, fyOf, inr, showMonth, thisMonthIST, todayIST } from "@/lib/erp/labels";
+import { fyMonths, fyOf, inr, showMonth, thisMonthIST, todayIST, handlesMoney } from "@/lib/erp/labels";
 import { StipendRun } from "@/components/erp/stipend-run";
 import { fundBalances, getOpening } from "@/lib/erp/books";
 import { Empty, PageHead } from "@/components/erp/ui";
@@ -23,7 +23,7 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
   const funds = opening ? await fundBalances() : null;
   const paid = lines.filter((l) => l.paid_voucher);
   const due = lines.filter((l) => !l.paid_voucher);
-  const editor = canDo(u.role, "editor");
+  const editor = handlesMoney(u.role);
 
   return (
     <>

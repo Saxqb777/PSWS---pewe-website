@@ -36,11 +36,66 @@ export const METHODS = {
   upi: { en: "GPay / PhonePe (UPI)", hi: "UPI se" },
   bank: { en: "Bank transfer (NEFT / IMPS)", hi: "Bank se" },
   cheque: { en: "Cheque", hi: "Cheque se" },
+  other: { en: "Other", hi: "Kuch aur" },
 } satisfies Labelled<string>;
 export type Method = keyof typeof METHODS;
 
 /** The same, short enough for a line in a list. */
-export const METHOD_SHORT: Record<Method, string> = { cash: "Cash", upi: "UPI", bank: "Bank", cheque: "Cheque" };
+export const METHOD_SHORT: Record<Method, string> = { cash: "Cash", upi: "UPI", bank: "Bank", cheque: "Cheque", other: "Other" };
+
+/** How money came or went, in a line: what was typed for "Other", and the bank for a transfer. */
+export function howPaid(method: Method, other?: string | null, bank?: string | null, short = false): string {
+  if (method === "other") return other || "Other";
+  const word = short ? METHOD_SHORT[method] : METHODS[method].en;
+  return method === "bank" && bank ? `${word}, ${bank}` : word;
+}
+
+/* ------------------------------------------------------------------ money from abroad */
+
+/** Where members send money from; anything else can be typed. India is the usual and is never written down. */
+export const COUNTRIES = [
+  "India",
+  "United Arab Emirates",
+  "Saudi Arabia",
+  "Qatar",
+  "Oman",
+  "Kuwait",
+  "Bahrain",
+  "United Kingdom",
+  "United States",
+  "Canada",
+  "Australia",
+];
+
+/** Currencies a gift may be sent in. The books are in rupees. */
+export const CURRENCIES: Record<string, string> = {
+  INR: "₹ Rupees",
+  AED: "AED Dirham",
+  SAR: "SAR Riyal",
+  QAR: "QAR Riyal",
+  OMR: "OMR Rial",
+  KWD: "KWD Dinar",
+  BHD: "BHD Dinar",
+  USD: "USD Dollar",
+  GBP: "GBP Pound",
+  EUR: "EUR Euro",
+  CAD: "CAD Dollar",
+  AUD: "AUD Dollar",
+};
+
+/** "AED 500" or "USD 1,250.50": an amount sent in another currency. */
+export function foreign(amount: number | string | null, currency: string | null): string {
+  if (amount == null || !currency) return "";
+  const n = Number(amount);
+  return `${currency} ${n.toLocaleString("en-IN", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+/** Where it came from, as one line, or "" when it was rupees from India. */
+export function fromAbroad(country: string | null, currency: string | null, sent: number | string | null): string {
+  return [currency && currency !== "INR" ? foreign(sent, currency) : "", country && country !== "India" ? `from ${country}` : ""]
+    .filter(Boolean)
+    .join(" ");
+}
 
 /** What a family asked for. */
 export const KINDS = {
@@ -73,6 +128,7 @@ export const ROLES = {
   editor: { en: "Can add entries", hi: "Entry daal sakte hain" },
   viewer: { en: "Can only see", hi: "Sirf dekh sakte hain" },
   member: { en: "Member", hi: "Sirf apna portal" },
+  accountant: { en: "PSWS Accountant", hi: "Paise ka hisaab, bank ke saath" },
 } satisfies Labelled<string>;
 export type Role = keyof typeof ROLES;
 
@@ -85,9 +141,12 @@ export function labelOf(map: Record<string, { en: string }>, key: string | null 
 /** The kinds of payment that are help for a family. */
 export const FAMILY_PURPOSES: Purpose[] = ["medical", "education", "livelihood", "emergency", "stipend"];
 
-// a member has their own portal and nothing in the office
-const RANK: Record<Role, number> = { member: -1, viewer: 0, editor: 1, admin: 2 };
+// a member has their own portal and nothing in the office; the Accountant adds entries like an editor, and alone handles money
+const RANK: Record<Role, number> = { member: -1, viewer: 0, editor: 1, accountant: 1, admin: 2 };
 export const canDo = (have: Role, need: Role) => RANK[have] >= RANK[need];
+
+/** Money in, money out, and members' gifts found in the bank: the PSWS Accountant's alone. */
+export const handlesMoney = (role: Role) => role === "accountant";
 
 /** Places in and around Pewe, offered as suggestions (anything can be typed). */
 export const PLACES = ["Pewe", "Amshet Bhoiwadi", "Rab Bhoiwadi", "Pere", "Pardalewadi", "Guhagar", "Mumbai"];
@@ -112,7 +171,7 @@ export const ASK_STATUSES = {
 export type AskStatus = keyof typeof ASK_STATUSES;
 
 export const PLEDGE_STATUSES = {
-  waiting: { en: "Waiting for the Treasurer", hi: "Treasurer dekh rahe hain" },
+  waiting: { en: "Waiting for the Accountant", hi: "Accountant dekh rahe hain" },
   confirmed: { en: "Received", hi: "Mil gaya" },
   not_found: { en: "Not found yet", hi: "Abhi nahi mila" },
   withdrawn: { en: "Withdrawn", hi: "Wapas liya" },

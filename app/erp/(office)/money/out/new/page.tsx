@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import { familyNames, getFamily, getRequest, getWork, workNames } from "@/lib/erp/data";
 import { KINDS, inr, todayIST, labelOf } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
@@ -13,7 +13,7 @@ type Search = { for?: string; family?: string; work?: string; request?: string }
 
 /** Opened from Home, from a family (help given), from a work, or from an approved request. */
 export default async function NewMoneyOut({ searchParams }: { searchParams: Promise<Search> }) {
-  await requireUser("editor");
+  await requireAccountant();
   const sp = await searchParams;
   const [families, works, opening] = await Promise.all([familyNames(), workNames(), getOpening()]);
   const funds = opening ? await fundBalances() : null;

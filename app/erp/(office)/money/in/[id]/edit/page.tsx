@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import { getMoneyIn, knownNames } from "@/lib/erp/data";
 import { toId } from "@/lib/erp/form-state";
 import { MoneyInForm } from "@/components/erp/money-forms";
@@ -10,7 +10,7 @@ import { saveMoneyIn } from "../../../actions";
 export const metadata = { title: "Change a receipt" };
 
 export default async function EditMoneyIn({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser("editor");
+  await requireAccountant();
   const id = toId((await params).id);
   const m = id ? await getMoneyIn(id) : null;
   if (!m) notFound();

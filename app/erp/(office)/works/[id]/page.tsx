@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getWork, paymentsFor } from "@/lib/erp/data";
-import { WORK_STATUSES, canDo, inr, showDate } from "@/lib/erp/labels";
+import { WORK_STATUSES, canDo, inr, showDate, handlesMoney } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
 import { AskBox } from "@/components/erp/cancel-box";
@@ -27,6 +27,7 @@ export default async function WorkPage({
   const sp = await searchParams;
   const payments = await paymentsFor({ workId: w.id });
   const editor = canDo(u.role, "editor");
+  const money = handlesMoney(u.role);
   const left = w.budget_paise ? w.budget_paise - w.spent_paise : null;
   const pending = w.removed_at ? null : await openApproval(`work:${w.id}`);
 
@@ -35,9 +36,11 @@ export default async function WorkPage({
       <PageHead title={w.name} sub={[w.place, WORK_STATUSES[w.status].en].filter(Boolean).join(" · ")} back={{ href: "/erp/works", label: "Village works" }}>
         {editor && !w.removed_at && (
           <>
-            <Link href={`/erp/money/out/new?work=${w.id}`} className={styles.btn}>
-              Record a payment
-            </Link>
+            {money && (
+              <Link href={`/erp/money/out/new?work=${w.id}`} className={styles.btn}>
+                Record a payment
+              </Link>
+            )}
             <Link href={`/erp/works/${w.id}/edit`} className={styles.btnQuiet}>
               Change details
             </Link>

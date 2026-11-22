@@ -1,14 +1,18 @@
 import "server-only";
 import { db, logChange, num } from "./db";
 import type { User } from "./auth";
-import { addMoneyIn } from "./data";
+import { addMoneyIn, getMoneyIn, type MoneyIn } from "./data";
 import { approverIds, closedMessage } from "./books";
+import type { MoneyDetail } from "./details";
 import {
   ASK_KINDS,
   HEADS,
   PURPOSES,
+  foreign,
+  fromAbroad,
   fyOf,
   fyRange,
+  howPaid,
   inr,
   labelOf,
   todayIST,
@@ -70,9 +74,15 @@ export interface PassLine {
   method: Method;
 }
 
+/** A year ("2025-26"), or any two dates a member chose for a statement. */
+export type Period = string | { from: string; to: string } | null;
+
+const span = (when: Period) =>
+  typeof when === "string" ? fyRange(when) : (when ?? { from: "1900-01-01", to: "9999-12-31" });
+
 /** Every rupee a member gave PSWS, and every rupee of help they or their family received. Newest first. */
-export async function passbook(memberId: number, fy: string | null = null): Promise<PassLine[]> {
-  const range = fy ? fyRange(fy) : { from: "1900-01-01", to: "9999-12-31" };
+export async function passbook(memberId: number, when: Period = null): Promise<PassLine[]> {
+  const range = span(when);
   const rows = await db()`
     SELECT 'gave' AS dir, m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.receipt_no AS no, m.amount_paise, m.method,
            m.head AS key, m.head_other AS other, a.title AS ask_title
@@ -110,8 +120,8 @@ export interface CollectedLine {
 }
 
 /** What a member gathered from others and handed in: shown apart from what they gave themselves. */
-export async function collections(memberId: number, fy: string | null = null): Promise<CollectedLine[]> {
-  const range = fy ? fyRange(fy) : { from: "1900-01-01", to: "9999-12-31" };
+export async function collections(memberId: number, when: Period = null): Promise<CollectedLine[]> {
+  const range = span(when);
   const rows = await db()`
     SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.receipt_no AS no, m.amount_paise, m.people, m.head,
            m.head_other, a.title AS ask_title
@@ -129,13 +139,30 @@ export async function collections(memberId: number, fy: string | null = null): P
 }
 
 /** Who collected for an ask, biggest first. Those who asked not to be named are left out here (their money still counts). */
-export async function askCollectors(askId: number): Promise<{ name: string; amount_paise: number; people: number }[]> {
+export async function askCollectors(
+  askId: number,
+): Promise<{ name: string; amount_paise: number; people: number; names: string[] }[]> {
+  // the people collected from are named, unless the collector chose to keep their names hidden
   const rows = await db()`
-    SELECT u.name, sum(m.amount_paise) AS amount_paise, sum(coalesce(m.people, 0)) AS people
-    FROM erp_money_in m JOIN erp_user u ON u.id = m.collected_by
-    WHERE m.ask_id = ${askId} AND m.cancelled_at IS NULL AND NOT m.name_hidden
-    GROUP BY u.id, u.name ORDER BY sum(m.amount_paise) DESC`;
-  return rows.map((r) => ({ name: String(r.name), amount_paise: num(r.amount_paise), people: num(r.people) }));
+    WITH c AS (
+      SELECT u.id, u.name, sum(m.amount_paise) AS amount_paise, sum(coalesce(m.people, 0)) AS people
+      FROM erp_money_in m JOIN erp_user u ON u.id = m.collected_by
+      WHERE m.ask_id = ${askId} AND m.cancelled_at IS NULL AND NOT m.name_hidden
+      GROUP BY u.id, u.name
+    ), n AS (
+      SELECT m.collected_by AS id, array_agg(g ORDER BY m.on_date, m.id) AS names
+      FROM erp_money_in m, unnest(m.givers) AS g
+      WHERE m.ask_id = ${askId} AND m.cancelled_at IS NULL AND NOT m.name_hidden AND NOT m.givers_hidden
+      GROUP BY m.collected_by
+    )
+    SELECT c.name, c.amount_paise, c.people, coalesce(n.names, '{}') AS names
+    FROM c LEFT JOIN n ON n.id = c.id ORDER BY c.amount_paise DESC`;
+  return rows.map((r) => ({
+    name: String(r.name),
+    amount_paise: num(r.amount_paise),
+    people: num(r.people),
+    names: (r.names as string[]) ?? [],
+  }));
 }
 
 /* ================================================================== asks */
@@ -331,6 +358,14 @@ export async function closeAsk(u: User, id: number, note: string): Promise<strin
   return null;
 }
 
+/** One of a member's own receipts: one they gave, or money they collected and handed in. Nobody else's. */
+export async function myReceipt(memberId: number, id: number): Promise<MoneyIn | null> {
+  const rows = await db()`
+    SELECT id FROM erp_money_in
+    WHERE id = ${id} AND cancelled_at IS NULL AND (member_id = ${memberId} OR collected_by = ${memberId})`;
+  return rows[0] ? getMoneyIn(id) : null;
+}
+
 /* ================================================================== "I sent" */
 
 export interface Pledge {
@@ -340,16 +375,28 @@ export interface Pledge {
   member_no: string | null;
   ask_id: number | null;
   ask_title: string | null;
-  amount_paise: number;
+  /** empty for a gift in another currency, until the Accountant finds it */
+  amount_paise: number | null;
   head: Head;
+  head_other: string | null;
   method: Method;
+  method_other: string | null;
+  bank_name: string | null;
   reference: string | null;
+  country: string | null;
+  currency: string | null;
+  sent_amount: number | null;
   sent_on: string;
   show_name: boolean;
   collected: boolean;
   people: number | null;
   givers_note: string | null;
+  givers: string[] | null;
+  givers_hidden: boolean;
+  proof_id: number | null;
   status: PledgeStatus;
+  /** the receipt, once the Accountant found it */
+  money_in_id: number | null;
   receipt_no: string | null;
   check_note: string | null;
   created_at: string;
@@ -357,8 +404,9 @@ export interface Pledge {
 
 const SELECT_PLEDGE = `
   SELECT p.id, p.member_id, u.name AS member_name, u.member_no, p.ask_id, a.title AS ask_title, p.amount_paise, p.head,
-         p.method, p.reference, to_char(p.sent_on, 'YYYY-MM-DD') AS sent_on, p.show_name, p.collected, p.people,
-         p.givers_note, p.status, m.receipt_no,
+         p.head_other, p.method, p.method_other, p.bank_name, p.reference, p.country, p.currency, p.sent_amount,
+         to_char(p.sent_on, 'YYYY-MM-DD') AS sent_on, p.show_name, p.collected, p.people,
+         p.givers_note, p.givers, p.givers_hidden, p.proof_id, p.status, p.money_in_id, m.receipt_no,
          p.check_note, p.created_at
   FROM erp_pledge p JOIN erp_user u ON u.id = p.member_id
     LEFT JOIN erp_ask a ON a.id = p.ask_id LEFT JOIN erp_money_in m ON m.id = p.money_in_id`;
@@ -368,9 +416,15 @@ const asPledge = (r: Record<string, unknown>): Pledge => ({
   id: num(r.id),
   member_id: num(r.member_id),
   ask_id: r.ask_id == null ? null : num(r.ask_id),
-  amount_paise: num(r.amount_paise),
+  amount_paise: r.amount_paise == null ? null : num(r.amount_paise),
+  sent_amount: r.sent_amount == null ? null : Number(r.sent_amount),
   people: r.people == null ? null : num(r.people),
+  proof_id: r.proof_id == null ? null : num(r.proof_id),
+  money_in_id: r.money_in_id == null ? null : num(r.money_in_id),
 });
+
+/** What a member said they sent: rupees, or the amount in the currency they sent it in. */
+export const pledgeAmount = (p: Pledge) => (p.amount_paise != null ? inr(p.amount_paise) : foreign(p.sent_amount, p.currency));
 
 export async function myPledges(memberId: number): Promise<Pledge[]> {
   const rows = await db().query(`${SELECT_PLEDGE} WHERE p.member_id = $1 ORDER BY p.created_at DESC LIMIT 100`, [memberId]);
@@ -387,10 +441,12 @@ export async function getPledge(id: number): Promise<Pledge | null> {
   return rows[0] ? asPledge(rows[0]) : null;
 }
 
-export interface PledgeFields {
+export interface PledgeFields extends MoneyDetail {
   ask_id: number | null;
-  amount_paise: number;
+  /** empty when sent in another currency */
+  amount_paise: number | null;
   head: Head;
+  head_other: string | null;
   method: Method;
   reference: string | null;
   sent_on: string;
@@ -398,27 +454,33 @@ export interface PledgeFields {
   /** money they gathered from others, not their own gift */
   collected: boolean;
   people: number | null;
-  givers_note: string | null;
+  givers: string[];
+  givers_hidden: boolean;
+  /** a screenshot of the payment, for the Accountant */
+  proof_id: number | null;
 }
 
-/** A member says they paid. Nothing counts until the Treasurer finds it. */
+/** A member says they paid. Nothing counts until the PSWS Accountant finds it. */
 export async function addPledge(u: User, f: PledgeFields): Promise<number> {
   const rows = await db()`
-    INSERT INTO erp_pledge (member_id, ask_id, amount_paise, head, method, reference, sent_on, show_name, collected, people,
-                            givers_note)
-    VALUES (${u.id}, ${f.ask_id}, ${f.amount_paise}, ${f.head}, ${f.method}, ${f.reference}, ${f.sent_on}, ${f.show_name},
-            ${f.collected}, ${f.collected ? f.people : null}, ${f.collected ? f.givers_note : null})
+    INSERT INTO erp_pledge (member_id, ask_id, amount_paise, head, head_other, method, method_other, bank_name, reference,
+                            country, currency, sent_amount, sent_on, show_name, collected, people, givers, givers_hidden, proof_id)
+    VALUES (${u.id}, ${f.ask_id}, ${f.amount_paise}, ${f.head}, ${f.head_other}, ${f.method}, ${f.method_other}, ${f.bank_name},
+            ${f.reference}, ${f.country}, ${f.currency}, ${f.sent_amount}, ${f.sent_on}, ${f.show_name}, ${f.collected},
+            ${f.collected ? f.people : null}, ${f.collected && f.givers.length ? f.givers : null},
+            ${f.collected && f.givers_hidden}, ${f.proof_id})
     RETURNING id`;
   const id = num(rows[0].id);
+  const sum = f.amount_paise != null ? inr(f.amount_paise) : foreign(f.sent_amount, f.currency);
   await logChange(u.id, "added", "pledge", id,
-    `Said they sent ${inr(f.amount_paise)}${f.collected ? ` collected from ${f.people ? `${f.people} people` : "others"}` : ""} (${f.method.toUpperCase()}${f.reference ? ` ${f.reference}` : ""})`);
+    `Said they sent ${sum}${f.collected ? ` collected from ${f.people ? `${f.people} people` : "others"}` : ""} (${howPaid(f.method, f.method_other, f.bank_name, true)}${f.reference ? ` ${f.reference}` : ""}${fromAbroad(f.country, null, null) ? `, ${fromAbroad(f.country, null, null)}` : ""})`);
   return id;
 }
 
 export async function withdrawPledge(u: User, id: number): Promise<string | null> {
   const rows = await db()`
     UPDATE erp_pledge SET status = 'withdrawn' WHERE id = ${id} AND member_id = ${u.id} AND status = 'waiting' RETURNING id`;
-  return rows[0] ? null : "This can only be taken back while it waits for the Treasurer.";
+  return rows[0] ? null : "This can only be taken back while it waits for the Accountant.";
 }
 
 /** Money handed in by a member who gathered it from others: their effort, not their gift. */
@@ -450,19 +512,35 @@ export async function noteFundGift(head: Head, amountPaise: number, shownName: s
   await addFeed("gift", null, giftLine(shownName, amountPaise, HEADS[head].en, collected));
 }
 
+/** A new photo on an ask: in the history, and for an open appeal on everyone's screen too. */
+export async function notePhoto(u: User, a: Ask) {
+  await logChange(u.id, "added", "ask", a.id, `A photo was added to ${a.title}`);
+  if (isPublicKind(a.kind) && (a.status === "live" || a.status === "closed")) await addFeed("notice", a.id, `New photo on ${a.title}`);
+}
+
 /** For the cash book: "Collected by Ayaan from 10 people". */
 export const collectedFrom = (collector: string, people: number | null) =>
   `Collected by ${collector}${people ? ` from ${people} ${people === 1 ? "person" : "people"}` : ""}`;
 
-/** The Treasurer found it in the bank: it becomes a numbered receipt, and counts. */
-export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: string } | { error: string }> {
+/**
+ * The PSWS Accountant found it in the bank: it becomes a numbered receipt, and
+ * counts. A gift in another currency needs the rupees that arrived.
+ */
+export async function confirmPledge(
+  u: User,
+  id: number,
+  rupees: number | null = null,
+): Promise<{ receipt_no: string } | { error: string }> {
   const p = await getPledge(id);
   if (!p || p.status !== "waiting") return { error: "This has already been checked." };
+  if (p.member_id === u.id) return { error: "Nobody confirms their own gift." };
+  const amount = p.amount_paise ?? rupees;
+  if (!amount) return { error: `Type the rupees that arrived in the bank for ${foreign(p.sent_amount, p.currency)}.` };
   const closed = await closedMessage(p.sent_on);
   if (closed) return { error: closed };
   // claim it first, so it is turned into a receipt once only
   const claimed = await db()`
-    UPDATE erp_pledge SET status = 'confirmed', checked_by = ${u.id}, checked_at = now()
+    UPDATE erp_pledge SET status = 'confirmed', checked_by = ${u.id}, checked_at = now(), amount_paise = ${amount}
     WHERE id = ${id} AND status = 'waiting' RETURNING id`;
   if (!claimed[0]) return { error: "This has already been checked." };
   const member = await getMe(p.member_id);
@@ -474,12 +552,19 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
       from_name: p.collected ? collectedFrom(member?.name ?? p.member_name, p.people) : (member?.name ?? p.member_name),
       from_phone: member?.phone && /^\d+$/.test(member.phone) ? member.phone : null,
       from_place: member?.lives_in ?? null,
-      amount_paise: p.amount_paise,
+      amount_paise: amount,
       head: p.head,
-      head_other: null,
+      head_other: p.head_other,
       method: p.method,
+      method_other: p.method_other,
+      bank_name: p.bank_name,
       reference: p.reference,
+      country: p.country,
+      currency: p.currency,
+      sent_amount: p.sent_amount,
       note: p.collected && p.givers_note ? `${forWhat}. Given by: ${p.givers_note}` : forWhat,
+      givers: p.collected ? p.givers : null,
+      givers_hidden: p.collected && p.givers_hidden,
       // a collection is the collector's effort, never their own gift
       member_id: p.collected ? null : p.member_id,
       collected_by: p.collected ? p.member_id : null,
@@ -490,25 +575,28 @@ export async function confirmPledge(u: User, id: number): Promise<{ receipt_no: 
     });
   } catch (e) {
     // no receipt was made, so it goes back to waiting
-    await db()`UPDATE erp_pledge SET status = 'waiting', checked_by = NULL, checked_at = NULL WHERE id = ${id}`;
+    await db()`UPDATE erp_pledge SET status = 'waiting', checked_by = NULL, checked_at = NULL, amount_paise = ${p.amount_paise}
+               WHERE id = ${id}`;
     throw e;
   }
   await db()`UPDATE erp_pledge SET money_in_id = ${r.id} WHERE id = ${id}`;
-  await logChange(u.id, "decided", "pledge", id, `Found ${inr(p.amount_paise)} from ${p.member_name} in the bank: receipt ${r.receipt_no}`);
+  await logChange(u.id, "decided", "pledge", id, `Found ${inr(amount)} from ${p.member_name} in the bank: receipt ${r.receipt_no}`);
   const shown = p.show_name ? p.member_name : null;
   const collected = p.collected ? { people: p.people } : null;
-  if (p.ask_id) await noteGift(p.ask_id, p.amount_paise, shown, collected);
-  else await noteFundGift(p.head, p.amount_paise, shown, collected);
+  if (p.ask_id) await noteGift(p.ask_id, amount, shown, collected);
+  else await noteFundGift(p.head, amount, shown, collected);
   return { receipt_no: r.receipt_no };
 }
 
-/** Not in the bank (yet): the member sees why, and can ask the Treasurer. */
+/** Not in the bank (yet): the member sees why, and can ask the Accountant. */
 export async function pledgeNotFound(u: User, id: number, note: string): Promise<string | null> {
+  const p = await getPledge(id);
+  if (p?.member_id === u.id) return "Nobody checks their own gift.";
   const rows = await db()`
     UPDATE erp_pledge SET status = 'not_found', checked_by = ${u.id}, checked_at = now(), check_note = ${note}
-    WHERE id = ${id} AND status = 'waiting' RETURNING amount_paise`;
-  if (!rows[0]) return "This has already been checked.";
-  await logChange(u.id, "decided", "pledge", id, `Could not find ${inr(num(rows[0].amount_paise))} in the bank: ${note}`);
+    WHERE id = ${id} AND status = 'waiting' RETURNING id`;
+  if (!rows[0] || !p) return "This has already been checked.";
+  await logChange(u.id, "decided", "pledge", id, `Could not find ${pledgeAmount(p)} in the bank: ${note}`);
   return null;
 }
 
@@ -571,7 +659,7 @@ export async function listPortalMembers(): Promise<PortalMember[]> {
            coalesce((SELECT sum(m.amount_paise) FROM erp_money_in m
                      WHERE m.collected_by = u.id AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${fy.from} AND ${fy.to}), 0)
              AS collected_paise
-    FROM erp_user u WHERE u.phone <> 'owner' ORDER BY u.active DESC, u.name`;
+    FROM erp_user u WHERE u.phone <> 'owner' AND u.role <> 'accountant' ORDER BY u.active DESC, u.name`;
   return rows.map((r) => ({
     ...(r as unknown as PortalMember),
     id: num(r.id),
@@ -657,4 +745,45 @@ export async function askReceipts(askId: number) {
     method: r.method as Method,
     member_no: (r.member_no as string) ?? null,
   }));
+}
+
+/* ================================================================== "I'm coming" */
+
+export interface Replies {
+  coming: number;
+  not: number;
+  /** what this member said: coming, not coming, or nothing yet */
+  mine: boolean | null;
+}
+
+/** For the meetings coming up: how many said they are coming, and what this member said. */
+export async function meetingReplies(ids: number[], userId: number): Promise<Record<number, Replies>> {
+  if (!ids.length) return {};
+  const rows = await db()`
+    SELECT meeting_id, count(*) FILTER (WHERE coming) AS coming, count(*) FILTER (WHERE NOT coming) AS "not",
+           bool_or(coming) FILTER (WHERE user_id = ${userId}) AS mine
+    FROM erp_meeting_reply WHERE meeting_id = ANY(${ids}::bigint[]) GROUP BY meeting_id`;
+  const out: Record<number, Replies> = {};
+  for (const id of ids) out[id] = { coming: 0, not: 0, mine: null };
+  for (const r of rows)
+    out[num(r.meeting_id)] = { coming: num(r.coming), not: num(r.not), mine: r.mine == null ? null : Boolean(r.mine) };
+  return out;
+}
+
+export async function replyToMeeting(u: User, meetingId: number, coming: boolean): Promise<boolean> {
+  const rows = await db()`
+    INSERT INTO erp_meeting_reply (meeting_id, user_id, coming)
+    SELECT id, ${u.id}, ${coming} FROM erp_meeting
+    WHERE id = ${meetingId} AND kind = 'meeting' AND on_date >= (now() AT TIME ZONE 'Asia/Kolkata')::date
+    ON CONFLICT (meeting_id, user_id) DO UPDATE SET coming = EXCLUDED.coming, at = now()
+    RETURNING meeting_id`;
+  return !!rows[0];
+}
+
+/** For the office: who said they are coming, and who cannot. */
+export async function whoIsComing(meetingId: number): Promise<{ name: string; member_no: string | null; coming: boolean }[]> {
+  const rows = await db()`
+    SELECT u.name, u.member_no, r.coming FROM erp_meeting_reply r JOIN erp_user u ON u.id = r.user_id
+    WHERE r.meeting_id = ${meetingId} ORDER BY r.coming DESC, u.name`;
+  return rows.map((r) => ({ name: String(r.name), member_no: (r.member_no as string) ?? null, coming: Boolean(r.coming) }));
 }

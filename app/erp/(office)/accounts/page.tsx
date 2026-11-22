@@ -3,13 +3,12 @@ import { requireUser } from "@/lib/erp/auth";
 import {
   fundBalances,
   getOpening,
-  isApprover,
   listMonths,
   openApproval,
   placeBalances,
   type Opening,
 } from "@/lib/erp/books";
-import { HEADS, fyMonths, fyOf, inr, showDate, showMonth, showWhen, thisMonthIST, todayIST } from "@/lib/erp/labels";
+import { HEADS, fyMonths, fyOf, inr, showDate, showMonth, showWhen, thisMonthIST, todayIST, handlesMoney } from "@/lib/erp/labels";
 import { AmountInput, Chips, ErpForm, Field, Submit } from "@/components/erp/form";
 import { PageHead, Pending, Section } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
@@ -50,12 +49,12 @@ function StartingForm({ o, change }: { o: Opening | null; change: boolean }) {
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ started?: string; closed?: string }> }) {
   const u = await requireUser();
   const sp = await searchParams;
-  const [opening, places, funds, months, approver, pendingOpening] = await Promise.all([
+  const money = handlesMoney(u.role);
+  const [opening, places, funds, months, pendingOpening] = await Promise.all([
     getOpening(),
     placeBalances(),
     fundBalances(),
     listMonths(),
-    isApprover(u.id),
     openApproval("opening"),
   ]);
   const fy = fyOf(todayIST());
@@ -81,7 +80,11 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             Enter what the Society has on the day you start: the cash counted and the bank balance, and how much of it
             belongs to each fund. After that the office keeps every balance by itself.
           </p>
-          <StartingForm o={null} change={false} />
+          {money ? (
+            <StartingForm o={null} change={false} />
+          ) : (
+            <p className={styles.note}>The PSWS Accountant enters them.</p>
+          )}
         </section>
       ) : (
         <>
@@ -141,6 +144,8 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             nothing asks for a tick first.
           </p>
 
+          {money && (
+          <>
           <Section title="Move money between cash and bank" />
           <ErpForm action={moveMoney} resetOnDone>
             <Chips
@@ -167,6 +172,8 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           <p className={styles.note} style={{ marginTop: 6 }}>
             This is not income or spending, so it does not change any fund. It shows in Money.
           </p>
+          </>
+          )}
 
           <Section title="Months" />
           {monthList.length ? (
@@ -193,7 +200,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                               : "Not closed yet"}
                         </span>
                       </span>
-                      {(closed || approver) && (
+                      {(closed || money) && (
                         <Link href={`/erp/accounts/close/${m}`} className={styles.btnQuiet}>
                           {closed ? "Open" : "Close"}
                         </Link>
@@ -206,9 +213,9 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           ) : (
             <p className={styles.note}>Months can be closed once they have ended.</p>
           )}
-          {!approver && (
+          {!money && (
             <p className={styles.note} style={{ marginTop: 6 }}>
-              The approvers close each month after checking it against the bank statement and the cash.
+              The PSWS Accountant closes each month after checking it against the bank statement and the cash.
             </p>
           )}
           <Section title="Starting balances" />
@@ -221,7 +228,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
               </summary>
               <div>
                 <p className={styles.p}>Changing them needs all the approvers.</p>
-                <StartingForm o={opening} change />
+                {money && <StartingForm o={opening} change />}
               </div>
             </details>
           )}

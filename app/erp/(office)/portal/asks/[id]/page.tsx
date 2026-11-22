@@ -7,8 +7,11 @@ import { ASK_KINDS, ASK_STATUSES, HEADS, METHOD_SHORT, inr, showDate, showWhen }
 import { toId } from "@/lib/erp/form-state";
 import { ErpForm, Field, Submit } from "@/components/erp/form";
 import { Facts, PageHead, Section } from "@/components/erp/ui";
+import { PhotoForm } from "@/components/erp/portal-forms";
+import { AskPhotos } from "@/components/erp/ask-photos";
+import { askPhotos } from "@/lib/erp/files";
 import styles from "@/components/erp/erp.module.css";
-import { closeTheAsk, voteOnAsk } from "../../actions";
+import { addAskPhoto, closeTheAsk, takeOffAskPhoto, voteOnAsk } from "../../actions";
 
 export const metadata = { title: "Ask" };
 
@@ -25,7 +28,7 @@ export default async function OfficeAsk({
   const a = id ? await getAsk(id) : null;
   if (!a) notFound();
   const sp = await searchParams;
-  const [votes, receipts] = await Promise.all([askVotes(a.id), askReceipts(a.id)]);
+  const [votes, receipts, photos] = await Promise.all([askVotes(a.id), askReceipts(a.id), askPhotos(a.id)]);
   const myVote = votes.find((v) => v.user_id === u.id);
   const label = a.kind === "help" && a.status === "live" ? "Accepted" : ASK_STATUSES[a.status].en;
 
@@ -55,6 +58,12 @@ export default async function OfficeAsk({
           ]}
         />
       </div>
+
+      <Section title={photos.length ? `Photos (${photos.length})` : "Photos"} />
+      <AskPhotos photos={photos} removeFor={(ph) => takeOffAskPhoto.bind(null, a.id, ph.id)} />
+      {a.status !== "withdrawn" && a.status !== "declined" && (
+        <PhotoForm action={addAskPhoto.bind(null, a.id)} office />
+      )}
 
       <Section title={`Approvers: ${a.yes} of ${ASK_YES_NEEDED} needed said yes`} />
       <ul className={styles.list}>
@@ -134,7 +143,7 @@ export default async function OfficeAsk({
           <ErpForm action={closeTheAsk.bind(null, a.id)} confirm="Close this ask? Members can no longer give to it.">
             <Field
               label={a.kind === "help" ? "What was done?" : "How was the money spent?"}
-              hint="Every member reads this, e.g. Paid ₹38,000 to the hospital on 20 Oct, bill with the Treasurer"
+              hint="Every member reads this, e.g. Paid ₹38,000 to the hospital on 20 Oct, bill with the Accountant"
               name="note"
               wide
             >

@@ -405,3 +405,81 @@ ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS collected   boolean NOT NULL D
 ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS people      int CHECK (people IS NULL OR people > 0);
 ALTER TABLE erp_pledge   ADD COLUMN IF NOT EXISTS givers_note text;
 CREATE INDEX IF NOT EXISTS erp_money_in_collected_by ON erp_money_in (collected_by) WHERE collected_by IS NOT NULL;
+
+-- ---------------------------------------------------------------- the PSWS Accountant
+-- One account for the job, not for a person. Only it records money coming in
+-- and going out, and confirms members' gifts against the bank; everyone else in
+-- the office sees the money and cannot add to it. Whoever holds the account now
+-- is held_by, and the history keeps who held it for each thing it did.
+ALTER TABLE erp_user DROP CONSTRAINT IF EXISTS erp_user_role_check;
+ALTER TABLE erp_user ADD CONSTRAINT erp_user_role_check CHECK (role IN ('admin', 'editor', 'viewer', 'member', 'accountant'));
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS held_by    bigint REFERENCES erp_user(id);  -- empty: the website owner
+ALTER TABLE erp_user ADD COLUMN IF NOT EXISTS held_since timestamptz;
+INSERT INTO erp_user (name, phone, role) VALUES ('PSWS Accountant', 'accountant', 'accountant')
+  ON CONFLICT (phone) DO NOTHING;
+ALTER TABLE erp_audit ADD COLUMN IF NOT EXISTS held_by bigint REFERENCES erp_user(id);
+
+-- ---------------------------------------------------------------- pictures: payment screenshots and photos on asks
+-- Kept in the database, behind the sign-in, never at a public address: a
+-- payment screenshot shows a bank account.
+CREATE TABLE IF NOT EXISTS erp_file (
+  id          bigserial   PRIMARY KEY,
+  kind        text        NOT NULL CHECK (kind IN ('proof', 'ask_photo')),
+  mime        text        NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp')),
+  bytes       bytea       NOT NULL,
+  width       int,
+  height      int,
+  caption     text,
+  ask_id      bigint      REFERENCES erp_ask(id),
+  uploaded_by bigint      REFERENCES erp_user(id),
+  uploaded_at timestamptz NOT NULL DEFAULT now(),
+  removed_at  timestamptz,
+  removed_by  bigint      REFERENCES erp_user(id)
+);
+CREATE INDEX IF NOT EXISTS erp_file_ask ON erp_file (ask_id, uploaded_at) WHERE ask_id IS NOT NULL AND removed_at IS NULL;
+
+-- ---------------------------------------------------------------- fuller money details
+-- "Other" for how money came or went, the bank it came through, the country
+-- it was sent from, and the currency when it was not rupees. The books stay in
+-- rupees: a gift in another currency waits until the Accountant types the
+-- rupees that arrived. The names of the people a member collected from are kept
+-- one by one, for the receipt.
+ALTER TABLE erp_money_in  DROP CONSTRAINT IF EXISTS erp_money_in_method_check;
+ALTER TABLE erp_money_in  ADD CONSTRAINT erp_money_in_method_check CHECK (method IN ('cash', 'upi', 'bank', 'cheque', 'other'));
+ALTER TABLE erp_money_out DROP CONSTRAINT IF EXISTS erp_money_out_method_check;
+ALTER TABLE erp_money_out ADD CONSTRAINT erp_money_out_method_check CHECK (method IN ('cash', 'upi', 'bank', 'cheque', 'other'));
+ALTER TABLE erp_pledge    DROP CONSTRAINT IF EXISTS erp_pledge_method_check;
+ALTER TABLE erp_pledge    ADD CONSTRAINT erp_pledge_method_check CHECK (method IN ('cash', 'upi', 'bank', 'cheque', 'other'));
+
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS method_other  text;
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS bank_name     text;
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS country       text;          -- empty: India
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS currency      text;          -- empty: rupees
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS sent_amount   numeric(14, 2) CHECK (sent_amount IS NULL OR sent_amount > 0);
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS givers        text[];
+ALTER TABLE erp_money_in  ADD COLUMN IF NOT EXISTS givers_hidden boolean NOT NULL DEFAULT false;
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS method_other  text;
+ALTER TABLE erp_money_out ADD COLUMN IF NOT EXISTS bank_name     text;
+
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS head_other    text;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS method_other  text;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS bank_name     text;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS country       text;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS currency      text;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS sent_amount   numeric(14, 2) CHECK (sent_amount IS NULL OR sent_amount > 0);
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS givers        text[];
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS givers_hidden boolean NOT NULL DEFAULT false;
+ALTER TABLE erp_pledge ADD COLUMN IF NOT EXISTS proof_id      bigint REFERENCES erp_file(id);
+-- a gift in another currency has no rupee amount until it is found in the bank
+ALTER TABLE erp_pledge ALTER COLUMN amount_paise DROP NOT NULL;
+ALTER TABLE erp_pledge DROP CONSTRAINT IF EXISTS erp_pledge_some_amount;
+ALTER TABLE erp_pledge ADD CONSTRAINT erp_pledge_some_amount CHECK (amount_paise IS NOT NULL OR sent_amount IS NOT NULL);
+
+-- ---------------------------------------------------------------- "I'm coming"
+CREATE TABLE IF NOT EXISTS erp_meeting_reply (
+  meeting_id bigint      NOT NULL REFERENCES erp_meeting(id),
+  user_id    bigint      NOT NULL REFERENCES erp_user(id),
+  coming     boolean     NOT NULL,
+  at         timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (meeting_id, user_id)
+);

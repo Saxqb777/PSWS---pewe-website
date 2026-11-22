@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
-import { isApprover, listMonths, monthFigures, openApproval } from "@/lib/erp/books";
-import { inr, showMonth, showWhen, thisMonthIST } from "@/lib/erp/labels";
+import { listMonths, monthFigures, openApproval } from "@/lib/erp/books";
+import { handlesMoney, inr, showMonth, showWhen, thisMonthIST } from "@/lib/erp/labels";
 import { AmountInput, ErpForm, Field, Submit } from "@/components/erp/form";
 import { AskBox } from "@/components/erp/cancel-box";
 import { Facts, PageHead, Pending } from "@/components/erp/ui";
@@ -15,12 +15,8 @@ export default async function MonthPage({ params }: { params: Promise<{ month: s
   const u = await requireUser();
   const { month } = await params;
   if (!/^\d{4}-\d{2}$/.test(month) || month >= thisMonthIST()) notFound();
-  const [months, approver, books, pending] = await Promise.all([
-    listMonths(),
-    isApprover(u.id),
-    monthFigures(month),
-    openApproval(`month:${month}`),
-  ]);
+  const money = handlesMoney(u.role);
+  const [months, books, pending] = await Promise.all([listMonths(), monthFigures(month), openApproval(`month:${month}`)]);
   const row = months.get(month);
   const closed = row?.status === "closed";
 
@@ -45,15 +41,17 @@ export default async function MonthPage({ params }: { params: Promise<{ month: s
           {pending ? (
             <Pending a={pending} />
           ) : (
+            money && (
             <AskBox
               action={askReopen.bind(null, month)}
               title="Reopen this month"
               explain="Nothing new can be added to a closed month. Reopening it needs all the approvers; close it again once the entries are in."
               button="Ask to reopen"
             />
+            )
           )}
         </>
-      ) : approver ? (
+      ) : money ? (
         <>
           <p className={styles.p}>
             Check the month against the bank statement and the cash in hand, then close it. Nothing new can be added to a
@@ -85,7 +83,7 @@ export default async function MonthPage({ params }: { params: Promise<{ month: s
           </ErpForm>
         </>
       ) : (
-        <p className={styles.p}>The approvers close each month.</p>
+        <p className={styles.p}>The PSWS Accountant closes each month, against the bank statement and the cash.</p>
       )}
     </>
   );

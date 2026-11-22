@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import {
   addFamily,
   addMoneyIn,
@@ -45,6 +45,7 @@ import {
   type Purpose,
 } from "@/lib/erp/labels";
 import { toId, type FormState } from "@/lib/erp/form-state";
+import { readDetail, readGivers } from "@/lib/erp/details";
 import { portalOn } from "@/lib/erp/flags";
 import { collectedFrom, getAsk, isPublicKind, noteFundGift, noteGift } from "@/lib/erp/portal";
 import { db, num } from "@/lib/erp/db";
@@ -82,6 +83,8 @@ function readMoneyIn(data: FormData): { f: MoneyInFields; errors: Record<string,
   const head_other = readOther(data, "head", head, errors, "Type what it is for. (Kis liye?)");
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How did it come? (Kaise aaya?)";
+  const detail = readDetail(data, isKey(METHODS, method) ? method : null, errors);
+  if (detail.currency && !amount) errors.amount = "Type the rupees that arrived in the bank, e.g. 11250.";
   return {
     errors,
     f: {
@@ -95,6 +98,7 @@ function readMoneyIn(data: FormData): { f: MoneyInFields; errors: Record<string,
       method: method as MoneyInFields["method"],
       reference: clean(data.get("reference"), 120),
       note: cleanLong(data.get("note"), 1000),
+      ...detail,
     },
   };
 }
@@ -111,7 +115,7 @@ function readReason(data: FormData, errors: Record<string, string>, ask: string)
  * approvers, with the reason, and only made once every one of them agrees.
  */
 export async function saveMoneyIn(id: number | null, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const { f, errors } = readMoneyIn(data);
   const reason = id ? readReason(data, errors, "Say why it needs changing. The approvers read this. (Kyun?)") : "";
   if (Object.keys(errors).length) return { errors };
@@ -164,15 +168,13 @@ export async function saveMoneyIn(id: number | null, _: FormState, data: FormDat
     // gathered from others by this member: their collection, not their own gift
     if (data.get("collected") === "on") {
       if (!f.member_id) linkErrors.member_no = "Type the PSWS number of the member who collected it.";
-      const raw = clean(data.get("people"), 6);
-      const people = raw ? Number(raw) : null;
-      if (raw && !(Number.isInteger(people) && people! > 0 && people! < 10000)) linkErrors.people = "A number, e.g. 10.";
+      const g = readGivers(data, linkErrors);
       f.collected_by = f.member_id;
       f.member_id = null;
-      f.people = people;
-      f.givers_note = cleanLong(data.get("givers_note"), 2000);
-      if (memberName) f.from_name = collectedFrom(memberName, people);
-      if (f.givers_note) f.note = [f.note, `Given by: ${f.givers_note}`].filter(Boolean).join(". ");
+      f.people = g.people;
+      f.givers = g.givers;
+      f.givers_hidden = g.givers_hidden;
+      if (memberName) f.from_name = collectedFrom(memberName, g.people);
     }
     f.name_hidden = data.get("hide_name") === "on";
     if (Object.keys(linkErrors).length) return { errors: linkErrors };
@@ -208,6 +210,7 @@ async function readMoneyOut(data: FormData): Promise<{
   const head_other = readOther(data, "head", head, errors, "Type which money it came out of.");
   const method = data.get("method");
   if (!isKey(METHODS, method)) errors.method = "How was it paid? (Kaise diya?)";
+  const { method_other, bank_name } = readDetail(data, isKey(METHODS, method) ? method : null, errors, { abroad: false });
 
   let paid_to = clean(data.get("paid_to"), 120);
   let family_id: number | null = null;
@@ -248,6 +251,8 @@ async function readMoneyOut(data: FormData): Promise<{
       purpose: purpose as Purpose,
       purpose_other,
       method: method as MoneyOutFields["method"],
+      method_other,
+      bank_name,
       reference: clean(data.get("reference"), 120),
       family_id,
       request_id,
@@ -266,7 +271,7 @@ async function fundProblem(f: MoneyOutFields, exceptId: number | null, data: For
 }
 
 export async function saveMoneyOut(id: number | null, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const { f, errors, newFamily } = await readMoneyOut(data);
   const reason = id ? readReason(data, errors, "Say why it needs changing. The approvers read this. (Kyun?)") : "";
   if (Object.keys(errors).length) return { errors };
@@ -311,7 +316,7 @@ export async function saveMoneyOut(id: number | null, _: FormState, data: FormDa
 
 /** Deleting a receipt, a payment or a move between cash and bank: asked, never done straight away. */
 export async function askDelete(dir: "in" | "out" | "transfer", id: number, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const errors: Record<string, string> = {};
   const reason = readReason(data, errors, "Say why it should be deleted. The approvers read this. (Kyun?)");
   if (Object.keys(errors).length) return { errors };

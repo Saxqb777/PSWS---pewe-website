@@ -2,6 +2,7 @@ import { KINDS, PLACES, WORK_STATUSES, todayIST, type Role } from "@/lib/erp/lab
 import type { Family, Meeting, Member, Request, Work } from "@/lib/erp/data";
 import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { KindAndShare } from "./meeting-share";
 import styles from "./erp.module.css";
 
 /** The office's shorter forms. Each one is the same for adding and for changing. */
@@ -198,15 +199,7 @@ export function MemberForm({ action, member, submit }: { action: Action; member?
 export function MeetingForm({ action, meeting, submit }: { action: Action; meeting?: Meeting; submit: string }) {
   return (
     <ErpForm action={action}>
-      <Chips
-        name="kind"
-        legend="Is it a meeting or a notice?"
-        options={[
-          { value: "meeting", en: "Meeting", hi: "Baithak, minutes" },
-          { value: "notice", en: "Notice", hi: "Elaan, khabar" },
-        ]}
-        defaultValue={meeting?.kind ?? "meeting"}
-      />
+      <KindAndShare kind={meeting?.kind} shared={meeting?.for_website} />
       <div className={styles.grid}>
         <Field label="Date" name="on_date">
           <input name="on_date" type="date" defaultValue={meeting?.on_date ?? todayIST()} />

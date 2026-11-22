@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getMoneyIn } from "@/lib/erp/data";
-import { HEADS, METHODS, canDo, inr, rupeesInWords, showDate, showPhone, showWhen, labelOf } from "@/lib/erp/labels";
+import { handlesMoney, showDate, showPhone, showWhen } from "@/lib/erp/labels";
 import { toId, waLink } from "@/lib/erp/form-state";
-import { SOCIETY } from "@/lib/site";
 import { AskBox } from "@/components/erp/cancel-box";
 import { PrintButton } from "@/components/erp/shell";
+import { Receipt, receiptText } from "@/components/erp/receipt";
 import { PageHead, Pending } from "@/components/erp/ui";
 import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
@@ -27,17 +27,8 @@ export default async function MoneyInPage({
   if (!m) notFound();
   const sp = await searchParams;
   const pending = m.cancelled_at ? null : await openApproval(`money_in:${m.id}`);
-  const words = rupeesInWords(m.amount_paise);
-  const how = METHODS[m.method].en.split(" (")[0];
-  const text = [
-    SOCIETY.name,
-    `Receipt ${m.receipt_no} · ${showDate(m.on_date)}`,
-    "",
-    `Received with thanks ${inr(m.amount_paise)} (${words} rupees) from ${m.from_name} towards ${labelOf(HEADS, m.head, m.head_other)}, by ${how}${m.reference ? ` (ref. ${m.reference})` : ""}.`,
-    "",
-    `Thank you. ${SOCIETY.shortName} office, Pewe`,
-  ].join("\n");
-  const editor = canDo(u.role, "editor");
+  const text = receiptText(m);
+  const editor = handlesMoney(u.role);
 
   return (
     <>
@@ -65,57 +56,7 @@ export default async function MoneyInPage({
       {sp.saved && <p className={`${styles.formDone} ${styles.noPrint}`}>Change saved.</p>}
       {pending && <Pending a={pending} />}
 
-      <article className={styles.receipt} aria-label={`Receipt ${m.receipt_no}`}>
-        <header className={styles.receiptHead}>
-          <p className={styles.receiptName}>{SOCIETY.name}</p>
-          <p className={styles.receiptMr}>{SOCIETY.nameMarathi}</p>
-          <p className={styles.receiptAddr}>
-            {SOCIETY.address.line1}, Tal. Guhagar, Dist. Ratnagiri
-            <br />
-            Reg. {SOCIETY.societyRegNo} · {SOCIETY.registrationNo}
-          </p>
-        </header>
-        <div className={styles.receiptLine}>
-          <span>
-            No. <b>{m.receipt_no}</b>
-          </span>
-          <span>
-            Date <b>{showDate(m.on_date)}</b>
-          </span>
-        </div>
-        <p className={styles.receiptField}>
-          Received with thanks from
-          <span className={styles.receiptFill}>
-            {m.from_name}
-            {m.from_place ? `, ${m.from_place}` : ""}
-          </span>
-        </p>
-        <p className={styles.receiptField}>
-          the sum of Rupees
-          <span className={styles.receiptFill}>{words} only</span>
-        </p>
-        <p className={styles.receiptField}>
-          towards
-          <span className={styles.receiptFill}>
-            {labelOf(HEADS, m.head, m.head_other)}, by {how}
-            {m.reference ? ` (ref. ${m.reference})` : ""}
-          </span>
-        </p>
-        {m.note && (
-          <p className={styles.receiptField}>
-            note
-            <span className={styles.receiptFill}>{m.note}</span>
-          </p>
-        )}
-        <footer className={styles.receiptFoot}>
-          <span className={styles.receiptBox}>{inr(m.amount_paise)}</span>
-          <span className={styles.receiptSign}>
-            <b>For {SOCIETY.shortName}</b>
-            {m.created_by_name ?? "the office"}
-          </span>
-        </footer>
-        {m.cancelled_at && <span className={styles.stamp}>Deleted</span>}
-      </article>
+      <Receipt m={m} />
 
       {m.cancelled_at ? (
         <p className={`${styles.banner} ${styles.bannerWarn}`} style={{ marginTop: 20 }}>

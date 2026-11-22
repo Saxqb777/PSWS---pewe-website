@@ -2,14 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import {
   addTransfer,
   askApproval,
   closeMonth,
   closedMessage,
   getOpening,
-  isApprover,
   monthFigures,
   openingChanges,
   setOpening,
@@ -20,7 +19,7 @@ import type { FormState } from "@/lib/erp/form-state";
 
 /** The starting balances: set once, and changed afterwards only with the approvers. */
 export async function saveStarting(_: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const errors: Record<string, string> = {};
   const on_date = String(data.get("on_date") ?? "");
   if (!isDate(on_date) || on_date > todayIST()) errors.on_date = "Pick the date these balances are from.";
@@ -71,7 +70,7 @@ export async function saveStarting(_: FormState, data: FormData): Promise<FormSt
 
 /** Cash deposited in the bank, or cash taken out of it. */
 export async function moveMoney(_: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const errors: Record<string, string> = {};
   const direction = data.get("direction");
   if (direction !== "to_bank" && direction !== "to_cash") errors.direction = "Which way did the money go?";
@@ -87,10 +86,9 @@ export async function moveMoney(_: FormState, data: FormData): Promise<FormState
   return { done: `Saved: ${direction === "to_bank" ? "cash deposited in the bank" : "cash taken from the bank"}, ${inr(amount)}.` };
 }
 
-/** Closing a month: the books against the bank statement and the cash counted. Only the approvers. */
+/** Closing a month: the books against the bank statement and the cash counted. The PSWS Accountant's job. */
 export async function closeMonthAction(month: string, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
-  if (!(await isApprover(u.id))) return { error: "Only the approvers close a month." };
+  const u = await requireAccountant();
   if (!/^\d{4}-\d{2}$/.test(month) || month >= thisMonthIST()) return { error: "A month can be closed once it has ended." };
   const errors: Record<string, string> = {};
   const cash = toPaiseOrZero(data.get("cash"));
@@ -116,7 +114,7 @@ export async function closeMonthAction(month: string, _: FormState, data: FormDa
 }
 
 export async function askReopen(month: string, _: FormState, data: FormData): Promise<FormState> {
-  const u = await requireUser("editor");
+  const u = await requireAccountant();
   const reason = clean(data.get("reason"), 300);
   if (!reason) return { errors: { reason: "Say why it needs reopening. The approvers read this." } };
   const r = await askApproval(u, {

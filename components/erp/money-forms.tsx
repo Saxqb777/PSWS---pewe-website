@@ -13,7 +13,8 @@ import {
   type Purpose,
 } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
-import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountInput, ChoiceWithOther, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountBox, CountryField, GiversBox, HowBox, type RefLabels } from "./money-detail";
 import styles from "./erp.module.css";
 
 type Action = (state: FormState, data: FormData) => Promise<FormState>;
@@ -21,18 +22,12 @@ type Action = (state: FormState, data: FormData) => Promise<FormState>;
 const choices = <K extends string>(o: Record<K, { en: string; hi: string }>, keys?: K[]): Choice[] =>
   (keys ?? (Object.keys(o) as K[])).map((k) => ({ value: k, en: o[k].en, hi: o[k].hi }));
 
-const REFERENCE_LABEL: Record<Method, string> = {
-  cash: "Number",
-  upi: "UPI number",
-  bank: "Bank number (UTR)",
-  cheque: "Cheque number",
-};
-
-const REFERENCE_HINT: Record<Method, string> = {
-  cash: "Not needed for cash",
-  upi: "From the UPI message",
-  bank: "From the bank message",
-  cheque: "Cheque number and bank",
+const REFS: RefLabels = {
+  cash: ["Number", "Not needed for cash"],
+  upi: ["UPI number", "From the UPI message"],
+  bank: ["Bank number (UTR)", "From the bank message"],
+  cheque: ["Cheque number", "Cheque number and bank"],
+  other: ["Number", "Optional"],
 };
 
 /** For a change to a saved entry: why, for the approvers. */
@@ -41,34 +36,6 @@ function ReasonBox() {
     <Field label="Why does it need changing?" hint="Kyun? The approvers read this before they approve" name="reason">
       <input name="reason" autoComplete="off" />
     </Field>
-  );
-}
-
-/** Money a member gathered from several people and handed in: their collection, not their own gift. */
-function CollectedBox() {
-  const [on, setOn] = useState(false);
-  return (
-    <>
-      <label className={styles.check}>
-        <input type="checkbox" name="collected" checked={on} onChange={(e) => setOn(e.target.checked)} />
-        <span>
-          <strong>Collected from others by this member</strong>
-          <span className={styles.hint} style={{ display: "block" }}>
-            Type the collector&apos;s PSWS number above. It counts as their collection, not their own gift.
-          </span>
-        </span>
-      </label>
-      {on && (
-        <div className={styles.grid}>
-          <Field label="From how many people?" hint="Kitne logon se" name="people">
-            <input name="people" inputMode="numeric" autoComplete="off" />
-          </Field>
-          <Field label="Their names" hint="Optional, for the books" name="givers_note" wide>
-            <textarea name="givers_note" rows={2} />
-          </Field>
-        </div>
-      )}
-    </>
   );
 }
 
@@ -83,7 +50,12 @@ export interface MoneyInInitial {
   head?: Head;
   head_other?: string | null;
   method?: Method;
+  method_other?: string | null;
+  bank_name?: string | null;
   reference?: string | null;
+  country?: string | null;
+  currency?: string | null;
+  sent_amount?: number | null;
   note?: string | null;
 }
 
@@ -104,7 +76,6 @@ export function MoneyInForm({
   /** with the members' portal on: the open asks a new receipt can be for */
   asks?: { id: number; title: string }[];
 }) {
-  const [method, setMethod] = useState<Method>(initial.method ?? "cash");
   return (
     <ErpForm action={action}>
       <div className={styles.grid}>
@@ -116,11 +87,18 @@ export function MoneyInForm({
             ))}
           </datalist>
         </Field>
-        <AmountInput name="amount" defaultPaise={initial.amount_paise} />
         <Field label="Date" hint="Kab aaya" name="on_date">
           <input name="on_date" type="date" defaultValue={initial.on_date} />
         </Field>
       </div>
+      <AmountBox
+        label="Amount received"
+        hint="Kitna aaya"
+        defaultPaise={initial.amount_paise}
+        initialCurrency={initial.currency}
+        initialSent={initial.sent_amount}
+        rupeesToo
+      />
       <ChoiceWithOther
         name="head"
         legend="What is it for?"
@@ -130,18 +108,16 @@ export function MoneyInForm({
         otherLabel="What is it for?"
         otherDefault={initial.head_other}
       />
-      <Chips
-        name="method"
+      <HowBox
         legend="How did it come?"
         hint="Kaise aaya"
         options={choices(METHODS)}
-        value={method}
-        onChange={(v) => setMethod(v as Method)}
+        defaultMethod={initial.method ?? "cash"}
+        refs={REFS}
+        initial={initial}
       />
       <div className={styles.grid}>
-        <Field label={REFERENCE_LABEL[method]} hint={REFERENCE_HINT[method]} name="reference">
-          <input name="reference" autoComplete="off" defaultValue={initial.reference ?? ""} />
-        </Field>
+        <CountryField initial={initial.country} />
         <Field label="Their place" hint="Gaon ya shehar, if you know" name="from_place">
           <input name="from_place" list="places" autoComplete="off" defaultValue={initial.from_place ?? ""} />
           <datalist id="places">
@@ -174,7 +150,12 @@ export function MoneyInForm({
           </Field>
         </div>
       )}
-      {asks && <CollectedBox />}
+      {asks && (
+        <GiversBox
+          title="Collected from others by this member"
+          explain="Type the collector's PSWS number above. It counts as their collection, not their own gift."
+        />
+      )}
       {asks && (
         <label className={styles.check}>
           <input type="checkbox" name="hide_name" />
@@ -209,6 +190,8 @@ export interface MoneyOutInitial {
   purpose?: Purpose;
   purpose_other?: string | null;
   method?: Method;
+  method_other?: string | null;
+  bank_name?: string | null;
   reference?: string | null;
   family_id?: number | null;
   request_id?: number | null;
@@ -249,7 +232,6 @@ export function MoneyOutForm({
   const [head, setHead] = useState<Head>(initial.head ?? HEAD_FOR(initial.purpose ?? "") ?? "zakat");
   const [headTouched, setHeadTouched] = useState(!!initial.head);
   const [family, setFamily] = useState<string>(initial.family_id ? String(initial.family_id) : "");
-  const [method, setMethod] = useState<Method>(initial.method ?? "bank");
   const [amount, setAmount] = useState<number | null>(initial.amount_paise ?? null);
   const fund = funds?.find((f) => f.head === head) ?? null;
   const over = !!fund && !!amount && amount > fund.left;
@@ -370,22 +352,17 @@ export function MoneyOutForm({
           </span>
         </label>
       )}
-      <Chips
-        name="method"
+      <HowBox
         legend="How was it paid?"
         hint="Kaise diya"
         options={choices(METHODS)}
-        value={method}
-        onChange={(v) => setMethod(v as Method)}
+        defaultMethod={initial.method ?? "bank"}
+        refs={REFS}
+        initial={initial}
       />
-      <div className={styles.grid}>
-        <Field label={REFERENCE_LABEL[method]} hint={REFERENCE_HINT[method]} name="reference">
-          <input name="reference" autoComplete="off" defaultValue={initial.reference ?? ""} />
-        </Field>
-        <Field label="Note" hint="Optional, e.g. bill number" name="note">
-          <input name="note" defaultValue={initial.note ?? ""} />
-        </Field>
-      </div>
+      <Field label="Note" hint="Optional, e.g. bill number" name="note">
+        <input name="note" defaultValue={initial.note ?? ""} />
+      </Field>
       <datalist id="places">
         {PLACES.map((p) => (
           <option key={p} value={p} />

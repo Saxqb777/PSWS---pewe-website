@@ -19,7 +19,6 @@ import {
 } from "./data";
 import {
   HEADS,
-  METHODS,
   PURPOSES,
   fyOf,
   inr,
@@ -29,6 +28,8 @@ import {
   showPhone,
   todayIST,
   type Head,
+  howPaid,
+  fromAbroad,
 } from "./labels";
 
 /**
@@ -650,8 +651,9 @@ export function moneyInChanges(m: MoneyIn, f: MoneyInFields): string | null {
     ["From", m.from_name, f.from_name],
     ["Amount", inr(m.amount_paise), inr(f.amount_paise)],
     ["For", labelOf(HEADS, m.head, m.head_other), labelOf(HEADS, f.head, f.head_other)],
-    ["How", METHODS[m.method].en, METHODS[f.method].en],
+    ["How", howPaid(m.method, m.method_other, m.bank_name), howPaid(f.method, f.method_other, f.bank_name)],
     ["Number", m.reference ?? "", f.reference ?? ""],
+    ["Sent from", fromAbroad(m.country, m.currency, m.sent_amount), fromAbroad(f.country ?? null, f.currency ?? null, f.sent_amount ?? null)],
     ["Place", m.from_place ?? "", f.from_place ?? ""],
     ["Mobile", showPhone(m.from_phone), showPhone(f.from_phone)],
     ["Note", m.note ?? "", f.note ?? ""],
@@ -671,7 +673,7 @@ export async function moneyOutChanges(
     ["Amount", inr(m.amount_paise), inr(f.amount_paise)],
     ["For", labelOf(PURPOSES, m.purpose, m.purpose_other), labelOf(PURPOSES, f.purpose, f.purpose_other)],
     ["From which money", labelOf(HEADS, m.head, m.head_other), labelOf(HEADS, f.head, f.head_other)],
-    ["How", METHODS[m.method].en, METHODS[f.method].en],
+    ["How", howPaid(m.method, m.method_other, m.bank_name), howPaid(f.method, f.method_other, f.bank_name)],
     ["Number", m.reference ?? "", f.reference ?? ""],
     ["Family", m.family_name ?? "", famName],
     ["Work", m.work_name ?? "", workName],

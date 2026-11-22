@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import { requireAccountant } from "@/lib/erp/auth";
 import { familyNames, getMoneyOut, getRequest, workNames } from "@/lib/erp/data";
 import { KINDS, labelOf } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
@@ -11,7 +11,7 @@ import { saveMoneyOut } from "../../../actions";
 export const metadata = { title: "Change a payment" };
 
 export default async function EditMoneyOut({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser("editor");
+  await requireAccountant();
   const id = toId((await params).id);
   const m = id ? await getMoneyOut(id) : null;
   if (!m) notFound();

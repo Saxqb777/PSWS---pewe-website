@@ -72,21 +72,21 @@ const STEPS: Step[] = [
   },
   {
     key: "office",
-    as: "Imran",
-    title: "Be the Treasurer",
-    how: "Imran checks the bank. His “Members' portal” page lists every payment members said they sent.",
+    as: "Accountant",
+    title: "Be the PSWS Accountant",
+    how: "Only the PSWS Accountant handles money: it checks the bank and makes every receipt. Its “Members' portal” page lists every payment members said they sent.",
     go: () => "/erp/portal",
     goLabel: "Open Members' portal",
-    done: (h) => h.me === "Imran" && h.path === "/erp/portal",
+    done: (h) => h.me === "Accountant" && h.path === "/erp/portal",
   },
   {
     key: "found",
-    as: "Imran",
+    as: "Accountant",
     title: "Find it in the bank",
     how: "On Ayaan's ₹1,000, tap “Found it: make the receipt”. Watch the live screen: the bar moves by itself.",
     go: () => "/erp/portal",
     goLabel: "Open Members' portal",
-    done: (h) => h.me === "Imran" && h.path === "/erp/portal" && h.q.has("found"),
+    done: (h) => h.me === "Accountant" && h.path === "/erp/portal" && h.q.has("found"),
   },
   {
     key: "approve",
@@ -127,7 +127,7 @@ const STEPS: Step[] = [
 ];
 
 const POINTS = 10;
-const LEVELS = ["New member", "Giver", "Treasurer's helper", "Committee pro", "PSWS champion"];
+const LEVELS = ["New member", "Giver", "Accountant's helper", "Committee pro", "PSWS champion"];
 const levelFor = (n: number) => LEVELS[Math.min(LEVELS.length - 1, Math.floor((n / STEPS.length) * (LEVELS.length - 1)))];
 const KEY = "psws-demo-tour";
 
@@ -258,7 +258,7 @@ export function TourFloat({
                 <input type="hidden" name="id" value={people[step.as] ?? ""} />
                 <input type="hidden" name="next" value={step.go(ids)} />
                 <button type="submit" className={t.go}>
-                  Be {step.as}
+                  Be {step.as === "Accountant" ? "the Accountant" : step.as}
                 </button>
               </form>
             ) : (
@@ -270,7 +270,7 @@ export function TourFloat({
               Skip
             </button>
           </div>
-          {needSwitch && <p className={t.note}>You are {me ?? "not signed in"}. This step is done as {step.as}.</p>}
+          {needSwitch && <p className={t.note}>You are {me === "Accountant" ? "the Accountant" : (me ?? "not signed in")}. This step is done as {step.as === "Accountant" ? "the Accountant" : step.as}.</p>}
         </>
       ) : (
         <div className={t.won}>
@@ -281,7 +281,7 @@ export function TourFloat({
           </div>
           <h2 className={t.title}>Tour complete</h2>
           <p className={t.how}>
-            {STEPS.length * POINTS} points. You have seen every part: giving, the Treasurer&apos;s check, approvals, collecting
+            {STEPS.length * POINTS} points. You have seen every part: giving, the Accountant&apos;s check, approvals, collecting
             from others, private help and a big giver&apos;s year.
           </p>
         </div>

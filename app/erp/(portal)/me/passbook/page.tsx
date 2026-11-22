@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
-import { collections, myPledges, passbook } from "@/lib/erp/portal";
+import { collections, myPledges, passbook, pledgeAmount } from "@/lib/erp/portal";
 import { knownYears } from "@/lib/erp/data";
 import { fyOf, inr, showDate, todayIST } from "@/lib/erp/labels";
 import { H2, Passbook, PledgeStatus } from "@/components/erp/portal-ui";
@@ -31,9 +31,12 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
             {u.member_no} · only you and the office see this
           </p>
         </div>
+        <Link href="/erp/me/statement" className={p.passStmt}>
+          Statement
+        </Link>
       </div>
       {sp.gave && (
-        <p className={styles.formDone}>Thank you. Once the Treasurer finds it in the bank, your receipt is made and it shows here.</p>
+        <p className={styles.formDone}>Thank you. Once the PSWS Accountant finds it in the bank, your receipt is made and it shows here.</p>
       )}
 
       {years.length > 1 && (
@@ -68,7 +71,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
         <Passbook lines={lines} />
       ) : (
         <p className={styles.note} style={{ marginTop: 14 }}>
-          Nothing in {fy} yet. When you give, the Treasurer makes your receipt and it appears here.
+          Nothing in {fy} yet. When you give, the Accountant makes your receipt and it appears here.
         </p>
       )}
 
@@ -81,7 +84,9 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
           <ul className={p.items}>
             {gathered.map((c) => (
               <li key={c.id}>
-                <span className={p.itemTitle}>{c.what}</span>
+                <Link href={`/erp/me/receipt/${c.id}`} className={p.itemTitle}>
+                  {c.what}
+                </Link>
                 <span className={p.itemAmt}>{inr(c.amount_paise)}</span>
                 <span className={p.itemMeta}>
                   {showDate(c.on_date)} · {c.no}
@@ -104,11 +109,11 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
                   {x.collected ? " (collected)" : ""}
                   <PledgeStatus status={x.status} />
                 </span>
-                <span className={p.itemAmt}>{inr(x.amount_paise)}</span>
+                <span className={p.itemAmt}>{pledgeAmount(x)}</span>
                 <span className={p.itemMeta}>
                   Sent {showDate(x.sent_on)}
                   {x.reference ? ` · ${x.reference}` : ""}
-                  {x.check_note ? ` · Treasurer: ${x.check_note}` : ""}
+                  {x.check_note ? ` · Accountant: ${x.check_note}` : ""}
                 </span>
                 {x.status === "waiting" && (
                   <form action={takeBackPledge.bind(null, x.id)} style={{ gridColumn: "1 / -1" }}>
