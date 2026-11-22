@@ -7,6 +7,7 @@ import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choic
 import { AmountBox, CountryField, GiversBox, HowBox, type RefLabels } from "./money-detail";
 import { PictureInput } from "./picture-input";
 import styles from "./erp.module.css";
+import { DateInput } from "./date-input";
 
 /** The forms a member fills in on their own portal. */
 
@@ -63,7 +64,7 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
       <div className={styles.grid}>
         <CountryField />
         <Field label="When?" hint="Kab bheja" name="sent_on">
-          <input name="sent_on" type="date" defaultValue={todayIST()} max={todayIST()} />
+          <DateInput name="sent_on" defaultValue={todayIST()} max={todayIST()} />
         </Field>
       </div>
       <PictureInput
@@ -137,7 +138,7 @@ export function AskForm({ action, kind: start }: { action: Action; kind: AskKind
         <div className={styles.grid}>
           <AmountInput name="target" label="How much is needed?" hint="Kitna chahiye" />
           <Field label="Open until" hint="Kab tak" name="closes_on">
-            <input name="closes_on" type="date" defaultValue={in30Days()} min={todayIST()} />
+            <DateInput name="closes_on" defaultValue={in30Days()} min={todayIST()} />
           </Field>
         </div>
       )}

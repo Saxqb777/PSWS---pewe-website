@@ -13,6 +13,7 @@ import { AmountInput, Chips, ErpForm, Field, Submit } from "@/components/erp/for
 import { PageHead, Pending, Section } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { moveMoney, saveStarting } from "./actions";
+import { DateInput } from "@/components/erp/date-input";
 
 export const metadata = { title: "Accounts" };
 
@@ -21,7 +22,7 @@ function StartingForm({ o, change }: { o: Opening | null; change: boolean }) {
     <ErpForm action={saveStarting}>
       <div className={styles.grid}>
         <Field label="Balances on" hint="The day you start counting from" name="on_date">
-          <input name="on_date" type="date" defaultValue={o?.on_date ?? todayIST()} />
+          <DateInput name="on_date" defaultValue={o?.on_date ?? todayIST()} />
         </Field>
         <span />
         <AmountInput name="cash" label="Cash in hand" hint="Counted cash" defaultPaise={o?.cash_paise || null} />
@@ -159,7 +160,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             <div className={styles.grid}>
               <AmountInput name="amount" />
               <Field label="Date" name="on_date">
-                <input name="on_date" type="date" defaultValue={todayIST()} />
+                <DateInput name="on_date" defaultValue={todayIST()} />
               </Field>
               <Field label="Note" hint="Optional, e.g. deposit slip number" name="note" wide>
                 <input name="note" autoComplete="off" />

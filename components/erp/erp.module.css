@@ -1610,3 +1610,49 @@ a.rowLink:hover {
     break-after: page;
   }
 }
+
+/* ------------------------------------------------------------ a date, day/month/year */
+
+.dateBox {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dateBox > input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.dateBtn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dateBtn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* the phone's own calendar, opened by the button; never seen itself */
+.dateBox > .datePick {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 46px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}

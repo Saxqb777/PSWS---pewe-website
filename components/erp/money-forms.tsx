@@ -16,6 +16,7 @@ import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, ChoiceWithOther, ErpForm, Field, Submit, type Choice } from "./form";
 import { AmountBox, CountryField, GiversBox, HowBox, type RefLabels } from "./money-detail";
 import styles from "./erp.module.css";
+import { DateInput } from "./date-input";
 
 type Action = (state: FormState, data: FormData) => Promise<FormState>;
 
@@ -88,7 +89,7 @@ export function MoneyInForm({
           </datalist>
         </Field>
         <Field label="Date" hint="Kab aaya" name="on_date">
-          <input name="on_date" type="date" defaultValue={initial.on_date} />
+          <DateInput name="on_date" defaultValue={initial.on_date} />
         </Field>
       </div>
       <AmountBox
@@ -252,7 +253,7 @@ export function MoneyOutForm({
         </Field>
         <AmountInput name="amount" defaultPaise={initial.amount_paise} onChange={setAmount} />
         <Field label="Date" hint="Kab diya" name="on_date">
-          <input name="on_date" type="date" defaultValue={initial.on_date} />
+          <DateInput name="on_date" defaultValue={initial.on_date} />
         </Field>
       </div>
 

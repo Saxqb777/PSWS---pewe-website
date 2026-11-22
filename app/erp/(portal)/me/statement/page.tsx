@@ -7,6 +7,7 @@ import { Passbook } from "@/components/erp/portal-ui";
 import { SOCIETY } from "@/lib/site";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
+import { DateInput } from "@/components/erp/date-input";
 
 export const metadata = { title: "My statement" };
 
@@ -48,11 +49,11 @@ export default async function Statement({ searchParams }: { searchParams: Promis
         <form className={p.pick} method="get">
           <label>
             <span>From</span>
-            <input type="date" name="from" defaultValue={from ?? thisYear.from} max={today} required />
+            <DateInput name="from" defaultValue={from ?? thisYear.from} max={today} required />
           </label>
           <label>
             <span>To</span>
-            <input type="date" name="to" defaultValue={to ?? today} max={today} required />
+            <DateInput name="to" defaultValue={to ?? today} max={today} required />
           </label>
           <button type="submit" className={styles.btn}>
             Show

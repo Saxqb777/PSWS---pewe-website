@@ -483,3 +483,8 @@ CREATE TABLE IF NOT EXISTS erp_meeting_reply (
   at         timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (meeting_id, user_id)
 );
+
+-- ---------------------------------------------------------------- minutes on the letterhead
+-- A meeting's minutes, kept with it: the objective, the discussion, the
+-- decisions, the action points and the next steps. Empty for most meetings.
+ALTER TABLE erp_meeting ADD COLUMN IF NOT EXISTS minutes jsonb;

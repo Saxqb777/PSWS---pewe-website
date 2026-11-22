@@ -1,6 +1,7 @@
 import { requireMember } from "@/lib/erp/auth";
 import { listMeetings } from "@/lib/erp/data";
 import { meetingReplies } from "@/lib/erp/portal";
+import Link from "next/link";
 import { showDay, todayIST } from "@/lib/erp/labels";
 import { H2 } from "@/components/erp/portal-ui";
 import styles from "@/components/erp/erp.module.css";
@@ -53,6 +54,11 @@ export default async function NoticesPage() {
             </span>
             <h3>{m.title}</h3>
             {m.body && <p>{m.body}</p>}
+            {m.has_minutes && (
+              <Link href={`/erp/minutes/${m.id}`} className={p.minutesLink}>
+                Read the minutes
+              </Link>
+            )}
           </article>
         ))
       ) : (

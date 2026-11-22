@@ -1414,3 +1414,15 @@
   min-height: 38px;
   font-size: 14px;
 }
+
+.minutesLink {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #1f4d35;
+  border-radius: 4px;
+}

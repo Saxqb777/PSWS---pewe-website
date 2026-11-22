@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { getMeeting } from "@/lib/erp/data";
 import { portalOn } from "@/lib/erp/flags";
 import { whoIsComing } from "@/lib/erp/portal";
+import Link from "next/link";
 import { canDo, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { MeetingForm } from "@/components/erp/forms";
@@ -31,6 +32,11 @@ export default async function MeetingPage({
   return (
     <>
       <PageHead title={m.title} sub={`${m.kind === "meeting" ? "Meeting" : "Notice"} · ${showDate(m.on_date)}`} back={{ href: "/erp/meetings", label: "Meetings and notices" }}>
+        {m.has_minutes && (
+          <Link href={`/erp/minutes/${m.id}`} className={styles.btn}>
+            Read the minutes
+          </Link>
+        )}
         <PrintButton />
       </PageHead>
       {(sp.new || sp.saved) && (

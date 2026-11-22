@@ -792,13 +792,16 @@ export interface Meeting {
   body: string | null;
   for_website: boolean;
   created_by_name: string | null;
+  /** the meeting's minutes are kept, to read on the letterhead */
+  has_minutes: boolean;
 }
 
-export type MeetingFields = Omit<Meeting, "id" | "created_by_name">;
+export type MeetingFields = Omit<Meeting, "id" | "created_by_name" | "has_minutes">;
 
 export async function listMeetings(): Promise<Meeting[]> {
   const rows = await db()`
     SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website,
+           m.minutes IS NOT NULL AS has_minutes,
            CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_meeting m LEFT JOIN erp_user u ON u.id = m.created_by ORDER BY m.on_date DESC, m.id DESC LIMIT 500`;
   return rows.map((r) => ({ ...r, id: num(r.id) }) as Meeting);
@@ -807,6 +810,7 @@ export async function listMeetings(): Promise<Meeting[]> {
 export async function getMeeting(id: number): Promise<Meeting | null> {
   const rows = await db()`
     SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.kind, m.title, m.body, m.for_website,
+           m.minutes IS NOT NULL AS has_minutes,
            CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_meeting m LEFT JOIN erp_user u ON u.id = m.created_by WHERE m.id = ${id}`;
   return rows[0] ? ({ ...rows[0], id: num(rows[0].id) } as Meeting) : null;

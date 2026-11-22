@@ -4,6 +4,7 @@ import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
 import { KindAndShare } from "./meeting-share";
 import styles from "./erp.module.css";
+import { DateInput } from "./date-input";
 
 /** The office's shorter forms. Each one is the same for adding and for changing. */
 
@@ -81,7 +82,7 @@ export function RequestForm({ action }: { action: Action }) {
       <div className={styles.grid}>
         <AmountInput name="asked" label="Amount asked" hint="Optional, if known" />
         <Field label="Asked on" hint="Kab maanga" name="asked_on">
-          <input name="asked_on" type="date" defaultValue={todayIST()} />
+          <DateInput name="asked_on" defaultValue={todayIST()} />
         </Field>
         <Field label="Details" hint="Hospital, school, kya hua" name="details" wide>
           <textarea name="details" />
@@ -106,7 +107,7 @@ export function DecideForm({ action, request }: { action: Action; request: Reque
           defaultPaise={request.approved_paise ?? request.asked_paise}
         />
         <Field label="Decided on" hint="Faisla kab hua" name="decided_on">
-          <input name="decided_on" type="date" defaultValue={todayIST()} />
+          <DateInput name="decided_on" defaultValue={todayIST()} />
         </Field>
         <Field label="Note" hint="Optional, e.g. meeting of 13 Sep" name="note" wide>
           <input name="note" defaultValue={request.decision_note ?? ""} />
@@ -147,10 +148,10 @@ export function WorkForm({ action, work, submit }: { action: Action; work?: Work
       />
       <div className={styles.grid}>
         <Field label="Started on" hint="Optional" name="started_on">
-          <input name="started_on" type="date" defaultValue={work?.started_on ?? ""} />
+          <DateInput name="started_on" defaultValue={work?.started_on ?? ""} />
         </Field>
         <Field label="Finished on" hint="Optional" name="finished_on">
-          <input name="finished_on" type="date" defaultValue={work?.finished_on ?? ""} />
+          <DateInput name="finished_on" defaultValue={work?.finished_on ?? ""} />
         </Field>
         <Field label="Notes" hint="Contractor, quotation, decisions" name="notes" wide>
           <textarea name="notes" defaultValue={work?.notes ?? ""} />
@@ -202,7 +203,7 @@ export function MeetingForm({ action, meeting, submit }: { action: Action; meeti
       <KindAndShare kind={meeting?.kind} shared={meeting?.for_website} />
       <div className={styles.grid}>
         <Field label="Date" name="on_date">
-          <input name="on_date" type="date" defaultValue={meeting?.on_date ?? todayIST()} />
+          <DateInput name="on_date" defaultValue={meeting?.on_date ?? todayIST()} />
         </Field>
         <Field label="Title" hint="e.g. Zakat committee meeting" name="title">
           <input name="title" autoComplete="off" defaultValue={meeting?.title ?? ""} />

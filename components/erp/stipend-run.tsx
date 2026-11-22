@@ -7,6 +7,7 @@ import type { FormState } from "@/lib/erp/form-state";
 import type { StipendLine } from "@/lib/erp/data";
 import { ChoiceWithOther, Chips, ErpForm, Field, Submit } from "./form";
 import styles from "./erp.module.css";
+import { DateInput } from "./date-input";
 
 /**
  * The month's stipends in one go: everyone on the stipend is ticked with
@@ -102,7 +103,7 @@ export function StipendRun({
         <>
           <div className={styles.grid}>
             <Field label="Date sent" hint="Kab bheja" name="on_date">
-              <input name="on_date" type="date" defaultValue={todayIST()} />
+              <DateInput name="on_date" defaultValue={todayIST()} />
             </Field>
             <Field label="Bank number" hint="Optional" name="reference">
               <input name="reference" autoComplete="off" />

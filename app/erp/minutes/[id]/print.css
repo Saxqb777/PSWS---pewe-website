@@ -1,0 +1,7 @@
+/* On paper, a little tighter than the election minutes, so a meeting's minutes keep to whole pages. */
+@media print {
+  .min-paper .mom-sec { margin-top: 16px; }
+  .min-paper .mom-def { padding: 6px 0; }
+  .min-paper .mom-table td { padding: 5px 9px; }
+  .min-paper .mom-foot { margin-top: 14px; }
+}
