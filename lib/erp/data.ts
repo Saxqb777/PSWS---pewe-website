@@ -323,6 +323,24 @@ export interface MoneyFilter {
   q: string | null;
 }
 
+/** The receipts between two dates, newest first, for printing together. Deleted ones are left out. */
+export async function receiptsBetween(
+  from: string,
+  to: string,
+): Promise<{ id: number; receipt_no: string; on_date: string; from_name: string; amount_paise: number }[]> {
+  const rows = await db()`
+    SELECT id, receipt_no, to_char(on_date, 'YYYY-MM-DD') AS on_date, from_name, amount_paise
+    FROM erp_money_in WHERE cancelled_at IS NULL AND on_date BETWEEN ${from} AND ${to}
+    ORDER BY on_date DESC, receipt_no DESC LIMIT 500`;
+  return rows.map((r) => ({
+    id: num(r.id),
+    receipt_no: String(r.receipt_no),
+    on_date: String(r.on_date),
+    from_name: String(r.from_name),
+    amount_paise: num(r.amount_paise),
+  }));
+}
+
 export async function listMoney(f: MoneyFilter): Promise<MoneyRow[]> {
   const like = f.q ? `%${f.q}%` : null;
   const rows = await db()`

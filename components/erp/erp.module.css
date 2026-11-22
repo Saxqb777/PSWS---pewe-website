@@ -1656,3 +1656,20 @@ a.rowLink:hover {
   opacity: 0;
   pointer-events: none;
 }
+
+.printDates {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 480px) {
+  .printDates {
+    grid-template-columns: 1fr 1fr;
+  }
+  .printDates > button {
+    grid-column: 1 / -1;
+  }
+}
