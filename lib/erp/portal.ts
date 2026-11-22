@@ -479,8 +479,13 @@ export async function addPledge(u: User, f: PledgeFields): Promise<number> {
 
 export async function withdrawPledge(u: User, id: number): Promise<string | null> {
   const rows = await db()`
-    UPDATE erp_pledge SET status = 'withdrawn' WHERE id = ${id} AND member_id = ${u.id} AND status = 'waiting' RETURNING id`;
-  return rows[0] ? null : "This can only be taken back while it waits for the Accountant.";
+    UPDATE erp_pledge SET status = 'withdrawn' WHERE id = ${id} AND member_id = ${u.id} AND status = 'waiting'
+    RETURNING amount_paise, sent_amount, currency, reference`;
+  const r = rows[0];
+  if (!r) return "This can only be taken back while it waits for the Accountant.";
+  const amount = r.amount_paise != null ? inr(num(r.amount_paise)) : foreign(Number(r.sent_amount), r.currency as string);
+  await logChange(u.id, "cancelled", "pledge", id, `Took back ${amount} they said they sent${r.reference ? ` (UTR ${r.reference})` : ""}`);
+  return null;
 }
 
 /** Money handed in by a member who gathered it from others: their effort, not their gift. */

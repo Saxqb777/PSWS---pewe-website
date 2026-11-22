@@ -1375,3 +1375,42 @@
 .tourDots i[data-on] {
   background: #1f4d35;
 }
+
+/* ------------------------------------------------------------ "typed it wrong?": two taps, never one */
+
+.takeBack {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.takeBack > summary {
+  display: inline-block;
+  padding: 4px 0;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.takeBack > summary::-webkit-details-marker {
+  display: none;
+}
+
+.takeBack form {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  color: var(--ink-2);
+}
+
+.takeBack button {
+  justify-self: start;
+  min-height: 38px;
+  font-size: 14px;
+}

@@ -116,11 +116,17 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
                   {x.check_note ? ` · Accountant: ${x.check_note}` : ""}
                 </span>
                 {x.status === "waiting" && (
-                  <form action={takeBackPledge.bind(null, x.id)} style={{ gridColumn: "1 / -1" }}>
-                    <button type="submit" className={styles.btnQuiet} style={{ minHeight: 36, fontSize: 14 }}>
-                      I typed it wrong, take it back
-                    </button>
-                  </form>
+                  <details className={p.takeBack}>
+                    <summary>Typed it wrong?</summary>
+                    <form action={takeBackPledge.bind(null, x.id)}>
+                      <span>
+                        This takes it off the Accountant&apos;s list. Then send it again with the right details.
+                      </span>
+                      <button type="submit" className={styles.btnQuiet}>
+                        Yes, take it back
+                      </button>
+                    </form>
+                  </details>
                 )}
               </li>
             ))}
