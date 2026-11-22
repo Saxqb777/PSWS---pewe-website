@@ -9,7 +9,7 @@ import p from "./portal.module.css";
 /** The portal's tabs, along the bottom where a thumb reaches. */
 const TABS = [
   { href: "/erp/me", label: "Home", hi: "Ghar" },
-  { href: "/erp/me/asks", label: "Asks", hi: "Chanda" },
+  { href: "/erp/me/asks", label: "Donate", hi: "Chanda" },
   { href: "/erp/me/passbook", label: "Passbook", hi: "Hisaab" },
   { href: "/erp/me/notices", label: "Notices", hi: "Khabar" },
   { href: "/erp/me/card", label: "Me", hi: "Main" },

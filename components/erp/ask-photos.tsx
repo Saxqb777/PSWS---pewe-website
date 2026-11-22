@@ -23,7 +23,7 @@ export function AskPhotos({
           <li key={ph.id}>
             <a href={`/erp/file/${ph.id}`} target="_blank" rel="noopener noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element -- a private photo, served behind the sign-in */}
-              <img src={`/erp/file/${ph.id}`} alt={ph.caption ?? "A photo on this ask"} loading="lazy" />
+              <img src={`/erp/file/${ph.id}`} alt={ph.caption ?? "A photo on this appeal"} loading="lazy" />
             </a>
             <span className={p.photoCap}>
               {ph.caption && <b>{ph.caption}</b>}

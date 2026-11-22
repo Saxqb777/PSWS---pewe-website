@@ -7,7 +7,7 @@ import { AutoRefresh } from "@/components/erp/portal-client";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 
-export const metadata = { title: "Asks" };
+export const metadata = { title: "Donate" };
 
 export default async function AsksPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const u = await requireMember();
@@ -18,11 +18,11 @@ export default async function AsksPage({ searchParams }: { searchParams: Promise
   return (
     <>
       {which === "open" && <AutoRefresh every={6000} />}
-      <h1 className={p.h1}>Asks</h1>
+      <h1 className={p.h1}>Donate</h1>
       <p className={p.lead}>Collections and Zakat appeals, once two approvers have said yes. The money goes only to PSWS.</p>
       <div className={styles.actions} style={{ marginBottom: 16 }}>
         <Link href="/erp/me/new" className={styles.btn}>
-          Put out an ask
+          Ask for donations
         </Link>
       </div>
       <nav className={styles.tabs} aria-label="Show">
@@ -57,7 +57,7 @@ export default async function AsksPage({ searchParams }: { searchParams: Promise
             ))}
           </ul>
         ) : (
-          <p className={styles.note}>You have not put out an ask yet.</p>
+          <p className={styles.note}>You have not asked for donations yet.</p>
         )
       ) : asks.length ? (
         asks.map((a) => <AskCard key={a.id} a={a} href={`/erp/me/asks/${a.id}`} />)

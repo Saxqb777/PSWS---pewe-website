@@ -52,7 +52,7 @@ export default async function CardPage() {
 
       <H2>For a meeting</H2>
       <p className={styles.p}>
-        The live screen shows the open asks and what is coming in, big enough for a TV.{" "}
+        The live screen shows the open appeals and what is coming in, big enough for a TV.{" "}
         <Link href="/erp/live" className={styles.link}>
           Open the live screen
         </Link>

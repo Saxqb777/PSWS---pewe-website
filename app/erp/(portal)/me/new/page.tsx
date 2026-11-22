@@ -5,7 +5,7 @@ import { AskForm } from "@/components/erp/portal-forms";
 import p from "@/components/erp/portal.module.css";
 import { postAsk } from "../actions";
 
-export const metadata = { title: "Put out an ask" };
+export const metadata = { title: "Ask for donations" };
 
 export default async function NewAskPage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
   await requireMember();
@@ -14,9 +14,9 @@ export default async function NewAskPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <Link href="/erp/me/asks" className={p.back}>
-        ← Asks
+        ← Donate
       </Link>
-      <h1 className={p.h1}>Put out an ask</h1>
+      <h1 className={p.h1}>Ask for donations</h1>
       <p className={p.lead}>A collection for a cause, a Zakat appeal for someone in need, or help for you or someone you know.</p>
       <AskForm action={postAsk} kind={kind} />
     </>

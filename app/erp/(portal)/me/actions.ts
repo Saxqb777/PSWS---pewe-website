@@ -55,7 +55,7 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
   let head_other: string | null = null;
   if (askId) {
     const a = await getAsk(askId);
-    if (!a || a.status !== "live" || !isPublicKind(a.kind)) return { error: "This ask is not open any more." };
+    if (!a || a.status !== "live" || !isPublicKind(a.kind)) return { error: "This appeal is not open any more." };
     head = a.head;
   } else {
     const h = data.get("head");
@@ -140,7 +140,7 @@ export async function addOwnPhoto(askId: number, _: FormState, data: FormData): 
   const u = await actingMember();
   const a = await getAsk(askId);
   if (!a || a.asked_by !== u.id || a.status === "withdrawn" || a.status === "declined")
-    return { error: "Photos can be added to your own open ask." };
+    return { error: "Photos can be added to your own open appeal." };
   const saved = await savePicture(u, data.get("photo"), "ask_photo", { askId, caption: clean(data.get("caption"), 120) });
   if (!saved) return { errors: { photo: "Choose a photo first." } };
   if ("error" in saved) return { errors: { photo: saved.error } };

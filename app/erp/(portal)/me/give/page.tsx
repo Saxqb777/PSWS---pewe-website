@@ -16,8 +16,8 @@ export default async function GivePage() {
       </Link>
       <h1 className={p.h1}>Give</h1>
       <p className={p.lead}>
-        To PSWS&apos;s Zakat, donations or village work. To give to one ask,{" "}
-        <Link href="/erp/me/asks">open it from Asks</Link>.
+        To PSWS&apos;s Zakat, donations or village work. To give to one appeal,{" "}
+        <Link href="/erp/me/asks">open it from Donate</Link>.
       </p>
       <PayTo />
       <GiveForm action={sendPledge.bind(null, null)} chooseFund />

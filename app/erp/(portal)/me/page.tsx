@@ -58,7 +58,7 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
           <small>Zakat, donation, village work</small>
         </Link>
         <Link href="/erp/me/new" className={p.act}>
-          Put out an ask
+          Ask for donations
           <small>Collection, Zakat, help</small>
         </Link>
       </div>
@@ -86,13 +86,13 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
         </>
       )}
 
-      <H2 link={{ href: "/erp/me/asks", label: "All asks" }}>
+      <H2 link={{ href: "/erp/me/asks", label: "All donations" }}>
         <span className={p.live}>Open now</span>
       </H2>
       {asks.length ? (
         asks.slice(0, 4).map((a) => <AskCard key={a.id} a={a} href={`/erp/me/asks/${a.id}`} />)
       ) : (
-        <p className={styles.note}>Nothing is open right now. Anyone can put out an ask; two approvers look at it first.</p>
+        <p className={styles.note}>Nothing is open right now. Anyone can ask for donations; two approvers look at it first.</p>
       )}
 
       <H2 link={{ href: "/erp/live", label: "Live screen" }}>What is happening</H2>

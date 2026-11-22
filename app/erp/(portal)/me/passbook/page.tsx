@@ -79,7 +79,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
         <>
           <H2>I collected</H2>
           <p className={styles.note} style={{ margin: "0 0 8px" }}>
-            Money you gathered from others and handed in. It counts for the ask, not as your own gift.
+            Money you gathered from others and handed in. It counts for the appeal, not as your own gift.
           </p>
           <ul className={p.items}>
             {gathered.map((c) => (

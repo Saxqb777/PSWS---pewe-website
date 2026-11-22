@@ -37,12 +37,12 @@ export default async function LiveScreen() {
           <b>{year.givers}</b>
         </div>
         <div>
-          <span>Asks open</span>
+          <span>Appeals open</span>
           <b>{year.open}</b>
         </div>
       </section>
       <div className={p.boardGrid}>
-        <section aria-label="Open asks">
+        <section aria-label="Open appeals">
           {asks.length ? (
             asks.slice(0, 5).map((a) => (
               <div key={a.id} className={p.boardAsk}>

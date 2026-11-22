@@ -14,7 +14,7 @@ import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 import { addOwnPhoto, removeOwnPhoto, sendPledge, takeBackAsk } from "../../actions";
 
-export const metadata = { title: "Ask" };
+export const metadata = { title: "Donate" };
 
 export default async function AskPage({
   params,
@@ -40,7 +40,7 @@ export default async function AskPage({
     <>
       {open && <AutoRefresh every={5000} />}
       <Link href="/erp/me/asks" className={p.back}>
-        ← Asks
+        ← Donate
       </Link>
       <p className={`${p.askKind} ${a.kind === "zakat" ? p.zakat : ""}`}>
         <span>{ASK_KINDS[a.kind].en}</span>
@@ -172,7 +172,7 @@ export default async function AskPage({
           <ShareAsk title={a.title} path={`/erp/me/asks/${a.id}`} />
         </>
       )}
-      {ended && <p className={styles.note}>This ask has ended. The office will close it and say how the money was spent.</p>}
+      {ended && <p className={styles.note}>This appeal has ended. The office will close it and say how the money was spent.</p>}
     </>
   );
 }

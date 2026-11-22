@@ -16,11 +16,11 @@ const STEPS: { tab: string | null; title: string; body: string }[] = [
   {
     tab: "/erp/me",
     title: "Home",
-    body: "Your PSWS card, the asks open now, and what is happening in the village as it happens. Tap Give to tell the office what you sent.",
+    body: "Your PSWS card, the appeals open now, and what is happening in the village as it happens. Tap Give to tell the office what you sent.",
   },
   {
     tab: "/erp/me/asks",
-    title: "Asks",
+    title: "Donate",
     body: "When a family needs help or the village needs work done, it goes up here once two approvers agree. Watch it fill, and see photos of what the money did.",
   },
   {

@@ -123,7 +123,7 @@ export default async function Statement({ searchParams }: { searchParams: Promis
             {gathered.length > 0 && (
               <>
                 <h3 className={p.stmtSub}>Collected from others and handed in: {inr(handedIn)}</h3>
-                <p className={p.stmtSmall}>This counts for the ask it was for, not as your own gift.</p>
+                <p className={p.stmtSmall}>This counts for the appeal it was for, not as your own gift.</p>
                 <table className={p.pass}>
                   <tbody>
                     {gathered.map((c) => (
