@@ -1,3 +1,5 @@
+import { COUNTRIES as WORLD } from "@/lib/countries";
+
 /**
  * The words the office screens use, in English with the Hinglish the
  * committee speaks underneath, and the small helpers every screen needs:
@@ -52,8 +54,12 @@ export function howPaid(method: Method, other?: string | null, bank?: string | n
 
 /* ------------------------------------------------------------------ money from abroad */
 
-/** Where members send money from; anything else can be typed. India is the usual and is never written down. */
-export const COUNTRIES = [
+/**
+ * Where money was sent from, picked from a list so nobody types it a new way
+ * each time. Where PSWS people are come first, then every country A to Z.
+ * India is the usual and is never written down.
+ */
+export const TOP_COUNTRIES = [
   "India",
   "United Arab Emirates",
   "Saudi Arabia",
@@ -63,9 +69,11 @@ export const COUNTRIES = [
   "Bahrain",
   "United Kingdom",
   "United States",
-  "Canada",
-  "Australia",
 ];
+export const OTHER_COUNTRIES = WORLD.map((c) => c.name)
+  .filter((n) => !TOP_COUNTRIES.includes(n))
+  .sort((a, b) => a.localeCompare(b));
+export const isCountry = (name: string) => TOP_COUNTRIES.includes(name) || OTHER_COUNTRIES.includes(name);
 
 /** Currencies a gift may be sent in. The books are in rupees. */
 export const CURRENCIES: Record<string, string> = {

@@ -1,5 +1,5 @@
 import "server-only";
-import { CURRENCIES, clean, type Method } from "./labels";
+import { CURRENCIES, clean, isCountry, type Method } from "./labels";
 
 /**
  * The fuller details of how money came or went, read the same way from a
@@ -38,8 +38,9 @@ export function readDetail(
   const bank_name = method === "bank" ? clean(data.get("bank_name"), 80) : null;
   if (!abroad) return { method_other, bank_name, country: null, currency: null, sent_amount: null };
 
-  const typed = clean(data.get("country"), 60);
-  const country = typed && !/^india$/i.test(typed) ? typed : null;
+  const picked = clean(data.get("country"), 60);
+  if (picked && !isCountry(picked)) errors.country = "Pick the country from the list.";
+  const country = picked && picked !== "India" && isCountry(picked) ? picked : null;
   const code = String(data.get("currency") ?? "INR").trim().toUpperCase();
   if (!(code in CURRENCIES)) errors.currency = "Pick the currency.";
   const currency = code !== "INR" && code in CURRENCIES ? code : null;

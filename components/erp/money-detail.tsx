@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { COUNTRIES, CURRENCIES, type Method } from "@/lib/erp/labels";
+import { CURRENCIES, OTHER_COUNTRIES, TOP_COUNTRIES, isCountry, type Method } from "@/lib/erp/labels";
 import { AmountInput, ChoiceWithOther, Field, type Choice } from "./form";
 import styles from "./erp.module.css";
 
@@ -142,15 +142,29 @@ export function AmountBox({
 }
 
 /** The country it was sent from. India unless they say otherwise: many send from the Gulf, in rupees or not. */
+/** Picked from a list: where PSWS people are first, then every country A to Z. */
 export function CountryField({ initial }: { initial?: string | null }) {
+  const now = initial ?? "India";
   return (
     <Field label="Sent from" hint="Kis desh se" name="country">
-      <input name="country" list="psws-countries" autoComplete="off" defaultValue={initial ?? "India"} />
-      <datalist id="psws-countries">
-        {COUNTRIES.map((c) => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
+      <select name="country" defaultValue={now}>
+        {/* a country saved before the list, kept so a change does not lose it */}
+        {!isCountry(now) && <option value={now}>{now}</option>}
+        <optgroup label="Where PSWS people are">
+          {TOP_COUNTRIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </optgroup>
+        <optgroup label="All countries">
+          {OTHER_COUNTRIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </optgroup>
+      </select>
     </Field>
   );
 }
