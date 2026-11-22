@@ -43,6 +43,9 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHead title="Money" sub={editor ? undefined : "Only the PSWS Accountant records money. Everyone in the office sees it here."}>
+        <Link href={`/erp/money/print?${exportQs}`} className={styles.btnQuiet}>
+          Print receipts
+        </Link>
         {editor && (
           <>
             <Link href="/erp/money/in/new" className={styles.btn}>

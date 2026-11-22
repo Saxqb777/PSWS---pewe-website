@@ -1539,3 +1539,74 @@ a.rowLink:hover {
     break-inside: avoid;
   }
 }
+
+/* ------------------------------------------------------------ printing several receipts together */
+
+.pickBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+
+.pickList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-strong);
+}
+
+.pickList li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.pickList label {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 2px;
+  cursor: pointer;
+}
+
+.pickList input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+}
+
+.pickList b {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pickList small {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.pickAmt {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.receiptSheet {
+  display: grid;
+  gap: 20px;
+}
+
+@media print {
+  .receiptSheet {
+    gap: 10mm;
+  }
+  .receiptSheet > article {
+    break-inside: avoid;
+    max-width: none;
+  }
+  /* two to a sheet; no empty sheet after the last */
+  .receiptSheet > article:nth-child(2n):not(:last-child) {
+    break-after: page;
+  }
+}
