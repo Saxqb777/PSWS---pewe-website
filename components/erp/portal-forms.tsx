@@ -21,8 +21,8 @@ const PAID_BY: Choice[] = [
 ];
 
 const REFS: RefLabels = {
-  upi: ["UPI number", "The 12-digit number in the payment message"],
-  bank: ["Bank number (UTR)", "From the bank's message"],
+  upi: ["UTR / UPI transaction ID", "The 12 digits. GPay: open the payment, UPI transaction ID. PhonePe: UTR"],
+  bank: ["UTR / reference number", "In the bank's SMS or app, after the transfer"],
   cash: ["Who did you give it to?", "And where"],
   cheque: ["Cheque number", "And the bank"],
   other: ["Number or note", "Anything that helps the Accountant find it"],

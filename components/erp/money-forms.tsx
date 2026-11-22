@@ -24,8 +24,8 @@ const choices = <K extends string>(o: Record<K, { en: string; hi: string }>, key
 
 const REFS: RefLabels = {
   cash: ["Number", "Not needed for cash"],
-  upi: ["UPI number", "From the UPI message"],
-  bank: ["Bank number (UTR)", "From the bank message"],
+  upi: ["UTR / UPI transaction ID", "The 12 digits from GPay or PhonePe"],
+  bank: ["UTR / reference number", "From the bank statement or message"],
   cheque: ["Cheque number", "Cheque number and bank"],
   other: ["Number", "Optional"],
 };

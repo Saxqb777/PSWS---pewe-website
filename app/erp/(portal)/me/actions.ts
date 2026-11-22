@@ -72,7 +72,7 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
   if (!detail.currency && !amount) errors.amount = "Type the amount in numbers, e.g. 1000.";
   const reference = clean(data.get("reference"), 120);
   if ((method === "upi" || method === "bank") && !reference)
-    errors.reference = "Type the number from the payment message, so the Accountant can find it.";
+    errors.reference = "Type the UTR, the 12-digit number of the payment, so the Accountant can find it.";
   const sent_on = String(data.get("sent_on") ?? "");
   if (!isDate(sent_on) || sent_on > todayIST()) errors.sent_on = "Pick the day you sent it.";
   // money gathered from others: counts for the ask and as their collection, not as their own gift

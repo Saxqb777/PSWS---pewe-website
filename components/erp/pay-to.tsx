@@ -32,7 +32,7 @@ export async function PayTo() {
       </div>
       <ol className={p.steps}>
         <li>Pay PSWS the usual way: GPay, bank transfer, cash or cheque.</li>
-        <li>Then tell us below, with the number from the payment message, and a screenshot if you have one.</li>
+        <li>Then tell us below, with the UTR (the 12-digit number of the payment), and a screenshot if you have one.</li>
         <li>The PSWS Accountant finds it in the bank and your receipt is made. Only then does it count.</li>
       </ol>
     </>
