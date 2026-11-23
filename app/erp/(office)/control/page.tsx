@@ -44,7 +44,7 @@ const PAGES: { group: string; note?: string; links: [string, string][] }[] = [
       ["Money", "/erp/money"],
       ["Accounts", "/erp/accounts"],
       ["Families", "/erp/families"],
-      ["Monthly help", "/erp/stipends"],
+      ["Monthly Stipend", "/erp/stipends"],
       ["Village works", "/erp/works"],
       ["Members", "/erp/members"],
       ["Meetings and notices", "/erp/meetings"],
@@ -107,8 +107,13 @@ export default async function ControlRoom({
             PSWS Accountant
           </h2>
           <p className={styles.p}>
-            One account for the job. Only it records money in and out, and confirms members&apos; gifts against the bank.
+            One account for the job. It records money in and out, and confirms members&apos; gifts against the bank.
             Everyone else in the office sees the money and cannot add to it.
+          </p>
+          <p className={styles.p}>
+            <strong>You can do the Accountant&apos;s work from your own login too</strong>, whoever holds the account: money
+            received and paid, finding members&apos; gifts in the bank, receipts. It is written to Who changed what as Office,
+            never as the Accountant.
           </p>
           <p className={styles.p}>
             <strong>Held by {acc.holder_name ?? "you"}</strong>

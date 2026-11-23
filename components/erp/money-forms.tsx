@@ -274,7 +274,7 @@ export function MoneyOutForm({
       />
       {purpose === "stipend" && !request && (
         <p className={styles.note}>
-          For regular monthly help, use the Monthly help page: it pays everyone at once and never pays a family twice in
+          For a regular monthly stipend, use the Monthly Stipend page: it pays everyone at once and never pays a family twice in
           a month.
         </p>
       )}

@@ -38,7 +38,7 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
     return `/erp/money?${p}`;
   };
   const exportQs = new URLSearchParams({ fy, ...(month ? { month } : {}) });
-  const editor = handlesMoney(u.role);
+  const editor = handlesMoney(u);
 
   return (
     <>

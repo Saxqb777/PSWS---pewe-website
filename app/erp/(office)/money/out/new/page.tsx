@@ -27,14 +27,19 @@ export default async function NewMoneyOut({ searchParams }: { searchParams: Prom
   const work = toId(sp.work) ? await getWork(toId(sp.work)!) : null;
 
   if (req && fam && (req.status === "approved" || req.status === "waiting")) {
+    // Zakat medical help goes straight to the hospital, as per its bill
+    const hospital = req.kind === "medical" ? req.hospital : null;
     Object.assign(initial, {
       family_id: fam.id,
       purpose: req.kind,
       amount_paise: req.approved_paise ? Math.max(req.approved_paise - req.paid_paise, 0) || null : null,
+      ...(hospital
+        ? { paid_to: hospital, head: "zakat" as const, note: `Zakat medical help for ${fam.name}, paid to the hospital as per the bill` }
+        : {}),
     });
     request = {
       id: req.id,
-      label: `${labelOf(KINDS, req.kind, req.kind_other)}${req.approved_paise ? `, approved ${inr(req.approved_paise)}` : ""}${req.paid_paise ? `, ${inr(req.paid_paise)} paid so far` : ""}`,
+      label: `${labelOf(KINDS, req.kind, req.kind_other)}${hospital ? ` at ${hospital}` : ""}${req.approved_paise ? `, approved ${inr(req.approved_paise)}` : ""}${req.paid_paise ? `, ${inr(req.paid_paise)} paid so far` : ""}`,
     };
     title = `Help given to ${fam.name}`;
     back = { href: `/erp/families/${fam.id}`, label: fam.name };

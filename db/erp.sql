@@ -488,3 +488,30 @@ CREATE TABLE IF NOT EXISTS erp_meeting_reply (
 -- A meeting's minutes, kept with it: the objective, the discussion, the
 -- decisions, the action points and the next steps. Empty for most meetings.
 ALTER TABLE erp_meeting ADD COLUMN IF NOT EXISTS minutes jsonb;
+
+-- ---------------------------------------------------------------- Zakat medical help
+-- A medical request: the hospital, whether the patient is admitted (IPD; the
+-- Zakat slab covers only them) and the hospital's bill or estimate. The amount
+-- asked is then the Zakat share by the slab, paid straight to the hospital.
+ALTER TABLE erp_request ADD COLUMN IF NOT EXISTS hospital   text;
+ALTER TABLE erp_request ADD COLUMN IF NOT EXISTS admitted   boolean;
+ALTER TABLE erp_request ADD COLUMN IF NOT EXISTS bill_paise bigint CHECK (bill_paise IS NULL OR bill_paise > 0);
+
+-- ---------------------------------------------------------------- promised, not sent yet
+-- The Ramadan sheet's "Committed": a gift promised to an appeal, by a member
+-- for themselves or for someone they know. It counts as promised until the
+-- money is sent and recorded ("sent", with that record), or it is dropped.
+CREATE TABLE IF NOT EXISTS erp_promise (
+  id           bigserial   PRIMARY KEY,
+  ask_id       bigint      NOT NULL REFERENCES erp_ask(id),
+  member_id    bigint      NOT NULL REFERENCES erp_user(id),
+  giver_name   text,                               -- empty: the member's own promise
+  country      text,
+  amount_paise bigint      NOT NULL CHECK (amount_paise > 0),
+  note         text,
+  status       text        NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'sent', 'dropped')),
+  pledge_id    bigint      REFERENCES erp_pledge(id),
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  closed_at    timestamptz
+);
+CREATE INDEX IF NOT EXISTS erp_promise_ask ON erp_promise (ask_id, status);

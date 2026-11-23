@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { db, num } from "./db";
-import { canDo, type Role } from "./labels";
+import { OWNER_PHONE, canDo, handlesMoney, type Role } from "./labels";
 import { demoOn, portalOn } from "./flags";
 
 /**
@@ -128,10 +128,10 @@ export async function actingMember(): Promise<User & { member_no: string }> {
   return requireMember();
 }
 
-/** For everything that adds or changes money: only the PSWS Accountant. Everyone else sees the money. */
+/** For everything that adds or changes money: the PSWS Accountant, or the website owner covering for them. Everyone else sees the money. */
 export async function requireAccountant(): Promise<User> {
   const u = await requireUser();
-  if (u.role !== "accountant") redirect("/erp/money?accountant=1");
+  if (!handlesMoney(u)) redirect("/erp/money?accountant=1");
   return u;
 }
 
@@ -432,7 +432,7 @@ export async function createFirstAdmin(name: string, phone: string, post: string
  * with access, and as "Office" in the history and on entries. Changing
  * ERP_OWNER_KEY in Vercel switches the link off.
  */
-export const OWNER_PHONE = "owner";
+export { OWNER_PHONE };
 /** The PSWS Accountant's account: one for the job, signed in to with the word "accountant". */
 export const ACCOUNTANT_PHONE = "accountant";
 const OWNER_DIGEST = "0830b63bec76e8cea778cdc3c7ff6988c2877eb9bc8aa87126bff0cbfecef53f";

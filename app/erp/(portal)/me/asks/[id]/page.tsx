@@ -6,13 +6,14 @@ import { ASK_KINDS, canDo, inr, oneGiver, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskStatus, H2, PledgeStatus, Raised } from "@/components/erp/portal-ui";
 import { AutoRefresh, ShareAsk } from "@/components/erp/portal-client";
-import { GiveForm, PhotoForm } from "@/components/erp/portal-forms";
+import { GiveForm, PhotoForm, PromiseForm } from "@/components/erp/portal-forms";
+import { collectionStatus, myPromises } from "@/lib/erp/collection";
 import { AskPhotos } from "@/components/erp/ask-photos";
 import { askPhotos } from "@/lib/erp/files";
 import { PayTo } from "@/components/erp/pay-to";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
-import { addOwnPhoto, removeOwnPhoto, sendPledge, takeBackAsk } from "../../actions";
+import { addOwnPhoto, dropOwnPromise, promiseGift, removeOwnPhoto, sendPledge, takeBackAsk } from "../../actions";
 
 export const metadata = { title: "Donate" };
 
@@ -35,6 +36,20 @@ export default async function AskPage({
   const mine = pledges.filter((x) => x.ask_id === a.id);
   const open = a.status === "live" && isPublicKind(a.kind);
   const ended = open && a.closes_on && a.closes_on < new Date().toISOString().slice(0, 10);
+  // a drive's money: in the bank, being checked, promised; and this member's own promises
+  const shown = (a.status === "live" || a.status === "closed") && isPublicKind(a.kind);
+  const [status, promises] = shown
+    ? await Promise.all([collectionStatus(a.id, a.target_paise), myPromises(u.id, a.id)])
+    : [null, []];
+  const openPromises = promises
+    .filter((x) => x.status === "open")
+    .map((x) => ({
+      id: x.id,
+      label: `${x.giver_name ?? "My promise"} · ${inr(x.amount_paise)}`,
+      giver_name: x.giver_name,
+      country: x.country,
+      amount_paise: x.amount_paise,
+    }));
 
   return (
     <>
@@ -76,6 +91,12 @@ export default async function AskPage({
         <div style={{ margin: "18px 0 6px" }}>
           <Raised a={a} />
         </div>
+      )}
+      {status && (
+        <p className={styles.note} style={{ marginTop: 6 }}>
+          In the bank {inr(status.inBank)} · being checked {inr(status.checking)} · promised {inr(status.promised)} ·{" "}
+          <Link href={`/erp/collection/${a.id}`}>Collection status</Link>
+        </p>
       )}
 
       {collectors.length > 0 && isPublicKind(a.kind) && (
@@ -163,11 +184,47 @@ export default async function AskPage({
         </>
       )}
 
+      {promises.length > 0 && (
+        <>
+          <H2>My promises</H2>
+          <ul className={p.items}>
+            {promises.map((x) => (
+              <li key={x.id}>
+                <span className={p.itemTitle}>{x.giver_name ? `For ${x.giver_name}` : "My promise"}</span>
+                <span className={p.itemAmt}>{inr(x.amount_paise)}</span>
+                <span className={p.itemMeta}>
+                  {x.status === "open" ? "Promised, not sent yet" : "Sent and recorded"}
+                  {x.country ? ` · lives in ${x.country}` : ""}
+                  {x.note ? ` · ${x.note}` : ""}
+                </span>
+                {x.status === "open" && (
+                  <details className={p.takeBack}>
+                    <summary>Not coming?</summary>
+                    <form action={dropOwnPromise.bind(null, a.id, x.id)}>
+                      <span>It stops counting as promised.</span>
+                      <button type="submit" className={styles.btnQuiet}>
+                        Yes, drop it
+                      </button>
+                    </form>
+                  </details>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {open && !ended && (
         <>
           <H2>Give to this</H2>
           <PayTo />
-          <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} />
+          <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} promises={openPromises} />
+          <H2>Promised, not sent yet?</H2>
+          <p className={styles.note}>
+            Record a promise, yours or someone&apos;s you know. It shows as promised on the collection status until the
+            money is sent; then record it above and pick the promise.
+          </p>
+          <PromiseForm action={promiseGift.bind(null, a.id)} />
           <H2>Tell others</H2>
           <ShareAsk title={a.title} path={`/erp/me/asks/${a.id}`} />
         </>

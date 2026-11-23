@@ -1673,3 +1673,32 @@ a.rowLink:hover {
     grid-column: 1 / -1;
   }
 }
+
+/* ------------------------------------------------------------ Zakat medical slab */
+.slabShare {
+  margin: 4px 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--ink);
+  background: var(--card);
+  font-size: 15px;
+}
+
+.slab {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.slab th {
+  text-align: left;
+  font-weight: 600;
+  padding: 6px 8px 6px 0;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.slab td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}

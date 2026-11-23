@@ -16,7 +16,7 @@ export default async function OfficePortal({ searchParams }: { searchParams: Pro
   const u = await requireUser("editor");
   if (!portalOn()) notFound();
   const sp = await searchParams;
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const [toApprove, toCheck, open, waiting, messages] = await Promise.all([
     asksForApprover(u.id),
     pledgesToCheck(),

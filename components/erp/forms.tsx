@@ -1,7 +1,8 @@
-import { KINDS, PLACES, WORK_STATUSES, todayIST, type Role } from "@/lib/erp/labels";
+import { PLACES, WORK_STATUSES, inr, todayIST, type Role } from "@/lib/erp/labels";
+import { zakatMedical } from "@/lib/erp/zakat";
 import type { Family, Meeting, Member, Request, Work } from "@/lib/erp/data";
 import type { FormState } from "@/lib/erp/form-state";
-import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
+import { AmountInput, Chips, ErpForm, Field, Submit, type Choice } from "./form";
 import { KindAndShare } from "./meeting-share";
 import styles from "./erp.module.css";
 import { DateInput } from "./date-input";
@@ -50,13 +51,13 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
           <label className={styles.check} style={{ marginBottom: 14 }}>
             <input type="checkbox" name="stipend_active" defaultChecked={family?.stipend_active ?? false} />
             <span>
-              <strong>Gets monthly help</strong>
+              <strong>Gets a monthly stipend</strong>
               <span className={styles.hint} style={{ display: "block" }}>
                 Har maheene paisa milta hai
               </span>
             </span>
           </label>
-          <AmountInput name="stipend" label="Monthly help amount" hint="Har maheene kitna" defaultPaise={family?.stipend_paise} />
+          <AmountInput name="stipend" label="Monthly stipend amount" hint="Har maheene kitna" defaultPaise={family?.stipend_paise} />
         </div>
       </div>
       <Places />
@@ -69,42 +70,23 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
 
 /* ------------------------------------------------------------ a request for help */
 
-export function RequestForm({ action }: { action: Action }) {
-  return (
-    <ErpForm action={action} resetOnDone>
-      <ChoiceWithOther
-        name="kind"
-        legend="What do they need?"
-        hint="Kis cheez ki zaroorat"
-        options={choices(KINDS)}
-        otherLabel="What do they need?"
-      />
-      <div className={styles.grid}>
-        <AmountInput name="asked" label="Amount asked" hint="Optional, if known" />
-        <Field label="Asked on" hint="Kab maanga" name="asked_on">
-          <DateInput name="asked_on" defaultValue={todayIST()} />
-        </Field>
-        <Field label="Details" hint="Hospital, school, kya hua" name="details" wide>
-          <textarea name="details" />
-        </Field>
-      </div>
-      <div className={styles.actions}>
-        <Submit>Save the request</Submit>
-      </div>
-    </ErpForm>
-  );
-}
-
 export function DecideForm({ action, request }: { action: Action; request: Request }) {
   const stipend = request.kind === "stipend";
+  const slab = request.kind === "medical" && request.bill_paise ? zakatMedical(request.bill_paise) : null;
   return (
     <ErpForm action={action}>
+      {slab != null && request.bill_paise && (
+        <p className={styles.slabShare}>
+          Bill {inr(request.bill_paise)}{request.hospital ? ` at ${request.hospital}` : ""}. By the Zakat slab: <b>Zakat pays {inr(slab)}</b>,
+          the family pays {inr(Math.max(request.bill_paise - slab, 0))}. More than the slab needs a reason in the note.
+        </p>
+      )}
       <div className={styles.grid}>
         <AmountInput
           name="approved"
           label={stipend ? "Approved each month" : "Amount approved"}
           hint={stipend ? "Har maheene kitna" : "Kitna manzoor hua"}
-          defaultPaise={request.approved_paise ?? request.asked_paise}
+          defaultPaise={request.approved_paise ?? slab ?? request.asked_paise}
         />
         <Field label="Decided on" hint="Faisla kab hua" name="decided_on">
           <DateInput name="decided_on" defaultValue={todayIST()} />

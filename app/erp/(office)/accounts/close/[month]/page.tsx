@@ -15,7 +15,7 @@ export default async function MonthPage({ params }: { params: Promise<{ month: s
   const u = await requireUser();
   const { month } = await params;
   if (!/^\d{4}-\d{2}$/.test(month) || month >= thisMonthIST()) notFound();
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const [months, books, pending] = await Promise.all([listMonths(), monthFigures(month), openApproval(`month:${month}`)]);
   const row = months.get(month);
   const closed = row?.status === "closed";

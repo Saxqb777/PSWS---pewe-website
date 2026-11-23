@@ -455,7 +455,7 @@ export async function getFamily(id: number): Promise<Family | null> {
 }
 
 const familySummary = (f: FamilyFields) =>
-  `Family ${f.name}${f.place ? ", " + f.place : ""}${f.stipend_active && f.stipend_paise ? `, monthly help ${inr(f.stipend_paise)}` : ""}`;
+  `Family ${f.name}${f.place ? ", " + f.place : ""}${f.stipend_active && f.stipend_paise ? `, monthly stipend ${inr(f.stipend_paise)}` : ""}`;
 
 export async function addFamily(u: User, f: FamilyFields): Promise<number> {
   const rows = await db()`
@@ -497,6 +497,10 @@ export interface Request {
   decided_on: string | null;
   decision_note: string | null;
   paid_paise: number;
+  /** a medical request: the hospital, whether the patient is admitted, and the bill */
+  hospital: string | null;
+  admitted: boolean | null;
+  bill_paise: number | null;
 }
 
 const asRequest = (r: Record<string, unknown>) =>
@@ -507,6 +511,7 @@ const asRequest = (r: Record<string, unknown>) =>
     asked_paise: r.asked_paise == null ? null : num(r.asked_paise),
     approved_paise: r.approved_paise == null ? null : num(r.approved_paise),
     paid_paise: num(r.paid_paise),
+    bill_paise: r.bill_paise == null ? null : num(r.bill_paise),
   }) as Request;
 
 export async function listRequests(opts: { familyId?: number; open?: boolean }): Promise<Request[]> {
@@ -515,6 +520,7 @@ export async function listRequests(opts: { familyId?: number; open?: boolean }):
   const rows = await db()`
     SELECT r.id, r.family_id, f.name AS family_name, r.kind, r.kind_other, to_char(r.asked_on, 'YYYY-MM-DD') AS asked_on, r.asked_paise,
            r.details, r.status, r.approved_paise, to_char(r.decided_on, 'YYYY-MM-DD') AS decided_on, r.decision_note,
+           r.hospital, r.admitted, r.bill_paise,
            (SELECT coalesce(sum(amount_paise), 0) FROM erp_money_out m WHERE m.request_id = r.id AND m.cancelled_at IS NULL) AS paid_paise
     FROM erp_request r JOIN erp_family f ON f.id = r.family_id
     WHERE (${fam}::bigint IS NULL OR r.family_id = ${fam})
@@ -528,6 +534,7 @@ export async function getRequest(id: number): Promise<Request | null> {
   const rows = await db()`
     SELECT r.id, r.family_id, f.name AS family_name, r.kind, r.kind_other, to_char(r.asked_on, 'YYYY-MM-DD') AS asked_on, r.asked_paise,
            r.details, r.status, r.approved_paise, to_char(r.decided_on, 'YYYY-MM-DD') AS decided_on, r.decision_note,
+           r.hospital, r.admitted, r.bill_paise,
            (SELECT coalesce(sum(amount_paise), 0) FROM erp_money_out m WHERE m.request_id = r.id AND m.cancelled_at IS NULL) AS paid_paise
     FROM erp_request r JOIN erp_family f ON f.id = r.family_id WHERE r.id = ${id}`;
   return rows[0] ? asRequest(rows[0]) : null;
@@ -542,15 +549,20 @@ export async function addRequest(
     asked_on: string;
     asked_paise: number | null;
     details: string | null;
+    hospital?: string | null;
+    admitted?: boolean | null;
+    bill_paise?: number | null;
   },
 ): Promise<number> {
   const rows = await db()`
-    INSERT INTO erp_request (family_id, kind, kind_other, asked_on, asked_paise, details, created_by)
-    VALUES (${f.family_id}, ${f.kind}, ${f.kind_other}, ${f.asked_on}, ${f.asked_paise}, ${f.details}, ${u.id})
+    INSERT INTO erp_request (family_id, kind, kind_other, asked_on, asked_paise, details, hospital, admitted, bill_paise, created_by)
+    VALUES (${f.family_id}, ${f.kind}, ${f.kind_other}, ${f.asked_on}, ${f.asked_paise}, ${f.details}, ${f.hospital ?? null},
+            ${f.admitted ?? null}, ${f.bill_paise ?? null}, ${u.id})
     RETURNING id, (SELECT name FROM erp_family WHERE id = ${f.family_id}) AS family_name`;
   const id = num(rows[0].id);
   await logChange(u.id, "added", "request", id,
-    `Request from ${rows[0].family_name}: ${labelOf(KINDS, f.kind, f.kind_other)}${f.asked_paise ? ", asked " + inr(f.asked_paise) : ""}`);
+    `Request from ${rows[0].family_name}: ${labelOf(KINDS, f.kind, f.kind_other)}${f.hospital ? ` at ${f.hospital}` : ""}` +
+      `${f.bill_paise ? `, bill ${inr(f.bill_paise)}` : ""}${f.asked_paise ? ", asked " + inr(f.asked_paise) : ""}`);
   return id;
 }
 
@@ -626,7 +638,7 @@ export async function payStipends(
   const last = num(reserved[0].last_no);
   const first = last - todo.length + 1;
   const vouchers = todo.map((_, i) => `P/${fy}/${pad(first + i)}`);
-  const note = `Monthly help for ${showMonth(month)}`;
+  const note = `Monthly stipend for ${showMonth(month)}`;
 
   const rows = await db()`
     INSERT INTO erp_money_out
@@ -644,7 +656,7 @@ export async function payStipends(
   await db()`UPDATE erp_request SET status = 'done', updated_at = now(), updated_by = ${u.id}
              WHERE kind = 'stipend' AND status = 'approved' AND family_id = ANY(${todo.map((l) => l.family_id)}::bigint[])`;
   await logChange(u.id, "paid", "stipend", null,
-    `Monthly help for ${showMonth(month)}: ${rows.length} families, ${inr(total)} (${vouchers[0]} to ${vouchers[vouchers.length - 1]})`);
+    `Monthly stipend for ${showMonth(month)}: ${rows.length} families, ${inr(total)} (${vouchers[0]} to ${vouchers[vouchers.length - 1]})`);
   return rows.length;
 }
 
@@ -1071,7 +1083,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
           LEFT JOIN erp_work w ON w.id = o.work_id
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, voucher_no`;
       return {
-        columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Number", "Family", "Work", "Monthly help for", "Note", "Entered by", "Cancelled", "Why cancelled"],
+        columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Number", "Family", "Work", "Monthly stipend for", "Note", "Entered by", "Cancelled", "Why cancelled"],
         rows: rows.map((r) => [r.voucher_no, r.d, r.paid_to, rupees(r.amount_paise), labelOf(PURPOSES, r.purpose as string, r.purpose_other as string | null),
           labelOf(HEADS, r.head as string, r.head_other as string | null),
           howPaid(r.method as Method, r.method_other as string | null, r.bank_name as string | null), r.reference, r.family, r.work,
@@ -1081,7 +1093,7 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
     case "families": {
       const rows = await listFamilies(fy, null, "all");
       return {
-        columns: ["Name", "Place", "Mobile", "People", "Monthly help", "Monthly help (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
+        columns: ["Name", "Place", "Mobile", "People", "Monthly stipend", "Monthly stipend (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
         rows: rows.map((r) => [r.name, r.place, csvPhone(r.phone), r.people, r.stipend_active ? "Yes" : "", rupees(r.stipend_paise),
           rupees(r.helped_this_year), r.last_help, r.waiting, r.active ? "Yes" : "No", r.notes]),
       };

@@ -27,7 +27,7 @@ export default async function MoneyOutPage({
   const sp = await searchParams;
   const pending = m.cancelled_at ? null : await openApproval(`money_out:${m.id}`);
   const req = m.request_id ? await getRequest(m.request_id) : null;
-  const editor = handlesMoney(u.role);
+  const editor = handlesMoney(u);
 
   return (
     <>

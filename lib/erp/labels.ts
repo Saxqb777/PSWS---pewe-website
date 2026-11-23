@@ -13,20 +13,20 @@ type Labelled<K extends string> = Record<K, { en: string; hi: string }>;
 /** What money came in for, or went out of. */
 export const HEADS = {
   zakat: { en: "Zakat", hi: "Zakat" },
-  donation: { en: "Donation (Sadaqah)", hi: "Sadaqah, atiya" },
-  development: { en: "Village work", hi: "Gaon ke kaam" },
+  donation: { en: "Donation", hi: "Atiya, daan" },
+  development: { en: "Village Work", hi: "Gaon ke kaam" },
   other: { en: "Other", hi: "Baaki" },
 } satisfies Labelled<string>;
 export type Head = keyof typeof HEADS;
 
 /** What a payment was for. */
 export const PURPOSES = {
-  stipend: { en: "Monthly help", hi: "Maheena" },
+  stipend: { en: "Monthly Stipend", hi: "Maheena" },
   medical: { en: "Medical", hi: "Ilaaj" },
-  education: { en: "Education", hi: "Padhai" },
-  livelihood: { en: "Help to earn", hi: "Rozgaar" },
+  education: { en: "Education", hi: "Padhai, hunar ke course" },
+  livelihood: { en: "Livelihood", hi: "Rozgaar: jaal, thela, auzaar" },
   emergency: { en: "Emergency", hi: "Aafat" },
-  works: { en: "Village works", hi: "Gaon ka kaam" },
+  works: { en: "Village Works", hi: "Gaon ka kaam" },
   office: { en: "Office and running costs", hi: "Daftar ka kharcha" },
   bank: { en: "Bank charges", hi: "Bank charges" },
   other: { en: "Other", hi: "Baaki" },
@@ -113,12 +113,48 @@ export function oneGiver(x: { collected: boolean; people: number | null; givers:
   return x.collected && x.people === 1 && x.givers?.length === 1 ? x.givers[0] : null;
 }
 
+/**
+ * Indian banks, for the bank a transfer came from or went to: PSWS's own bank
+ * first, then the ones most use, then the rest A to Z. Anything else is typed.
+ */
+export const BANKS = [
+  "Bank of India",
+  "State Bank of India",
+  "Canara Bank",
+  "ICICI Bank",
+  "HDFC Bank",
+  "Airtel Payments Bank",
+  "AU Small Finance Bank",
+  "Axis Bank",
+  "Bank of Baroda",
+  "Bank of Maharashtra",
+  "Central Bank of India",
+  "Federal Bank",
+  "IDBI Bank",
+  "IDFC First Bank",
+  "India Post Payments Bank",
+  "Indian Bank",
+  "Indian Overseas Bank",
+  "IndusInd Bank",
+  "Karnataka Bank",
+  "Kotak Mahindra Bank",
+  "Punjab & Sind Bank",
+  "Punjab National Bank",
+  "Ratnagiri District Central Co-operative Bank",
+  "RBL Bank",
+  "Saraswat Co-operative Bank",
+  "South Indian Bank",
+  "UCO Bank",
+  "Union Bank of India",
+  "Yes Bank",
+];
+
 /** What a family asked for. */
 export const KINDS = {
   medical: { en: "Medical", hi: "Ilaaj" },
-  stipend: { en: "Monthly help", hi: "Maheena" },
-  education: { en: "Education", hi: "Padhai" },
-  livelihood: { en: "Help to earn", hi: "Rozgaar" },
+  stipend: { en: "Monthly Stipend", hi: "Maheena" },
+  education: { en: "Education", hi: "Padhai, hunar ke course" },
+  livelihood: { en: "Livelihood", hi: "Rozgaar: jaal, thela, auzaar" },
   emergency: { en: "Emergency", hi: "Aafat" },
   other: { en: "Other", hi: "Baaki" },
 } satisfies Labelled<string>;
@@ -161,8 +197,15 @@ export const FAMILY_PURPOSES: Purpose[] = ["medical", "education", "livelihood",
 const RANK: Record<Role, number> = { member: -1, viewer: 0, editor: 1, accountant: 1, admin: 2 };
 export const canDo = (have: Role, need: Role) => RANK[have] >= RANK[need];
 
-/** Money in, money out, and members' gifts found in the bank: the PSWS Accountant's alone. */
-export const handlesMoney = (role: Role) => role === "accountant";
+/** The website owner's account: signed in to with the owner link, never shown as a person. */
+export const OWNER_PHONE = "owner";
+
+/**
+ * Money in, money out, and members' gifts found in the bank: the PSWS
+ * Accountant's, and the website owner's, who can cover for the Accountant.
+ * What the owner does is logged under the owner, never the Accountant.
+ */
+export const handlesMoney = (u: { role: Role; phone: string }) => u.role === "accountant" || u.phone === OWNER_PHONE;
 
 /** Places in and around Pewe, offered as suggestions (anything can be typed). */
 export const PLACES = ["Pewe", "Amshet Bhoiwadi", "Rab Bhoiwadi", "Pere", "Pardalewadi", "Guhagar", "Mumbai"];

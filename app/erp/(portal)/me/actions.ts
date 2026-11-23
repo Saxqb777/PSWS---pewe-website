@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actingMember, changePassword, checkPassword, passwordProblem } from "@/lib/erp/auth";
 import { addAsk, addMessage, addPledge, getAsk, isPublicKind, notePhoto, replyToMeeting, withdrawAsk, withdrawPledge } from "@/lib/erp/portal";
-import { ASK_KINDS, HEADS, METHODS, clean, cleanLong, isDate, isKey, todayIST, toPaise, type Head } from "@/lib/erp/labels";
-import type { FormState } from "@/lib/erp/form-state";
+import { ASK_KINDS, HEADS, METHODS, clean, cleanLong, isCountry, isDate, isKey, todayIST, toPaise, type Head } from "@/lib/erp/labels";
+import { toId, type FormState } from "@/lib/erp/form-state";
 import { readDetail, readGivers } from "@/lib/erp/details";
+import { addPromise, dropPromise, keepPromise, openPromise } from "@/lib/erp/collection";
 import { askPhotos, removeAskPhoto, savePicture } from "@/lib/erp/files";
 
 /** What a member does on their own portal. */
@@ -33,7 +34,11 @@ export async function postAsk(_: FormState, data: FormData): Promise<FormState> 
   }
   const headRaw = data.get("head");
   const head: Head =
-    kind === "zakat" ? "zakat" : kind === "collection" && (headRaw === "donation" || headRaw === "development") ? headRaw : "donation";
+    kind === "zakat"
+      ? "zakat"
+      : kind === "collection" && (headRaw === "zakat" || headRaw === "donation" || headRaw === "development")
+        ? headRaw
+        : "donation";
   if (Object.keys(errors).length) return { errors };
   const id = await addAsk(u, {
     kind: kind as keyof typeof ASK_KINDS,
@@ -88,9 +93,13 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     g = { people: 1, givers: name ? [name] : [], givers_hidden: data.get("hide_name") === "on" };
   } else if (fromWho === "many") g = readGivers(data, errors);
   if (Object.keys(errors).length) return { errors };
+  // paying a promise made earlier to this appeal: it then counts as sent, not promised
+  const promiseId = askId ? toId(String(data.get("promise_id") ?? "")) : null;
+  if (promiseId && !(await openPromise(u.id, promiseId, askId!))) errors.promise_id = "That promise is not open any more.";
+  if (Object.keys(errors).length) return { errors };
   const proof = await savePicture(u, data.get("proof"), "proof");
   if (proof && "error" in proof) return { errors: { proof: proof.error } };
-  await addPledge(u, {
+  const pledgeId = await addPledge(u, {
     ask_id: askId,
     amount_paise: amount,
     head,
@@ -107,6 +116,7 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     givers_hidden: g.givers_hidden,
     proof_id: proof?.id ?? null,
   });
+  if (promiseId) await keepPromise(u.id, promiseId, askId!, pledgeId);
   const flag = collected ? "gave=1&collected=1" : "gave=1";
   redirect(askId ? `/erp/me/asks/${askId}?${flag}` : `/erp/me/passbook?${flag}`);
 }
@@ -171,4 +181,36 @@ export async function replyMeeting(meetingId: number, coming: boolean) {
   const u = await actingMember();
   await replyToMeeting(u, meetingId, coming);
   revalidatePath("/erp/me/notices");
+}
+
+/** "I will give ₹50,000": promised to an appeal, not sent yet. It counts as promised until it is sent and recorded. */
+export async function promiseGift(askId: number, _: FormState, data: FormData): Promise<FormState> {
+  const u = await actingMember();
+  const a = await getAsk(askId);
+  if (!a || a.status !== "live" || !isPublicKind(a.kind)) return { error: "This appeal is not open any more." };
+  const errors: Record<string, string> = {};
+  const someone = data.get("promise_who") === "someone";
+  const giver_name = someone ? clean(data.get("promise_name"), 80) : null;
+  if (someone && !giver_name) errors.promise_name = "Type the name of the person who promised.";
+  const country = String(data.get("country") ?? "India");
+  if (!isCountry(country)) errors.country = "Pick the country from the list.";
+  const amount_paise = toPaise(data.get("promise_amount"));
+  if (!amount_paise) errors.promise_amount = "Type the amount in numbers, e.g. 50000.";
+  if (Object.keys(errors).length) return { errors };
+  await addPromise(u, {
+    ask_id: askId,
+    giver_name,
+    country: country === "India" ? null : country,
+    amount_paise: amount_paise!,
+    note: clean(data.get("promise_note"), 200),
+  });
+  revalidatePath(`/erp/me/asks/${askId}`);
+  return { done: "Saved as promised. When the money is sent, record it below and pick this promise." };
+}
+
+/** The promised gift is not coming after all. */
+export async function dropOwnPromise(askId: number, id: number) {
+  const u = await actingMember();
+  await dropPromise(u, id);
+  revalidatePath(`/erp/me/asks/${askId}`);
 }

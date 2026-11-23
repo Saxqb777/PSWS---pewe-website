@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/erp/auth";
 import { getFamily, listRequests, paymentsFor } from "@/lib/erp/data";
 import { KINDS, STATUSES, canDo, inr, showDate, showPhone, labelOf, handlesMoney } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
-import { DecideForm, RequestForm } from "@/components/erp/forms";
+import { DecideForm } from "@/components/erp/forms";
+import { RequestForm } from "@/components/erp/request-form";
 import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
 import { AskBox } from "@/components/erp/cancel-box";
 import { Removed } from "@/components/erp/bring-back";
@@ -29,7 +30,7 @@ export default async function FamilyPage({
   const [requests, payments] = await Promise.all([listRequests({ familyId: f.id }), paymentsFor({ familyId: f.id })]);
   const pending = f.active ? await openApproval(`family:${f.id}`) : null;
   const editor = canDo(u.role, "editor");
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const total = payments.filter((p) => !p.cancelled).reduce((s, p) => s + p.amount_paise, 0);
 
   return (
@@ -56,7 +57,7 @@ export default async function FamilyPage({
           items={[
             ["Mobile", f.phone && <a className={styles.link} href={`tel:+${f.phone}`}>{showPhone(f.phone)}</a>],
             ["People in the house", f.people],
-            ["Monthly help", f.stipend_active ? `${inr(f.stipend_paise)} a month` : "None"],
+            ["Monthly Stipend", f.stipend_active ? `${inr(f.stipend_paise)} a month` : "None"],
             ["Given so far", inr(total)],
             ["Notes", f.notes && <span style={{ whiteSpace: "pre-line" }}>{f.notes}</span>],
           ]}
@@ -80,7 +81,11 @@ export default async function FamilyPage({
                   </span>
                   <span className={styles.rowMeta}>
                     Asked {showDate(r.asked_on)}
-                    {r.asked_paise ? ` for ${inr(r.asked_paise)}` : ""}
+                    {r.kind === "medical" && r.bill_paise
+                      ? ` · ${r.hospital ?? "hospital"} bill ${inr(r.bill_paise)} · Zakat share by the slab ${inr(r.asked_paise ?? 0)}`
+                      : r.asked_paise
+                        ? ` for ${inr(r.asked_paise)}`
+                        : ""}
                     {r.decided_on ? ` · decided ${showDate(r.decided_on)}` : ""}
                     {r.approved_paise ? ` · approved ${inr(r.approved_paise)}${r.kind === "stipend" ? " a month" : ""}` : ""}
                     {r.paid_paise ? ` · paid ${inr(r.paid_paise)}` : ""}

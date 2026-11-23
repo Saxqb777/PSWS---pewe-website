@@ -32,7 +32,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
   ]);
   const zakat = funds.find((f) => f.head === "zakat");
   const editor = canDo(u.role, "editor");
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const paid = stipends.filter((s) => s.paid_voucher).length;
   const toPay = stipends.length - paid;
 
@@ -105,7 +105,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
             <li>
               <Link href="/erp/works">
                 <span>
-                  Village work<small>Gaon ka kaam</small>
+                  Village Work<small>Gaon ka kaam</small>
                 </span>
               </Link>
             </li>
@@ -191,7 +191,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
         </section>
 
         <section>
-          <Section title="Monthly help" />
+          <Section title="Monthly Stipend" />
           {stipends.length ? (
             <div className={styles.line}>
               <span>
@@ -202,7 +202,7 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
               </Link>
             </div>
           ) : (
-            <Empty>No family gets monthly help yet.</Empty>
+            <Empty>No family gets a monthly stipend yet.</Empty>
           )}
         </section>
       </div>

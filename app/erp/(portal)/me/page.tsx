@@ -55,7 +55,7 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
       <div className={p.acts}>
         <Link href="/erp/me/give" className={`${p.act} ${p.actMain}`}>
           Give
-          <small>Zakat, donation, village work</small>
+          <small>Zakat, Donation, Village Work</small>
         </Link>
         <Link href="/erp/me/new" className={p.act}>
           Ask for donations
@@ -109,6 +109,12 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
           <b>{inr(got)}</b>
         </div>
       </div>
+      {waiting.some((x) => x.status === "waiting" && x.amount_paise) && (
+        <p className={p.waitingSum}>
+          <span>Sent, waiting for the Accountant</span>
+          <b>{inr(waiting.filter((x) => x.status === "waiting").reduce((s, x) => s + (x.amount_paise ?? 0), 0))}</b>
+        </p>
+      )}
       {collected > 0 && (
         <p className={p.collectedSum}>
           <span>I collected from others</span>

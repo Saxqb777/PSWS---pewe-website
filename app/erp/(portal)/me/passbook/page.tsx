@@ -19,6 +19,8 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
   const [lines, pledges, gathered] = await Promise.all([passbook(u.id, fy), myPledges(u.id), collections(u.id, fy)]);
   const collectedTotal = gathered.reduce((s, l) => s + l.amount_paise, 0);
   const open = pledges.filter((x) => x.status === "waiting" || x.status === "not_found");
+  // what they said they sent and the Accountant has not found yet: shown apart, so "Given" never looks like nothing
+  const waiting = open.filter((x) => x.status === "waiting").reduce((s, x) => s + (x.amount_paise ?? 0), 0);
   const gave = lines.filter((l) => l.dir === "gave").reduce((s, l) => s + l.amount_paise, 0);
   const got = lines.filter((l) => l.dir === "received").reduce((s, l) => s + l.amount_paise, 0);
 
@@ -60,6 +62,12 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
 
+      {waiting > 0 && (
+        <p className={p.waitingSum}>
+          <span>Sent, waiting for the Accountant</span>
+          <b>{inr(waiting)}</b>
+        </p>
+      )}
       {collectedTotal > 0 && (
         <p className={p.collectedSum}>
           <span>Collected from others in {fy}</span>

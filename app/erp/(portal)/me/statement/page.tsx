@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
-import { collections, passbook } from "@/lib/erp/portal";
+import { collections, myPledges, passbook } from "@/lib/erp/portal";
 import { fyOf, fyRange, inr, showDate, todayIST } from "@/lib/erp/labels";
 import { PrintButton } from "@/components/erp/shell";
 import { Passbook } from "@/components/erp/portal-ui";
@@ -36,6 +36,12 @@ export default async function Statement({ searchParams }: { searchParams: Promis
   const gave = lines.filter((l) => l.dir === "gave").reduce((s, l) => s + l.amount_paise, 0);
   const got = lines.filter((l) => l.dir === "received").reduce((s, l) => s + l.amount_paise, 0);
   const handedIn = gathered.reduce((s, l) => s + l.amount_paise, 0);
+  // sent in these dates but not found in the bank yet: not counted, and said so
+  const waiting = chosen
+    ? (await myPledges(u.id))
+        .filter((x) => x.status === "waiting" && x.sent_on >= chosen.from && x.sent_on <= chosen.to)
+        .reduce((s, x) => s + (x.amount_paise ?? 0), 0)
+    : 0;
 
   return (
     <>
@@ -112,6 +118,12 @@ export default async function Statement({ searchParams }: { searchParams: Promis
                 <b>{inr(got)}</b>
               </div>
             </div>
+            {waiting > 0 && (
+              <p className={p.waitingSum}>
+                <span>Sent, waiting for the Accountant (not counted yet)</span>
+                <b>{inr(waiting)}</b>
+              </p>
+            )}
 
             {lines.length ? (
               <Passbook lines={lines} />

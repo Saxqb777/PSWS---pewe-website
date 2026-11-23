@@ -86,7 +86,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             <td>Families helped</td>
             <td>
               {r.families}
-              {r.stipendFamilies ? `, ${r.stipendFamilies} on monthly help` : ""}
+              {r.stipendFamilies ? `, ${r.stipendFamilies} on a monthly stipend` : ""}
             </td>
           </tr>
         </tbody>

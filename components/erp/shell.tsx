@@ -14,7 +14,7 @@ const GROUPS: { href: string; label: string; admin?: boolean; portal?: boolean; 
     { href: "/erp/money", label: "Money" },
     { href: "/erp/accounts", label: "Accounts" },
     { href: "/erp/families", label: "Families" },
-    { href: "/erp/stipends", label: "Monthly help" },
+    { href: "/erp/stipends", label: "Monthly Stipend" },
     { href: "/erp/works", label: "Village works" },
   ],
   [

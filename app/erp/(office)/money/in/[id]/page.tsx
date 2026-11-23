@@ -28,7 +28,7 @@ export default async function MoneyInPage({
   const sp = await searchParams;
   const pending = m.cancelled_at ? null : await openApproval(`money_in:${m.id}`);
   const text = receiptText(m);
-  const editor = handlesMoney(u.role);
+  const editor = handlesMoney(u);
 
   return (
     <>

@@ -50,7 +50,7 @@ function StartingForm({ o, change }: { o: Opening | null; change: boolean }) {
 export default async function AccountsPage({ searchParams }: { searchParams: Promise<{ started?: string; closed?: string }> }) {
   const u = await requireUser();
   const sp = await searchParams;
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const [opening, places, funds, months, pendingOpening] = await Promise.all([
     getOpening(),
     placeBalances(),

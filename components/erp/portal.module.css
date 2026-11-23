@@ -1488,3 +1488,24 @@
   background: #1f4d35;
   border-radius: 4px;
 }
+
+/* money sent but not yet found in the bank: it counts once the Accountant confirms it */
+.waitingSum {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--ink);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.waitingSum b {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums;
+}

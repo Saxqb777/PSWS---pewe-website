@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { NOT_COVERED, zakatMedical } from "@/lib/erp/zakat";
 import { redirect } from "next/navigation";
 import { requireAccountant, requireUser } from "@/lib/erp/auth";
 import { askApproval, closedMessage, fundBalances, getOpening } from "@/lib/erp/books";
@@ -69,8 +70,21 @@ export async function addFamilyRequest(familyId: number, _: FormState, data: For
   const asked_on = String(data.get("asked_on") ?? "");
   if (!isDate(asked_on) || asked_on > todayIST()) errors.asked_on = "Pick the date they asked.";
   const askedRaw = clean(data.get("asked"), 20);
-  const asked_paise = askedRaw ? toPaise(askedRaw) : null;
+  let asked_paise = askedRaw ? toPaise(askedRaw) : null;
   if (askedRaw && !asked_paise) errors.asked = "Numbers only, e.g. 25000. Leave empty if not known.";
+  // medical: the Zakat slab covers only patients admitted to hospital, and pays the hospital as per its bill
+  const medical = kind === "medical";
+  const hospital = medical ? clean(data.get("hospital"), 120) : null;
+  const admitted = medical ? data.get("admitted") === "yes" : null;
+  const billRaw = medical ? clean(data.get("bill"), 20) : null;
+  const bill_paise = billRaw ? toPaise(billRaw) : null;
+  if (medical) {
+    if (data.get("admitted") !== "yes" && data.get("admitted") !== "no") errors.admitted = "Is the patient admitted in hospital?";
+    else if (!admitted) errors.admitted = `Zakat medical help is only for patients admitted to hospital (IPD). Not covered: ${NOT_COVERED}.`;
+    if (!hospital) errors.hospital = "Which hospital? (Kaunsa hospital?)";
+    if (!bill_paise) errors.bill = "The hospital's bill or estimate, in numbers, e.g. 85000.";
+    else asked_paise = zakatMedical(bill_paise);
+  }
   if (Object.keys(errors).length) return { errors };
   if (!(await getFamily(familyId))) return { error: "This family is not in the office any more." };
   await addRequest(u, {
@@ -80,6 +94,9 @@ export async function addFamilyRequest(familyId: number, _: FormState, data: For
     asked_on,
     asked_paise,
     details: cleanLong(data.get("details"), 2000),
+    hospital,
+    admitted,
+    bill_paise,
   });
   revalidatePath("/erp", "layout");
   return { done: "Request saved. It now waits for the committee's decision." };
@@ -95,16 +112,27 @@ export async function decideFamilyRequest(requestId: number, _: FormState, data:
   const approved_paise = approvedRaw ? toPaise(approvedRaw) : null;
   if (approve && approvedRaw && !approved_paise) errors.approved = "Numbers only, e.g. 25000.";
   if (approve && req.kind === "stipend" && !approved_paise) errors.approved = "How much each month? (Har maheene kitna?)";
+  // medical: the slab is the rule; more than it needs the reason written down
+  const slab = req.kind === "medical" && req.bill_paise ? zakatMedical(req.bill_paise) : null;
+  if (approve && slab && approved_paise && approved_paise > slab && !clean(data.get("note"), 300))
+    errors.note = `That is more than the slab (${inr(slab)}). Write why in the note.`;
   const decided_on = String(data.get("decided_on") ?? "");
   if (!isDate(decided_on) || decided_on > todayIST()) errors.decided_on = "Pick the date of the decision.";
   if (Object.keys(errors).length) return { errors };
-  await decideRequest(u, requestId, { approve, approved_paise, decided_on, note: clean(data.get("note"), 300) });
+  await decideRequest(u, requestId, {
+    approve,
+    approved_paise: approved_paise ?? (approve ? slab : null),
+    decided_on,
+    note: clean(data.get("note"), 300),
+  });
   revalidatePath("/erp", "layout");
   return {
     done: approve
       ? req.kind === "stipend"
-        ? `Approved. ${req.family_name} now gets monthly help of ${inr(approved_paise)}.`
-        : "Approved. Record the payment when the money is given."
+        ? `Approved. ${req.family_name} now gets a monthly stipend of ${inr(approved_paise)}.`
+        : req.kind === "medical" && req.hospital
+          ? `Approved. The Accountant pays ${req.hospital} directly, as per the bill.`
+          : "Approved. Record the payment when the money is given."
       : "Saved as not approved.",
   };
 }

@@ -101,7 +101,7 @@ const STEPS: Step[] = [
     key: "collect",
     as: "Sana",
     title: "Collect from others",
-    how: "Tick “I collected this from others”, 4 people, ₹8,000, any UPI number, then “I have sent it”. It counts as Sana's collection, not her gift.",
+    how: "Under “Whose money is it?” pick “Several people”, 4 people, ₹8,000, any UPI number, then “I have sent it”. It counts as Sana's collection, not her gift.",
     go: (i) => `/erp/me/asks/${i.hospital}`,
     goLabel: "Go to the form",
     done: (h) => h.me === "Sana" && h.q.get("collected") === "1",

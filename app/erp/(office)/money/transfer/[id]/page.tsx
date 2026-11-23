@@ -37,7 +37,7 @@ export default async function TransferPage({ params }: { params: Promise<{ id: s
           ]}
         />
       </div>
-      {!t.cancelled_at && !pending && handlesMoney(u.role) && (
+      {!t.cancelled_at && !pending && handlesMoney(u) && (
         <AskBox
           action={askDelete.bind(null, "transfer", t.id)}
           title="Delete this"

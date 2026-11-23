@@ -57,6 +57,13 @@ export default async function OfficeAsk({
             ["How it was spent", a.closing_note],
           ]}
         />
+        {isPublicKind(a.kind) && (a.status === "live" || a.status === "closed") && (
+          <p style={{ margin: "12px 0 0" }}>
+            <Link href={`/erp/collection/${a.id}`} className={styles.btnQuiet}>
+              Collection status: by region, promised, on the letterhead
+            </Link>
+          </p>
+        )}
       </div>
 
       <Section title={photos.length ? `Photos (${photos.length})` : "Photos"} />

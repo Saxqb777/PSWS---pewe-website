@@ -35,6 +35,15 @@ const FUNDS: Choice[] = (["zakat", "donation", "development", "other"] as const)
   hi: HEADS[k].hi,
 }));
 
+/** A promise the member can now pay, as the Give form offers it. */
+export interface OpenPromise {
+  id: number;
+  label: string;
+  giver_name: string | null;
+  country: string | null;
+  amount_paise: number;
+}
+
 /** Whose money it is: the member's own, one other person's, or a collection from several. */
 type FromWho = "me" | "someone" | "many";
 
@@ -56,10 +65,42 @@ const HIDE: Record<FromWho, [string, string]> = {
  * it is: someone abroad gives it to a member in India, who pays it in and
  * records it here for them.
  */
-export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: boolean }) {
+export function GiveForm({
+  action,
+  chooseFund,
+  promises = [],
+}: {
+  action: Action;
+  chooseFund: boolean;
+  /** open promises to this appeal: sending one turns it from promised into sent */
+  promises?: OpenPromise[];
+}) {
   const [from, setFrom] = useState<FromWho>("me");
+  const [promise, setPromise] = useState("");
+  const [giverName, setGiverName] = useState("");
+  const kept = promises.find((x) => String(x.id) === promise) ?? null;
+  const pick = (v: string) => {
+    setPromise(v);
+    const pr = promises.find((x) => String(x.id) === v);
+    if (pr) {
+      setFrom(pr.giver_name ? "someone" : "me");
+      setGiverName(pr.giver_name ?? "");
+    }
+  };
   return (
     <ErpForm action={action}>
+      {promises.length > 0 && (
+        <Field label="Paying a promise?" hint="Pick it, so it stops counting as promised" name="promise_id">
+          <select name="promise_id" value={promise} onChange={(e) => pick(e.target.value)}>
+            <option value="">No, a new gift</option>
+            {promises.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Chips
         name="from_who"
         legend="Whose money is it?"
@@ -75,9 +116,15 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
           </p>
           <div className={styles.grid}>
             <Field label="Their full name" hint="Jinka paisa hai" name="giver_name">
-              <input name="giver_name" autoComplete="off" maxLength={80} />
+              <input
+                name="giver_name"
+                autoComplete="off"
+                maxLength={80}
+                value={giverName}
+                onChange={(e) => setGiverName(e.target.value)}
+              />
             </Field>
-            <CountryField label="Where do they live?" hint="Kis desh mein rehte hain" />
+            <CountryField key={`c${promise}`} initial={kept?.country} label="Where do they live?" hint="Kis desh mein rehte hain" />
           </div>
         </div>
       )}
@@ -90,8 +137,10 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
         </>
       )}
       <AmountBox
+        key={`a${promise}`}
         label={from === "many" ? "How much did you send in all?" : "How much did you send?"}
         hint="Kitna bheja"
+        defaultPaise={kept?.amount_paise}
         rupeesToo={false}
       />
       {chooseFund && (
@@ -100,7 +149,7 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
           legend="For"
           hint="Kis cheez ke liye"
           options={FUNDS}
-          defaultValue="donation"
+          defaultValue="zakat"
           otherLabel="What is it for?"
         />
       )}
@@ -108,6 +157,8 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
       <div className={styles.grid}>
         {from !== "someone" && (
           <CountryField
+            key={`c${promise}`}
+            initial={kept?.country}
             label={from === "many" ? "Where do they live?" : "Where do you live?"}
             hint={from === "many" ? "Most of them, kis desh mein" : "Kis desh mein rehte hain"}
           />
@@ -194,9 +245,15 @@ export function AskForm({ action, kind: start }: { action: Action; kind: AskKind
           name="head"
           legend="Which fund does the money go to?"
           hint="Kis khaate mein"
-          options={(["donation", "development"] as const).map((k) => ({ value: k, en: HEADS[k].en, hi: HEADS[k].hi }))}
+          options={(["zakat", "donation", "development"] as const).map((k) => ({ value: k, en: HEADS[k].en, hi: HEADS[k].hi }))}
           defaultValue="development"
         />
+      )}
+      {kind === "help" && (
+        <p className={styles.note}>
+          <b>Hospital bills:</b> Zakat helps patients admitted to hospital (IPD), paid straight to the hospital as per the
+          bill and the Zakat Committee&apos;s slab. OPD, outside tests and medicines are not covered.
+        </p>
       )}
       <p className={styles.note}>
         {kind === "help"
@@ -239,6 +296,49 @@ export function PhotoForm({ action, office = false }: { action: Action; office?:
       </Field>
       <div className={styles.actions}>
         <Submit quiet>Add the photo</Submit>
+      </div>
+    </ErpForm>
+  );
+}
+
+const PROMISE_WHO: Choice[] = [
+  { value: "me", en: "Mine", hi: "Mera" },
+  { value: "someone", en: "Someone else's", hi: "Kisi aur ka" },
+];
+
+/**
+ * "I will give ₹50,000": promised to an appeal, not sent yet, as the Ramadan
+ * sheet's "Committed". It counts as promised until the money is sent.
+ */
+export function PromiseForm({ action }: { action: Action }) {
+  const [who, setWho] = useState("me");
+  return (
+    <ErpForm action={action} resetOnDone>
+      <Chips
+        name="promise_who"
+        legend="Whose promise is it?"
+        hint="Kisne waada kiya"
+        options={PROMISE_WHO}
+        value={who}
+        onChange={setWho}
+      />
+      <div className={styles.grid}>
+        {who === "someone" && (
+          <Field label="Their full name" hint="Jinhone waada kiya" name="promise_name">
+            <input name="promise_name" autoComplete="off" maxLength={80} />
+          </Field>
+        )}
+        <CountryField
+          label={who === "someone" ? "Where do they live?" : "Where do you live?"}
+          hint="Kis desh mein rehte hain"
+        />
+        <AmountInput name="promise_amount" label="How much is promised?" hint="Kitne ka waada" />
+        <Field label="A note" hint="Optional, e.g. after salary on the 5th" name="promise_note">
+          <input name="promise_note" autoComplete="off" maxLength={200} />
+        </Field>
+      </div>
+      <div className={styles.actions}>
+        <Submit quiet>Save the promise</Submit>
       </div>
     </ErpForm>
   );

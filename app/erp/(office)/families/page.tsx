@@ -33,7 +33,7 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
         {(
           [
             ["all", "All"],
-            ["stipend", "Monthly help"],
+            ["stipend", "Monthly Stipend"],
             ["waiting", "Waiting"],
           ] as const
         ).map(([o, label]) => (
@@ -62,7 +62,7 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
                 <span className={styles.rowMain}>
                   <span className={styles.rowTitle}>
                     {f.name}
-                    {f.stipend_active && <span className={`${styles.tag} ${styles.tagIn}`}>monthly help</span>}
+                    {f.stipend_active && <span className={`${styles.tag} ${styles.tagIn}`}>monthly stipend</span>}
                     {f.waiting > 0 && <span className={`${styles.tag} ${styles.tagWarn}`}>{f.waiting} waiting</span>}
                     {!f.active && <span className={styles.tag}>not helped now</span>}
                   </span>

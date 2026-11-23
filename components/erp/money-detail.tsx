@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CURRENCIES, OTHER_COUNTRIES, TOP_COUNTRIES, isCountry, type Method } from "@/lib/erp/labels";
+import { BANKS, CURRENCIES, OTHER_COUNTRIES, TOP_COUNTRIES, isCountry, type Method } from "@/lib/erp/labels";
 import { AmountInput, ChoiceWithOther, Field, type Choice } from "./form";
 import styles from "./erp.module.css";
 
@@ -50,11 +50,7 @@ export function HowBox({
         otherDefault={initial.method_other}
       />
       <div className={styles.grid}>
-        {method === "bank" && (
-          <Field label="Bank name" hint="e.g. Bank of India, Emirates NBD" name="bank_name">
-            <input name="bank_name" autoComplete="off" defaultValue={initial.bank_name ?? ""} />
-          </Field>
-        )}
+        {method === "bank" && <BankField initial={initial.bank_name} />}
         <Field label={label} hint={refHint} name="reference">
           <input
             name="reference"
@@ -68,10 +64,41 @@ export function HowBox({
   );
 }
 
+const OTHER_BANK = "__other";
+
+/** The bank, picked from Indian banks so nobody types it a new way each time; "Other bank" for the rest. */
+function BankField({ initial }: { initial?: string | null }) {
+  const start = initial?.trim() ?? "";
+  const known = !start || BANKS.includes(start);
+  const [pick, setPick] = useState(known ? start : OTHER_BANK);
+  const [other, setOther] = useState(known ? "" : start);
+  return (
+    <>
+      <Field label="Bank name" hint="Kis bank se" name="bank_name">
+        <select value={pick} onChange={(e) => setPick(e.target.value)}>
+          <option value="">Pick the bank</option>
+          {BANKS.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+          <option value={OTHER_BANK}>Other bank</option>
+        </select>
+      </Field>
+      {pick === OTHER_BANK && (
+        <Field label="Which bank?" hint="Its full name" name="bank_name_other">
+          <input autoComplete="off" maxLength={80} value={other} onChange={(e) => setOther(e.target.value)} />
+        </Field>
+      )}
+      <input type="hidden" name="bank_name" value={pick === OTHER_BANK ? other : pick} />
+    </>
+  );
+}
+
 /**
- * The amount: rupees, as nearly always. "Sent in another currency?" turns it
- * into the amount in that currency, and, for the Accountant, the rupees that
- * arrived in the bank, which is what the books count.
+ * The amount, in rupees: PSWS takes money only from Indian accounts. An entry
+ * saved before that, in another currency, keeps its currency when it is
+ * changed, with the rupees that arrived in the bank, which is what the books count.
  */
 export function AmountBox({
   label,
@@ -91,7 +118,8 @@ export function AmountBox({
   rupeesToo: boolean;
   onChange?: (paise: number | null) => void;
 }) {
-  const [currency, setCurrency] = useState(initialCurrency && initialCurrency !== "INR" ? initialCurrency : "INR");
+  const old = !!initialCurrency && initialCurrency !== "INR";
+  const [currency, setCurrency] = useState(old ? initialCurrency : "INR");
   const abroad = currency !== "INR";
   return (
     <div className={styles.moneyBox}>
@@ -134,9 +162,11 @@ export function AmountBox({
       {!rupeesToo && abroad && (
         <p className={styles.note}>The Accountant types the rupees that arrived in the bank. Your receipt is in rupees.</p>
       )}
-      <button type="button" className={styles.textBtn} onClick={() => setCurrency(abroad ? "INR" : "AED")}>
-        {abroad ? "It was rupees" : "Sent in another currency?"}
-      </button>
+      {old && (
+        <button type="button" className={styles.textBtn} onClick={() => setCurrency(abroad ? "INR" : initialCurrency)}>
+          {abroad ? "It was rupees" : `It was in ${initialCurrency}`}
+        </button>
+      )}
     </div>
   );
 }

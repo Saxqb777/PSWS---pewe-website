@@ -1,0 +1,51 @@
+/* The collection status on the letterhead: figures right-aligned, totals ruled off. */
+.cs-table th.cs-n,
+.cs-table td.cs-n {
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+
+.cs-table .cs-strong {
+  font-weight: 600;
+}
+
+.cs-table tr.cs-total td {
+  font-weight: 600;
+  border-top: 1.5px solid #1C1815;
+  border-bottom: none;
+  background: #F4EFE6;
+}
+
+.mom-particulars dd.cs-big {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.cs-pct {
+  font-family: var(--font-plex-sans), system-ui, sans-serif;
+  font-size: 10px;
+  color: #786C5D;
+}
+
+.cs-due {
+  color: #7A2E2E;
+}
+
+.cs-empty {
+  margin-top: 10px;
+  color: #786C5D;
+}
+
+.min-tools .cs-wa {
+  text-decoration: none;
+  margin-right: 8px;
+}
+
+/* the table of regions is wide: on a phone it scrolls on its own, the page does not */
+@media (max-width: 640px) {
+  .min-paper .mom-sec {
+    overflow-x: auto;
+  }
+}

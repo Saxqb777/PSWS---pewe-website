@@ -262,7 +262,7 @@ const titles = {
   [hospital]: "Hospital costs for a family in Pewe",
   [roof]: "Roof repair for the Pewe primary school",
 };
-const fundName = { zakat: "Zakat", donation: "Donation (Sadaqah)", development: "Village work" };
+const fundName = { zakat: "Zakat", donation: "Donation", development: "Village Work" };
 const inr = (n) => `₹${n.toLocaleString("en-IN")}`;
 // Mariam asked to keep her name off her cash gift; everyone else's shows
 const hiddenGift = (from, amount) => from === "Mariam" && amount === 1000;

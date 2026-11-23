@@ -3,6 +3,7 @@ import { db, logChange, num } from "./db";
 import type { User } from "./auth";
 import { addMoneyIn, getMoneyIn, type MoneyIn } from "./data";
 import { approverIds, closedMessage } from "./books";
+import { reopenPromiseOf } from "./collection";
 import type { MoneyDetail } from "./details";
 import {
   ASK_KINDS,
@@ -490,6 +491,8 @@ export async function withdrawPledge(u: User, id: number): Promise<string | null
   if (!r) return "This can only be taken back while it waits for the Accountant.";
   const amount = r.amount_paise != null ? inr(num(r.amount_paise)) : foreign(Number(r.sent_amount), r.currency as string);
   await logChange(u.id, "cancelled", "pledge", id, `Took back ${amount} they said they sent${r.reference ? ` (UTR ${r.reference})` : ""}`);
+  // if it paid a promise, the promise is open again
+  await reopenPromiseOf(id);
   return null;
 }
 

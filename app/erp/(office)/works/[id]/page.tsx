@@ -27,7 +27,7 @@ export default async function WorkPage({
   const sp = await searchParams;
   const payments = await paymentsFor({ workId: w.id });
   const editor = canDo(u.role, "editor");
-  const money = handlesMoney(u.role);
+  const money = handlesMoney(u);
   const left = w.budget_paise ? w.budget_paise - w.spent_paise : null;
   const pending = w.removed_at ? null : await openApproval(`work:${w.id}`);
 
