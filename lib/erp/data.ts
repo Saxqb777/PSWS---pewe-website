@@ -62,6 +62,8 @@ export interface MoneyIn {
   cancelled_at: string | null;
   cancel_reason: string | null;
   created_by_name: string | null;
+  /** the member who paid it in for someone else, or collected it from several */
+  collected_by_name?: string | null;
   created_at: string;
 }
 
@@ -148,8 +150,9 @@ export async function getMoneyIn(id: number): Promise<MoneyIn | null> {
     SELECT m.id, m.receipt_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.from_name, m.from_phone, m.from_place,
            m.amount_paise, m.head, m.head_other, m.method, m.method_other, m.bank_name, m.reference, m.country, m.currency,
            m.sent_amount, m.givers, m.givers_hidden, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
-           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
-    FROM erp_money_in m LEFT JOIN erp_user u ON u.id = m.created_by WHERE m.id = ${id}`;
+           CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name, c.name AS collected_by_name
+    FROM erp_money_in m LEFT JOIN erp_user u ON u.id = m.created_by LEFT JOIN erp_user c ON c.id = m.collected_by
+    WHERE m.id = ${id}`;
   const r = rows[0];
   return r
     ? ({

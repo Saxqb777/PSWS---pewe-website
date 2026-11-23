@@ -75,9 +75,18 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
     errors.reference = "Type the UTR, the 12-digit number of the payment, so the Accountant can find it.";
   const sent_on = String(data.get("sent_on") ?? "");
   if (!isDate(sent_on) || sent_on > todayIST()) errors.sent_on = "Pick the day you sent it.";
-  // money gathered from others: counts for the ask and as their collection, not as their own gift
-  const collected = data.get("collected") === "on";
-  const g = collected ? readGivers(data, errors) : { people: null, givers: [], givers_hidden: false };
+  // whose money it is: the member's own; one other person's, in that person's name, the member only paid it
+  // in; or gathered from several. The last two count for the ask and as the member's collection, not their gift
+  const who = data.get("from_who");
+  const fromWho = who === "someone" || who === "many" ? who : "me";
+  const collected = fromWho !== "me";
+  let g: { people: number | null; givers: string[]; givers_hidden: boolean } = { people: null, givers: [], givers_hidden: false };
+  if (fromWho === "someone") {
+    const name = clean(data.get("giver_name"), 80);
+    if (!name) errors.giver_name = "Type the name of the person whose money it is.";
+    // their name shows unless the member ticks to keep it hidden; it always stays on the receipt
+    g = { people: 1, givers: name ? [name] : [], givers_hidden: data.get("hide_name") === "on" };
+  } else if (fromWho === "many") g = readGivers(data, errors);
   if (Object.keys(errors).length) return { errors };
   const proof = await savePicture(u, data.get("proof"), "proof");
   if (proof && "error" in proof) return { errors: { proof: proof.error } };

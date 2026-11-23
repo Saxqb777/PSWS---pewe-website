@@ -141,12 +141,23 @@ export function AmountBox({
   );
 }
 
-/** The country it was sent from. India unless they say otherwise: many send from the Gulf, in rupees or not. */
-/** Picked from a list: where PSWS people are first, then every country A to Z. */
-export function CountryField({ initial }: { initial?: string | null }) {
+/**
+ * Where the giver lives. The money itself always comes from an Indian account
+ * or UPI; someone abroad gives it to a member in India, who pays it in. Picked
+ * from a list: where PSWS people are first, then every country A to Z.
+ */
+export function CountryField({
+  initial,
+  label = "Where do you live?",
+  hint = "Kis desh mein rehte hain",
+}: {
+  initial?: string | null;
+  label?: string;
+  hint?: string;
+}) {
   const now = initial ?? "India";
   return (
-    <Field label="Sent from" hint="Kis desh se" name="country">
+    <Field label={label} hint={hint} name="country">
       <select name="country" defaultValue={now}>
         {/* a country saved before the list, kept so a change does not lose it */}
         {!isCountry(now) && <option value={now}>{now}</option>}
@@ -185,8 +196,6 @@ export function GiversBox({
   onToggle?: (on: boolean) => void;
 }) {
   const [on, setOn] = useState(false);
-  const [count, setCount] = useState("");
-  const n = Math.min(Math.max(Number.parseInt(count, 10) || 0, 0), MOST_BOXES);
   return (
     <>
       <label className={styles.check}>
@@ -206,48 +215,55 @@ export function GiversBox({
           </span>
         </span>
       </label>
-      {on && (
-        <div className={styles.givers}>
-          <Field label="From how many people?" hint="Kitne logon se" name="people">
-            <input
-              name="people"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="5"
-              value={count}
-              onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            />
-          </Field>
-          {n > 0 && (
-            <fieldset className={styles.giverNames}>
-              <legend className={styles.label}>
-                Their names
-                <span className={styles.hint}>Optional · they show on the receipt</span>
-              </legend>
-              <div className={styles.giverGrid}>
-                {Array.from({ length: n }, (_, i) => (
-                  <label key={i} className={styles.giverBox}>
-                    <span aria-hidden="true">{i + 1}</span>
-                    <input name="giver" autoComplete="off" aria-label={`Name ${i + 1}`} placeholder={`Name ${i + 1}`} />
-                  </label>
-                ))}
-              </div>
-              {Number(count) > MOST_BOXES && (
-                <p className={styles.note}>Type the first {MOST_BOXES} names here; the rest can go in the note.</p>
-              )}
-              <label className={styles.check} style={{ marginTop: 10 }}>
-                <input type="checkbox" name="givers_hidden" />
-                <span>
-                  <strong>Keep their names hidden</strong>
-                  <span className={styles.hint} style={{ display: "block" }}>
-                    They stay on the receipt, but not on the appeal for every member to see.
-                  </span>
-                </span>
-              </label>
-            </fieldset>
-          )}
-        </div>
-      )}
+      {on && <GiversFields />}
     </>
+  );
+}
+
+/** How many people the money came from, and a box for each one's name. */
+export function GiversFields() {
+  const [count, setCount] = useState("");
+  const n = Math.min(Math.max(Number.parseInt(count, 10) || 0, 0), MOST_BOXES);
+  return (
+    <div className={styles.givers}>
+      <Field label="From how many people?" hint="Kitne logon se" name="people">
+        <input
+          name="people"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="5"
+          value={count}
+          onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 4))}
+        />
+      </Field>
+      {n > 0 && (
+        <fieldset className={styles.giverNames}>
+          <legend className={styles.label}>
+            Their names
+            <span className={styles.hint}>Optional · they show on the receipt</span>
+          </legend>
+          <div className={styles.giverGrid}>
+            {Array.from({ length: n }, (_, i) => (
+              <label key={i} className={styles.giverBox}>
+                <span aria-hidden="true">{i + 1}</span>
+                <input name="giver" autoComplete="off" aria-label={`Name ${i + 1}`} placeholder={`Name ${i + 1}`} />
+              </label>
+            ))}
+          </div>
+          {Number(count) > MOST_BOXES && (
+            <p className={styles.note}>Type the first {MOST_BOXES} names here; the rest can go in the note.</p>
+          )}
+          <label className={styles.check} style={{ marginTop: 10 }}>
+            <input type="checkbox" name="givers_hidden" />
+            <span>
+              <strong>Keep their names hidden</strong>
+              <span className={styles.hint} style={{ display: "block" }}>
+                They stay on the receipt, but not on the appeal for every member to see.
+              </span>
+            </span>
+          </label>
+        </fieldset>
+      )}
+    </div>
   );
 }

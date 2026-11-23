@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
 import { collections, myPledges, passbook, pledgeAmount } from "@/lib/erp/portal";
 import { knownYears } from "@/lib/erp/data";
-import { fyOf, inr, showDate, todayIST } from "@/lib/erp/labels";
+import { fyOf, inr, oneGiver, showDate, todayIST } from "@/lib/erp/labels";
 import { H2, Passbook, PledgeStatus } from "@/components/erp/portal-ui";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
@@ -79,7 +79,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
         <>
           <H2>I collected</H2>
           <p className={styles.note} style={{ margin: "0 0 8px" }}>
-            Money you gathered from others and handed in. It counts for the appeal, not as your own gift.
+            Money you gathered from others, or paid in for someone else. It counts as theirs, not as your own gift.
           </p>
           <ul className={p.items}>
             {gathered.map((c) => (
@@ -90,7 +90,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
                 <span className={p.itemAmt}>{inr(c.amount_paise)}</span>
                 <span className={p.itemMeta}>
                   {showDate(c.on_date)} · {c.no}
-                  {c.people ? ` · from ${c.people} ${c.people === 1 ? "person" : "people"}` : ""}
+                  {c.for_name ? ` · for ${c.for_name}` : c.people ? ` · from ${c.people} ${c.people === 1 ? "person" : "people"}` : ""}
                 </span>
               </li>
             ))}
@@ -106,7 +106,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
               <li key={x.id}>
                 <span className={p.itemTitle}>
                   {x.ask_title ?? "Gift"}
-                  {x.collected ? " (collected)" : ""}
+                  {oneGiver(x) ? ` (for ${oneGiver(x)})` : x.collected ? " (collected)" : ""}
                   <PledgeStatus status={x.status} />
                 </span>
                 <span className={p.itemAmt}>{pledgeAmount(x)}</span>

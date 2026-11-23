@@ -105,6 +105,14 @@ export function fromAbroad(country: string | null, currency: string | null, sent
     .join(" ");
 }
 
+/**
+ * Money a member paid in for one other person: that person's name, else null.
+ * The gift, and its receipt, are in their name; the member only paid it in.
+ */
+export function oneGiver(x: { collected: boolean; people: number | null; givers: string[] | null }): string | null {
+  return x.collected && x.people === 1 && x.givers?.length === 1 ? x.givers[0] : null;
+}
+
 /** What a family asked for. */
 export const KINDS = {
   medical: { en: "Medical", hi: "Ilaaj" },

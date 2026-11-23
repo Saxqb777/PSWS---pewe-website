@@ -118,7 +118,7 @@ export function MoneyInForm({
         initial={initial}
       />
       <div className={styles.grid}>
-        <CountryField initial={initial.country} />
+        <CountryField initial={initial.country} label="Where the giver lives" hint="Kis desh mein" />
         <Field label="Their place" hint="Gaon ya shehar, if you know" name="from_place">
           <input name="from_place" list="places" autoComplete="off" defaultValue={initial.from_place ?? ""} />
           <datalist id="places">

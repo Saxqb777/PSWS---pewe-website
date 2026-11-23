@@ -14,6 +14,7 @@ import {
   fyRange,
   howPaid,
   inr,
+  oneGiver,
   labelOf,
   todayIST,
   type AskKind,
@@ -117,6 +118,8 @@ export interface CollectedLine {
   what: string;
   amount_paise: number;
   people: number | null;
+  /** paid in for one other person: their name */
+  for_name: string | null;
 }
 
 /** What a member gathered from others and handed in: shown apart from what they gave themselves. */
@@ -124,7 +127,8 @@ export async function collections(memberId: number, when: Period = null): Promis
   const range = span(when);
   const rows = await db()`
     SELECT m.id, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.receipt_no AS no, m.amount_paise, m.people, m.head,
-           m.head_other, a.title AS ask_title
+           m.head_other, a.title AS ask_title,
+           CASE WHEN m.people = 1 AND cardinality(m.givers) = 1 AND m.givers[1] = m.from_name THEN m.from_name END AS for_name
     FROM erp_money_in m LEFT JOIN erp_ask a ON a.id = m.ask_id
     WHERE m.collected_by = ${memberId} AND m.cancelled_at IS NULL AND m.on_date BETWEEN ${range.from} AND ${range.to}
     ORDER BY m.on_date DESC, m.receipt_no DESC`;
@@ -134,6 +138,7 @@ export async function collections(memberId: number, when: Period = null): Promis
     no: String(r.no),
     amount_paise: num(r.amount_paise),
     people: r.people == null ? null : num(r.people),
+    for_name: r.for_name == null ? null : String(r.for_name),
     what: r.ask_title ? String(r.ask_title) : labelOf(HEADS, String(r.head), r.head_other as string | null),
   }));
 }
@@ -473,7 +478,7 @@ export async function addPledge(u: User, f: PledgeFields): Promise<number> {
   const id = num(rows[0].id);
   const sum = f.amount_paise != null ? inr(f.amount_paise) : foreign(f.sent_amount, f.currency);
   await logChange(u.id, "added", "pledge", id,
-    `Said they sent ${sum}${f.collected ? ` collected from ${f.people ? `${f.people} people` : "others"}` : ""} (${howPaid(f.method, f.method_other, f.bank_name, true)}${f.reference ? ` ${f.reference}` : ""}${fromAbroad(f.country, null, null) ? `, ${fromAbroad(f.country, null, null)}` : ""})`);
+    `Said they sent ${sum}${oneGiver(f) ? ` for ${oneGiver(f)}` : f.collected ? ` collected from ${f.people ? `${f.people} people` : "others"}` : ""} (${howPaid(f.method, f.method_other, f.bank_name, true)}${f.reference ? ` ${f.reference}` : ""}${fromAbroad(f.country, null, null) ? `, ${fromAbroad(f.country, null, null)}` : ""})`);
   return id;
 }
 
@@ -549,14 +554,16 @@ export async function confirmPledge(
     WHERE id = ${id} AND status = 'waiting' RETURNING id`;
   if (!claimed[0]) return { error: "This has already been checked." };
   const member = await getMe(p.member_id);
+  // paid in for one other person: the receipt is theirs, the member is only who paid it in
+  const giver = oneGiver(p);
   let r: { id: number; receipt_no: string };
   try {
     const forWhat = p.ask_title ? `For: ${p.ask_title}` : "Given through the members' portal";
     r = await addMoneyIn(u, {
       on_date: p.sent_on,
-      from_name: p.collected ? collectedFrom(member?.name ?? p.member_name, p.people) : (member?.name ?? p.member_name),
-      from_phone: member?.phone && /^\d+$/.test(member.phone) ? member.phone : null,
-      from_place: member?.lives_in ?? null,
+      from_name: giver ?? (p.collected ? collectedFrom(member?.name ?? p.member_name, p.people) : (member?.name ?? p.member_name)),
+      from_phone: !giver && member?.phone && /^\d+$/.test(member.phone) ? member.phone : null,
+      from_place: giver ? null : (member?.lives_in ?? null),
       amount_paise: amount,
       head: p.head,
       head_other: p.head_other,
@@ -585,9 +592,11 @@ export async function confirmPledge(
     throw e;
   }
   await db()`UPDATE erp_pledge SET money_in_id = ${r.id} WHERE id = ${id}`;
-  await logChange(u.id, "decided", "pledge", id, `Found ${inr(amount)} from ${p.member_name} in the bank: receipt ${r.receipt_no}`);
-  const shown = p.show_name ? p.member_name : null;
-  const collected = p.collected ? { people: p.people } : null;
+  await logChange(u.id, "decided", "pledge", id,
+    `Found ${inr(amount)} from ${giver ? `${giver}, paid in by ${p.member_name}` : p.member_name} in the bank: receipt ${r.receipt_no}`);
+  // the feed names whose gift it is, unless they chose to keep it hidden
+  const shown = giver ? (p.show_name ? giver : null) : p.show_name ? p.member_name : null;
+  const collected = p.collected && !giver ? { people: p.people } : null;
   if (p.ask_id) await noteGift(p.ask_id, amount, shown, collected);
   else await noteFundGift(p.head, amount, shown, collected);
   return { receipt_no: r.receipt_no };

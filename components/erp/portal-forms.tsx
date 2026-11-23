@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ASK_KINDS, HEADS, todayIST, type AskKind } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
-import { AmountBox, CountryField, GiversBox, HowBox, type RefLabels } from "./money-detail";
+import { AmountBox, CountryField, GiversFields, HowBox, type RefLabels } from "./money-detail";
 import { PictureInput } from "./picture-input";
 import styles from "./erp.module.css";
 import { DateInput } from "./date-input";
@@ -35,18 +35,62 @@ const FUNDS: Choice[] = (["zakat", "donation", "development", "other"] as const)
   hi: HEADS[k].hi,
 }));
 
-/** "I sent ₹1,000": after paying PSWS the usual way, a member says so; the PSWS Accountant finds it and it counts. */
+/** Whose money it is: the member's own, one other person's, or a collection from several. */
+type FromWho = "me" | "someone" | "many";
+
+const FROM_WHO: Choice[] = [
+  { value: "me", en: "Me", hi: "Mera apna" },
+  { value: "someone", en: "Someone else", hi: "Kisi aur ka" },
+  { value: "many", en: "Several people", hi: "Kai logon se jama" },
+];
+
+const HIDE: Record<FromWho, [string, string]> = {
+  me: ["Keep my name hidden", "Otherwise every member sees your name and how much you gave, as it comes in. Naam chhupana ho to tick kijiye."],
+  someone: ["Keep their name hidden", "Otherwise every member sees their name and how much they gave. It stays on the receipt."],
+  many: ["Keep my name hidden", "Otherwise every member sees your name with what you collected. Naam chhupana ho to tick kijiye."],
+};
+
+/**
+ * "I sent ₹1,000": after paying PSWS the usual way, a member says so; the PSWS
+ * Accountant finds it and it counts. The gift is in the name of whoever's money
+ * it is: someone abroad gives it to a member in India, who pays it in and
+ * records it here for them.
+ */
 export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: boolean }) {
-  const [collected, setCollected] = useState(false);
+  const [from, setFrom] = useState<FromWho>("me");
   return (
     <ErpForm action={action}>
-      <GiversBox
-        title="I collected this from others"
-        explain="Money you gathered from family or friends. It counts as your collection, not your own gift. Doosron se jama kiya."
-        onToggle={setCollected}
+      <Chips
+        name="from_who"
+        legend="Whose money is it?"
+        hint="Kiska paisa hai"
+        options={FROM_WHO}
+        value={from}
+        onChange={(v) => setFrom(v as FromWho)}
       />
+      {from === "someone" && (
+        <div className={styles.givers}>
+          <p className={styles.note} style={{ marginTop: 0 }}>
+            The receipt is made in their name, and it counts as their gift. You are the one who paid it in.
+          </p>
+          <div className={styles.grid}>
+            <Field label="Their full name" hint="Jinka paisa hai" name="giver_name">
+              <input name="giver_name" autoComplete="off" maxLength={80} />
+            </Field>
+            <CountryField label="Where do they live?" hint="Kis desh mein rehte hain" />
+          </div>
+        </div>
+      )}
+      {from === "many" && (
+        <>
+          <p className={styles.note} style={{ marginTop: 0 }}>
+            Money you gathered from family or friends. It counts as your collection, not your own gift. Doosron se jama kiya.
+          </p>
+          <GiversFields />
+        </>
+      )}
       <AmountBox
-        label={collected ? "How much did you send in all?" : "How much did you send?"}
+        label={from === "many" ? "How much did you send in all?" : "How much did you send?"}
         hint="Kitna bheja"
         rupeesToo={false}
       />
@@ -62,7 +106,12 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
       )}
       <HowBox legend="How did you send it?" hint="Kaise bheja" options={PAID_BY} defaultMethod="upi" refs={REFS} />
       <div className={styles.grid}>
-        <CountryField />
+        {from !== "someone" && (
+          <CountryField
+            label={from === "many" ? "Where do they live?" : "Where do you live?"}
+            hint={from === "many" ? "Most of them, kis desh mein" : "Kis desh mein rehte hain"}
+          />
+        )}
         <Field label="When?" hint="Kab bheja" name="sent_on">
           <DateInput name="sent_on" defaultValue={todayIST()} max={todayIST()} />
         </Field>
@@ -76,11 +125,9 @@ export function GiveForm({ action, chooseFund }: { action: Action; chooseFund: b
       <label className={styles.check}>
         <input type="checkbox" name="hide_name" />
         <span>
-          <strong>Keep my name hidden</strong>
+          <strong>{HIDE[from][0]}</strong>
           <span className={styles.hint} style={{ display: "block" }}>
-            {collected
-              ? "Otherwise every member sees your name with what you collected. Naam chhupana ho to tick kijiye."
-              : "Otherwise every member sees your name and how much you gave, as it comes in. Naam chhupana ho to tick kijiye."}
+            {HIDE[from][1]}
           </span>
         </span>
       </label>

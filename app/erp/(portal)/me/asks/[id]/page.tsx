@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/erp/auth";
 import { ASK_YES_NEEDED, askCollectors, getAsk, isPublicKind, memberMaySee, myPledges, pledgeAmount } from "@/lib/erp/portal";
-import { ASK_KINDS, canDo, inr, showDate } from "@/lib/erp/labels";
+import { ASK_KINDS, canDo, inr, oneGiver, showDate } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { AskStatus, H2, PledgeStatus, Raised } from "@/components/erp/portal-ui";
 import { AutoRefresh, ShareAsk } from "@/components/erp/portal-client";
@@ -144,7 +144,7 @@ export default async function AskPage({
               <li key={x.id}>
                 <span className={p.itemTitle}>
                   {showDate(x.sent_on)}
-                  {x.collected ? ` · collected${x.people ? ` from ${x.people}` : ""}` : ""}
+                  {oneGiver(x) ? ` · for ${oneGiver(x)}` : x.collected ? ` · collected${x.people ? ` from ${x.people}` : ""}` : ""}
                   <PledgeStatus status={x.status} />
                 </span>
                 <span className={p.itemAmt}>{pledgeAmount(x)}</span>

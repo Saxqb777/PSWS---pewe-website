@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { portalOn } from "@/lib/erp/flags";
 import { ASK_YES_NEEDED, asksForApprover, officeAsks, openMessages, pledgeAmount, pledgesToCheck } from "@/lib/erp/portal";
-import { ASK_KINDS, HEADS, foreign, handlesMoney, howPaid, inr, labelOf, showDate, showWhen } from "@/lib/erp/labels";
+import { ASK_KINDS, HEADS, foreign, handlesMoney, howPaid, inr, labelOf, oneGiver, showDate, showWhen } from "@/lib/erp/labels";
 import { AmountInput, ErpForm, Field, Submit } from "@/components/erp/form";
 import { Empty, PageHead, Section } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
@@ -70,14 +70,24 @@ export default async function OfficePortal({ searchParams }: { searchParams: Pro
           {toCheck.map((x) => (
             <div key={x.id} className={styles.card}>
               <p style={{ margin: 0 }}>
-                <b>{pledgeAmount(x)}</b> from <b>{x.member_name}</b> ({x.member_no}) ·{" "}
-                {howPaid(x.method, x.method_other, x.bank_name, true)}
+                <b>{pledgeAmount(x)}</b> from{" "}
+                {oneGiver(x) ? (
+                  <>
+                    <b>{oneGiver(x)}</b>
+                    {x.country && x.country !== "India" ? ` (lives in ${x.country})` : ""}, paid in by <b>{x.member_name}</b> ({x.member_no})
+                  </>
+                ) : (
+                  <>
+                    <b>{x.member_name}</b> ({x.member_no})
+                    {x.country && x.country !== "India" ? `, lives in ${x.country}` : ""}
+                  </>
+                )}{" "}
+                · {howPaid(x.method, x.method_other, x.bank_name, true)}
                 {x.reference ? ` ${x.reference}` : ""} · sent {showDate(x.sent_on)}
-                {x.country ? ` from ${x.country}` : ""}
               </p>
               <p className={styles.note} style={{ margin: "4px 0 10px" }}>
                 For {x.ask_title ?? labelOf(HEADS, x.head, x.head_other)} · told us {showWhen(x.created_at)}
-                {x.collected && (
+                {x.collected && !oneGiver(x) && (
                   <>
                     <br />
                     <b>Collected from {x.people ? `${x.people} ${x.people === 1 ? "person" : "people"}` : "others"}</b>

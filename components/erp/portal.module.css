@@ -671,6 +671,68 @@
   font-size: 18px;
 }
 
+.payRule {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* PSWS's bank account: the long numbers set apart, one tap to copy */
+.bank {
+  margin: 10px 0 12px;
+}
+
+.bankRows {
+  margin: 0 0 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.bankRows > div {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bankRows dt {
+  font-size: 13px;
+  color: var(--ink-3, var(--ink-2));
+}
+
+.bankRows dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.bankNo {
+  font-family: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.copy {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.copy:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 .steps {
   margin: 0 0 16px;
   padding-left: 22px;
