@@ -482,10 +482,15 @@ export async function approvalsForMe(userId: number): Promise<Approval[]> {
 
 /** How many open requests still need this person's approval. */
 export async function waitingForMe(userId: number): Promise<number> {
+  // changes and deletions waiting for this approver, and members' appeals they have not said yes or no to
   const rows = await db()`
-    SELECT count(*) AS n FROM erp_approval a
-    WHERE a.status = 'waiting' AND a.expires_at > now() AND ${userId}::bigint = ANY(a.approvers)
-      AND NOT EXISTS (SELECT 1 FROM erp_approval_vote v WHERE v.approval_id = a.id AND v.user_id = ${userId} AND v.vote = 'yes')`;
+    SELECT (SELECT count(*) FROM erp_approval a
+            WHERE a.status = 'waiting' AND a.expires_at > now() AND ${userId}::bigint = ANY(a.approvers)
+              AND NOT EXISTS (SELECT 1 FROM erp_approval_vote v WHERE v.approval_id = a.id AND v.user_id = ${userId} AND v.vote = 'yes'))
+         + (SELECT count(*) FROM erp_ask k
+            WHERE k.status = 'waiting'
+              AND EXISTS (SELECT 1 FROM erp_user u WHERE u.id = ${userId} AND u.approver AND u.active)
+              AND NOT EXISTS (SELECT 1 FROM erp_ask_vote v WHERE v.ask_id = k.id AND v.user_id = ${userId})) AS n`;
   return num(rows[0].n);
 }
 
