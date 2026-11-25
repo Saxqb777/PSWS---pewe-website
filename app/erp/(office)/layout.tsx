@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OWNER_PHONE, ownerBehind, requireUser } from "@/lib/erp/auth";
+import { OWNER_PHONE, holdsAccountant, requireUser, whoBehind } from "@/lib/erp/auth";
 import { canDo } from "@/lib/erp/labels";
 import { waitingForMe } from "@/lib/erp/books";
 import { portalOn } from "@/lib/erp/flags";
@@ -7,7 +7,7 @@ import { officeWaiting } from "@/lib/erp/portal";
 import { MobileMenu, Nav } from "@/components/erp/shell";
 import { DemoTour } from "@/components/erp/demo-tour";
 import styles from "@/components/erp/erp.module.css";
-import { backToOwnerAction } from "./control/actions";
+import { backToOwnerAction, switchToAccountantAction } from "./control/actions";
 
 /**
  * The frame round every office page. Each page and each action checks who
@@ -17,10 +17,12 @@ export default async function OfficeLayout({ children }: { children: React.React
   const u = await requireUser();
   const admin = canDo(u.role, "admin");
   const accountant = u.role === "accountant";
-  const [needsMe, portal, behind] = await Promise.all([
+  const [needsMe, portal, behind, holder] = await Promise.all([
     waitingForMe(u.id),
     portalOn() ? officeWaiting(u.id).then((w) => w.pledges + w.asks + w.messages) : Promise.resolve(null),
-    accountant ? ownerBehind() : Promise.resolve(false),
+    accountant ? whoBehind() : Promise.resolve(null),
+    // whoever holds the Accountant's account switches to it from here, without its password
+    !accountant && u.phone !== OWNER_PHONE ? holdsAccountant(u.id) : Promise.resolve(false),
   ]);
   return (
     <>
@@ -52,7 +54,15 @@ export default async function OfficeLayout({ children }: { children: React.React
           <span>
             You are working as the <b>PSWS Accountant</b>.
           </span>
-          <button type="submit">Back to you</button>
+          <button type="submit">{behind.owner ? "Back to you" : `Back to ${behind.name.split(" ")[0]}`}</button>
+        </form>
+      )}
+      {holder && (
+        <form action={switchToAccountantAction} className={`${styles.workingAs} ${styles.switchBar}`}>
+          <span>
+            You hold the <b>PSWS Accountant</b> account.
+          </span>
+          <button type="submit">Switch to the Accountant</button>
         </form>
       )}
       <div className={styles.frame}>

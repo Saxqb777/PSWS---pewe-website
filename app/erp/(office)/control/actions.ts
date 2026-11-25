@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 import {
   LOOK_COOKIE,
   backToOwner,
+  whoBehind,
   handOverAccountant,
   makeInvite,
   requireOwner,
+  requireUser,
   siteOrigin,
   workAsAccountant,
 } from "@/lib/erp/auth";
@@ -124,9 +126,17 @@ export async function workAsAccountantAction() {
   redirect("/erp/money");
 }
 
+/** The holder of the Accountant's account switches to it from their own login. */
+export async function switchToAccountantAction() {
+  const u = await requireUser();
+  if (!(await workAsAccountant(u))) redirect("/erp");
+  redirect("/erp/money");
+}
+
 export async function backToOwnerAction() {
+  const who = await whoBehind();
   if (!(await backToOwner())) redirect("/erp/login");
-  redirect("/erp/control");
+  redirect(who?.owner ? "/erp/control" : "/erp");
 }
 
 /** The message that goes with the Accountant's link, on WhatsApp. */

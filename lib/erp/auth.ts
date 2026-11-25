@@ -3,7 +3,7 @@ import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "no
 import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { db, num } from "./db";
+import { db, logChange, num } from "./db";
 import { OWNER_PHONE, canDo, handlesMoney, type Role } from "./labels";
 import { demoOn, portalOn } from "./flags";
 
@@ -155,32 +155,50 @@ const sessionCookie = (expires: Date) => ({
   expires,
 });
 
-/** While the owner holds the Accountant's account, they can work as it without its password. */
-export async function workAsAccountant(owner: User): Promise<boolean> {
-  if (owner.phone !== OWNER_PHONE) return false;
+/** Does this person hold the PSWS Accountant's account, and so may switch to it from their own login? */
+export async function holdsAccountant(userId: number): Promise<boolean> {
+  const rows = await db()`SELECT 1 FROM erp_user WHERE phone = ${ACCOUNTANT_PHONE} AND active AND held_by = ${userId}`;
+  return !!rows[0];
+}
+
+/**
+ * Whoever holds the Accountant's account switches to it from their own login,
+ * without its password; so does the owner while no one else holds it. Their
+ * own session is kept aside, so one tap brings them back.
+ */
+export async function workAsAccountant(u: User): Promise<boolean> {
   const jar = await cookies();
-  const ownerToken = jar.get(SESSION_COOKIE)?.value;
+  const ownToken = jar.get(SESSION_COOKIE)?.value;
   const rows = await db()`SELECT id, held_by, active FROM erp_user WHERE phone = ${ACCOUNTANT_PHONE}`;
   const acc = rows[0];
-  if (!ownerToken || !acc?.active || (acc.held_by != null && num(acc.held_by) !== owner.id)) return false;
+  if (!ownToken || !acc?.active || u.role === "accountant") return false;
+  const holder = acc.held_by == null ? null : num(acc.held_by);
+  const may = u.phone === OWNER_PHONE ? holder == null || holder === u.id : holder === u.id;
+  if (!may) return false;
+  await logChange(u.id, "access", "user", num(acc.id), "Switched to the PSWS Accountant's account");
   await startSession(num(acc.id));
-  jar.set(OWNER_BACK_COOKIE, ownerToken, sessionCookie(new Date(Date.now() + SESSION_DAYS * 864e5)));
+  jar.set(OWNER_BACK_COOKIE, ownToken, sessionCookie(new Date(Date.now() + SESSION_DAYS * 864e5)));
   return true;
+}
+
+/** Whose own session waits behind the Accountant's: the owner, or the holder by name. */
+export async function whoBehind(): Promise<{ owner: boolean; name: string } | null> {
+  const back = (await cookies()).get(OWNER_BACK_COOKIE)?.value;
+  if (!back) return null;
+  const rows = await db()`
+    SELECT u.phone, u.name FROM erp_session s JOIN erp_user u ON u.id = s.user_id
+    WHERE s.token_hash = ${sha(back)} AND s.expires_at > now() AND u.active AND u.role <> 'accountant'`;
+  return rows[0] ? { owner: rows[0].phone === OWNER_PHONE, name: String(rows[0].name) } : null;
 }
 
 /** Is the owner's own session waiting behind this one? */
 export async function ownerBehind(): Promise<boolean> {
-  const back = (await cookies()).get(OWNER_BACK_COOKIE)?.value;
-  if (!back) return false;
-  const rows = await db()`
-    SELECT 1 FROM erp_session s JOIN erp_user u ON u.id = s.user_id
-    WHERE s.token_hash = ${sha(back)} AND s.expires_at > now() AND u.active AND u.phone = ${OWNER_PHONE}`;
-  return !!rows[0];
+  return !!(await whoBehind())?.owner;
 }
 
-/** Back from the Accountant's account to the owner's own: the Accountant's session ends. */
+/** Back from the Accountant's account to their own: the Accountant's session ends. */
 export async function backToOwner(): Promise<boolean> {
-  if (!(await ownerBehind())) return false;
+  if (!(await whoBehind())) return false;
   const jar = await cookies();
   const back = jar.get(OWNER_BACK_COOKIE)!.value;
   const now = jar.get(SESSION_COOKIE)?.value;

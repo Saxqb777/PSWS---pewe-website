@@ -1702,3 +1702,15 @@ a.rowLink:hover {
   border-bottom: 1px solid var(--rule);
   vertical-align: top;
 }
+
+/* the holder of the Accountant's account: one tap to work as it */
+.switchBar {
+  position: static;
+  color: var(--ink-2);
+  background: var(--card);
+  border-bottom: 1px solid var(--rule);
+}
+
+.switchBar button {
+  color: var(--ink);
+}
