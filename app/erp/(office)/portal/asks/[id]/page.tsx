@@ -60,7 +60,7 @@ export default async function OfficeAsk({
         {isPublicKind(a.kind) && (a.status === "live" || a.status === "closed") && (
           <p style={{ margin: "12px 0 0" }}>
             <Link href={`/erp/collection/${a.id}`} className={styles.btnQuiet}>
-              Collection status: by region, promised, on the letterhead
+              Collection status: by region, committed, on the letterhead
             </Link>
           </p>
         )}

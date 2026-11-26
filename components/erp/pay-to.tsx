@@ -56,24 +56,25 @@ export async function PayTo() {
           </>
         ) : (
           <>
-            <p>
-              <b>Pay PSWS into its own account:</b>
-            </p>
-            {bank && <BankBox bank={bank} share={shareText(bank)} />}
-            {upi && (
-              <>
-                <p>{bank ? "Or from GPay or PhonePe:" : "Pay PSWS from your own GPay or PhonePe:"}</p>
-                <p className={p.payId}>{upi}</p>
-              </>
+            {bank || upi ? (
+              <details className={p.bankFold}>
+                <summary>Show PSWS bank details</summary>
+                {bank && <BankBox bank={bank} share={shareText(bank)} />}
+                {upi && (
+                  <>
+                    <p>{bank ? "Or from GPay or PhonePe:" : "Pay PSWS from your own GPay or PhonePe:"}</p>
+                    <p className={p.payId}>{upi}</p>
+                  </>
+                )}
+                <p className={p.payRule}>PSWS never asks you to pay into a person&apos;s account.</p>
+                <p className={p.payRule}>
+                  <b>Living abroad?</b> Give it to a PSWS member in India. They pay it in here and record it in your name.
+                </p>
+              </details>
+            ) : (
+              <p>Ask the office for PSWS&apos;s bank details if you need them.</p>
             )}
-            {!bank && !upi && <p>Ask the office for PSWS&apos;s bank details if you need them.</p>}
-            <p className={p.payRule}>
-              Only from an Indian bank account or UPI: PSWS cannot take money from foreign bank accounts. PSWS never asks
-              you to pay into a person&apos;s account.
-            </p>
-            <p className={p.payRule}>
-              <b>Living abroad?</b> Give it to a PSWS member in India. They pay it in here and record it in your name.
-            </p>
+            <p className={p.payRule}>Only from an Indian bank account or UPI: PSWS cannot take money from foreign bank accounts.</p>
           </>
         )}
       </div>

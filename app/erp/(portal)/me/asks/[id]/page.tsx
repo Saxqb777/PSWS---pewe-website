@@ -8,6 +8,7 @@ import { AskStatus, H2, PledgeStatus, Raised } from "@/components/erp/portal-ui"
 import { AutoRefresh, ShareAsk } from "@/components/erp/portal-client";
 import { GiveForm, PhotoForm, PromiseForm } from "@/components/erp/portal-forms";
 import { collectionStatus, myPromises } from "@/lib/erp/collection";
+import { GiveSwitch } from "@/components/erp/give-switch";
 import { AskPhotos } from "@/components/erp/ask-photos";
 import { askPhotos } from "@/lib/erp/files";
 import { PayTo } from "@/components/erp/pay-to";
@@ -45,7 +46,7 @@ export default async function AskPage({
     .filter((x) => x.status === "open")
     .map((x) => ({
       id: x.id,
-      label: `${x.giver_name ?? "My promise"} · ${inr(x.amount_paise)}`,
+      label: `${x.giver_name ?? "My commitment"} · ${inr(x.amount_paise)}`,
       giver_name: x.giver_name,
       country: x.country,
       amount_paise: x.amount_paise,
@@ -94,7 +95,7 @@ export default async function AskPage({
       )}
       {status && (
         <p className={styles.note} style={{ marginTop: 6 }}>
-          In the bank {inr(status.inBank)} · being checked {inr(status.checking)} · promised {inr(status.promised)} ·{" "}
+          In the bank {inr(status.inBank)} · being checked {inr(status.checking)} · committed {inr(status.promised)} ·{" "}
           <Link href={`/erp/collection/${a.id}`}>Collection status</Link>
         </p>
       )}
@@ -186,14 +187,14 @@ export default async function AskPage({
 
       {promises.length > 0 && (
         <>
-          <H2>My promises</H2>
+          <H2>My commitments</H2>
           <ul className={p.items}>
             {promises.map((x) => (
               <li key={x.id}>
-                <span className={p.itemTitle}>{x.giver_name ? `For ${x.giver_name}` : "My promise"}</span>
+                <span className={p.itemTitle}>{x.giver_name ? `For ${x.giver_name}` : "My commitment"}</span>
                 <span className={p.itemAmt}>{inr(x.amount_paise)}</span>
                 <span className={p.itemMeta}>
-                  {x.status === "open" ? "Promised, not sent yet" : "Sent and recorded"}
+                  {x.status === "open" ? "Committed, not sent yet" : "Sent and recorded"}
                   {x.country ? ` · lives in ${x.country}` : ""}
                   {x.note ? ` · ${x.note}` : ""}
                 </span>
@@ -201,7 +202,7 @@ export default async function AskPage({
                   <details className={p.takeBack}>
                     <summary>Not coming?</summary>
                     <form action={dropOwnPromise.bind(null, a.id, x.id)}>
-                      <span>It stops counting as promised.</span>
+                      <span>It stops counting as committed.</span>
                       <button type="submit" className={styles.btnQuiet}>
                         Yes, drop it
                       </button>
@@ -217,14 +218,23 @@ export default async function AskPage({
       {open && !ended && (
         <>
           <H2>Give to this</H2>
-          <PayTo />
-          <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} promises={openPromises} />
-          <H2>Promised, not sent yet?</H2>
-          <p className={styles.note}>
-            Record a promise, yours or someone&apos;s you know. It shows as promised on the collection status until the
-            money is sent; then record it above and pick the promise.
-          </p>
-          <PromiseForm action={promiseGift.bind(null, a.id)} />
+          <GiveSwitch
+            sent={
+              <>
+                <PayTo />
+                <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} promises={openPromises} />
+              </>
+            }
+            commit={
+              <>
+                <p className={styles.note} style={{ margin: "12px 0 16px" }}>
+                  Money you, or someone you know, will send later. It shows as committed on the collection status until it
+                  is sent; then switch to &ldquo;I have sent it&rdquo; and pick it.
+                </p>
+                <PromiseForm action={promiseGift.bind(null, a.id)} />
+              </>
+            }
+          />
           <H2>Tell others</H2>
           <ShareAsk title={a.title} path={`/erp/me/asks/${a.id}`} />
         </>

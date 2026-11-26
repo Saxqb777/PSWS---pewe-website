@@ -1509,3 +1509,18 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums lining-nums;
 }
+
+/* PSWS's bank details, one tap away so the form stays short */
+.bankFold > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.bankFold[open] > summary {
+  margin-bottom: 8px;
+}
+
+.bankFold + .payRule {
+  margin-top: 8px;
+}

@@ -51,7 +51,7 @@ export async function addPromise(
     RETURNING id, (SELECT title FROM erp_ask WHERE id = ${f.ask_id}) AS title`;
   const id = num(rows[0].id);
   await logChange(u.id, "added", "promise", id,
-    `Promised ${inr(f.amount_paise)}${f.giver_name ? ` for ${f.giver_name}` : ""} to ${rows[0].title}`);
+    `Committed ${inr(f.amount_paise)}${f.giver_name ? ` for ${f.giver_name}` : ""} to ${rows[0].title}`);
   return id;
 }
 
@@ -62,7 +62,7 @@ export async function dropPromise(u: User, id: number) {
     WHERE id = ${id} AND member_id = ${u.id} AND status = 'open' RETURNING amount_paise, giver_name`;
   if (rows[0])
     await logChange(u.id, "cancelled", "promise", id,
-      `Dropped a promise of ${inr(num(rows[0].amount_paise))}${rows[0].giver_name ? ` for ${rows[0].giver_name}` : ""}`);
+      `Dropped a commitment of ${inr(num(rows[0].amount_paise))}${rows[0].giver_name ? ` for ${rows[0].giver_name}` : ""}`);
 }
 
 /** The money for a promise was sent and recorded: it now counts as sent, not promised. */

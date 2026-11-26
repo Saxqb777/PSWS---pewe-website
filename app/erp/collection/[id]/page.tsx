@@ -26,7 +26,7 @@ function shareText(title: string, asOf: string, s: CollectionStatus): string {
     ...(s.target ? [`Target: ${inr(s.target)}`] : []),
     `In the bank: ${inr(s.inBank)}`,
     `Being checked: ${inr(s.checking)}`,
-    `Promised: ${inr(s.promised)}`,
+    `Committed: ${inr(s.promised)}`,
     `Total: ${inr(s.total)}${s.target ? ` (${pctOf(s.total, s.target)})` : ""}`,
     ...(s.balance != null ? [`Still to raise: ${inr(s.balance)}`] : []),
     "",
@@ -37,7 +37,7 @@ function shareText(title: string, asOf: string, s: CollectionStatus): string {
 
 /**
  * A collection drive's status on the Society's letterhead, live: the target,
- * what is in the bank, being checked and promised, by region, and members' own
+ * what is in the bank, being checked and committed, by region, and members' own
  * gifts against what others gave through them. For anyone signed in.
  */
 export default async function CollectionStatusPage({ params }: { params: Promise<{ id: string }> }) {
@@ -135,7 +135,7 @@ export default async function CollectionStatusPage({ params }: { params: Promise
                 <dd className="cs-big">{s.target ? inr(s.target) : "Not set"}</dd>
               </div>
               <div>
-                <dt>Raised and promised</dt>
+                <dt>Raised and committed</dt>
                 <dd className="cs-big">
                   {inr(s.total)}
                   {s.target ? <span className="cs-pct"> {pctOf(s.total, s.target)}</span> : null}
@@ -171,7 +171,7 @@ export default async function CollectionStatusPage({ params }: { params: Promise
                     <td className="cs-n">{pctOf(s.checking, s.total)}</td>
                   </tr>
                   <tr>
-                    <td>Promised, not sent yet</td>
+                    <td>Committed, not sent yet</td>
                     <td className="cs-n">{inr(s.promised)}</td>
                     <td className="cs-n">{pctOf(s.promised, s.total)}</td>
                   </tr>
@@ -195,7 +195,7 @@ export default async function CollectionStatusPage({ params }: { params: Promise
                       <th>Where the giver lives</th>
                       <th className="cs-n">In the bank</th>
                       <th className="cs-n">Being checked</th>
-                      <th className="cs-n">Promised</th>
+                      <th className="cs-n">Committed</th>
                       <th className="cs-n">Total</th>
                       <th className="cs-n">Gifts</th>
                       <th className="cs-n">%</th>
@@ -225,7 +225,7 @@ export default async function CollectionStatusPage({ params }: { params: Promise
                   </tbody>
                 </table>
               ) : (
-                <p className="cs-empty">Nothing given or promised yet.</p>
+                <p className="cs-empty">Nothing given or committed yet.</p>
               )}
             </section>
 

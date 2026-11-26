@@ -95,7 +95,7 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
   if (Object.keys(errors).length) return { errors };
   // paying a promise made earlier to this appeal: it then counts as sent, not promised
   const promiseId = askId ? toId(String(data.get("promise_id") ?? "")) : null;
-  if (promiseId && !(await openPromise(u.id, promiseId, askId!))) errors.promise_id = "That promise is not open any more.";
+  if (promiseId && !(await openPromise(u.id, promiseId, askId!))) errors.promise_id = "That commitment is not open any more.";
   if (Object.keys(errors).length) return { errors };
   const proof = await savePicture(u, data.get("proof"), "proof");
   if (proof && "error" in proof) return { errors: { proof: proof.error } };
@@ -191,7 +191,7 @@ export async function promiseGift(askId: number, _: FormState, data: FormData): 
   const errors: Record<string, string> = {};
   const someone = data.get("promise_who") === "someone";
   const giver_name = someone ? clean(data.get("promise_name"), 80) : null;
-  if (someone && !giver_name) errors.promise_name = "Type the name of the person who promised.";
+  if (someone && !giver_name) errors.promise_name = "Type the name of the person who made the commitment.";
   const country = String(data.get("country") ?? "India");
   if (!isCountry(country)) errors.country = "Pick the country from the list.";
   const amount_paise = toPaise(data.get("promise_amount"));
@@ -205,7 +205,7 @@ export async function promiseGift(askId: number, _: FormState, data: FormData): 
     note: clean(data.get("promise_note"), 200),
   });
   revalidatePath(`/erp/me/asks/${askId}`);
-  return { done: "Saved as promised. When the money is sent, record it below and pick this promise." };
+  return { done: "Saved as a commitment. When the money is sent, switch to “I have sent it” and pick it." };
 }
 
 /** The promised gift is not coming after all. */

@@ -90,7 +90,7 @@ export function GiveForm({
   return (
     <ErpForm action={action}>
       {promises.length > 0 && (
-        <Field label="Paying a promise?" hint="Pick it, so it stops counting as promised" name="promise_id">
+        <Field label="Paying a commitment?" hint="Pick it, so it stops counting as committed" name="promise_id">
           <select name="promise_id" value={promise} onChange={(e) => pick(e.target.value)}>
             <option value="">No, a new gift</option>
             {promises.map((x) => (
@@ -316,7 +316,7 @@ export function PromiseForm({ action }: { action: Action }) {
     <ErpForm action={action} resetOnDone>
       <Chips
         name="promise_who"
-        legend="Whose promise is it?"
+        legend="Whose commitment is it?"
         hint="Kisne waada kiya"
         options={PROMISE_WHO}
         value={who}
@@ -332,13 +332,13 @@ export function PromiseForm({ action }: { action: Action }) {
           label={who === "someone" ? "Where do they live?" : "Where do you live?"}
           hint="Kis desh mein rehte hain"
         />
-        <AmountInput name="promise_amount" label="How much is promised?" hint="Kitne ka waada" />
+        <AmountInput name="promise_amount" label="How much is committed?" hint="Kitne ka waada" />
         <Field label="A note" hint="Optional, e.g. after salary on the 5th" name="promise_note">
           <input name="promise_note" autoComplete="off" maxLength={200} />
         </Field>
       </div>
       <div className={styles.actions}>
-        <Submit quiet>Save the promise</Submit>
+        <Submit>Save the commitment</Submit>
       </div>
     </ErpForm>
   );
