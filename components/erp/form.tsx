@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, createContext, startTransition, useActionState, useContext, useState } from "react";
+import { Fragment, createContext, startTransition, useActionState, useContext, useLayoutEffect, useRef, useState } from "react";
 import { inr, rupeesInWords, toPaise } from "@/lib/erp/labels";
 import { waLink, type FormState } from "@/lib/erp/form-state";
 import styles from "./erp.module.css";
@@ -130,6 +130,18 @@ export function Field({
   );
 }
 
+/** What is typed in an amount box, with Indian commas as it is typed: 1,00,000.50. Digits and one point only. */
+export function withCommas(typed: string): string {
+  const clean = typed.replace(/[^\d.]/g, "");
+  const dot = clean.indexOf(".");
+  const whole = (dot < 0 ? clean : clean.slice(0, dot)).replace(/^0+(?=\d)/, "");
+  const cents = dot < 0 ? null : clean.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  const last3 = whole.slice(-3);
+  const rest = whole.slice(0, -3);
+  const grouped = rest ? `${rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",")},${last3}` : last3;
+  return cents == null ? grouped : `${grouped || "0"}.${cents}`;
+}
+
 /** Rupees, with the amount read back in lakh and in words as it is typed. */
 export function AmountInput({
   name,
@@ -144,8 +156,23 @@ export function AmountInput({
   defaultPaise?: number | null;
   onChange?: (paise: number | null) => void;
 }) {
-  const [raw, setRaw] = useState(defaultPaise ? String(defaultPaise / 100) : "");
+  const [raw, setRaw] = useState(defaultPaise ? withCommas(String(defaultPaise / 100)) : "");
   const paise = toPaise(raw);
+  const box = useRef<HTMLInputElement>(null);
+  // where the cursor goes after commas come or go: after the same number of digits as before
+  const caret = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el || caret.current == null || document.activeElement !== el) return;
+    let seen = 0;
+    let at = 0;
+    while (at < raw.length && seen < caret.current) {
+      if (/[\d.]/.test(raw[at])) seen++;
+      at++;
+    }
+    el.setSelectionRange(at, at);
+    caret.current = null;
+  }, [raw]);
   const err = useError(name);
   return (
     <label className={`${styles.field} ${err ? styles.hasError : ""}`}>
@@ -156,14 +183,19 @@ export function AmountInput({
       <span className={styles.amount}>
         <span aria-hidden="true">₹</span>
         <input
+          ref={box}
           name={name}
           inputMode="decimal"
           autoComplete="off"
           placeholder="0"
           value={raw}
           onChange={(e) => {
-            setRaw(e.target.value);
-            onChange?.(toPaise(e.target.value));
+            const typed = e.target.value;
+            const pos = e.target.selectionStart ?? typed.length;
+            caret.current = typed.slice(0, pos).replace(/[^\d.]/g, "").length;
+            const next = withCommas(typed);
+            setRaw(next);
+            onChange?.(toPaise(next));
           }}
         />
       </span>
