@@ -213,6 +213,37 @@ export interface Fund {
 }
 
 /** What is left in each fund: what it started with, plus what came in for it, less what was paid from it. */
+/**
+ * Money dated before the starting balances: the balances leave it out, as if
+ * it were already in them. Said out loud, so it is never missed in silence.
+ */
+export interface BeforeStart {
+  on_date: string;
+  receipts: { no: string; paise: number }[];
+  payments: { no: string; paise: number }[];
+  in_paise: number;
+  out_paise: number;
+}
+
+export async function beforeStart(): Promise<BeforeStart | null> {
+  const o = await getOpening();
+  if (!o) return null;
+  const [ins, outs] = await Promise.all([
+    db()`SELECT receipt_no AS no, amount_paise FROM erp_money_in WHERE cancelled_at IS NULL AND on_date < ${o.on_date}::date ORDER BY on_date, receipt_no`,
+    db()`SELECT voucher_no AS no, amount_paise FROM erp_money_out WHERE cancelled_at IS NULL AND on_date < ${o.on_date}::date ORDER BY on_date, voucher_no`,
+  ]);
+  if (!ins.length && !outs.length) return null;
+  const receipts = ins.map((r) => ({ no: String(r.no), paise: num(r.amount_paise) }));
+  const payments = outs.map((r) => ({ no: String(r.no), paise: num(r.amount_paise) }));
+  return {
+    on_date: o.on_date,
+    receipts,
+    payments,
+    in_paise: receipts.reduce((s, r) => s + r.paise, 0),
+    out_paise: payments.reduce((s, r) => s + r.paise, 0),
+  };
+}
+
 export async function fundBalances(exceptOut: number | null = null): Promise<Fund[]> {
   const o = await getOpening();
   const since = o?.on_date ?? "1900-01-01";

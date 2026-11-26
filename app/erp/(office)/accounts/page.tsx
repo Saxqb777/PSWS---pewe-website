@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import {
+  beforeStart,
   fundBalances,
   getOpening,
   listMonths,
@@ -8,6 +9,7 @@ import {
   placeBalances,
   type Opening,
 } from "@/lib/erp/books";
+import { BeforeStartWarning } from "@/components/erp/before-start";
 import { HEADS, fyMonths, fyOf, inr, showDate, showMonth, showWhen, thisMonthIST, todayIST, handlesMoney } from "@/lib/erp/labels";
 import { AmountInput, Chips, ErpForm, Field, Submit } from "@/components/erp/form";
 import { PageHead, Pending, Section } from "@/components/erp/ui";
@@ -51,12 +53,13 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   const u = await requireUser();
   const sp = await searchParams;
   const money = handlesMoney(u);
-  const [opening, places, funds, months, pendingOpening] = await Promise.all([
+  const [opening, places, funds, months, pendingOpening, early] = await Promise.all([
     getOpening(),
     placeBalances(),
     fundBalances(),
     listMonths(),
     openApproval("opening"),
+    beforeStart(),
   ]);
   const fy = fyOf(todayIST());
   const prevFy = `${Number(fy.slice(0, 4)) - 1}-${fy.slice(2, 4)}`;
@@ -90,6 +93,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
       ) : (
         <>
           <Section title="Balances" />
+          {early && <BeforeStartWarning b={early} />}
           <table className={styles.sum}>
             <tbody>
               <tr>

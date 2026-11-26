@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/erp/auth";
 import { knownYears, report, stipendLines, totals } from "@/lib/erp/data";
-import { approvalsForMe, fundBalances, placeBalances } from "@/lib/erp/books";
+import { approvalsForMe, beforeStart, fundBalances, placeBalances } from "@/lib/erp/books";
+import { BeforeStartWarning } from "@/components/erp/before-start";
 import { membersNow } from "@/lib/erp/dashboard";
 import { portalOn } from "@/lib/erp/flags";
 import { officeWaiting, publicAsks } from "@/lib/erp/portal";
@@ -30,7 +31,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const range = fyRange(fy);
   const portal = portalOn();
 
-  const [places, funds, forMe, waiting, stipends, year, rep, members, asks] = await Promise.all([
+  const [places, funds, forMe, waiting, stipends, year, rep, members, asks, early] = await Promise.all([
     placeBalances(),
     fundBalances(),
     approvalsForMe(u.id),
@@ -40,6 +41,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     report(fy, null),
     portal ? membersNow() : Promise.resolve(null),
     portal ? publicAsks("live") : Promise.resolve([]),
+    beforeStart(),
   ]);
 
   const zakat = funds.find((f) => f.head === "zakat");
@@ -64,6 +66,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <PageHead title="Dashboard" sub="The Society at a glance" />
 
       <Section title="Held now" />
+      {early && <BeforeStartWarning b={early} link />}
       <div className={d.stats}>
         <Stat label="In the bank" value={full(places.bank)} href="/erp/accounts" />
         <Stat label="Cash in hand" value={full(places.cash)} href="/erp/accounts" />
