@@ -20,7 +20,7 @@ const paidInBy = (m: MoneyIn) =>
   m.collected_by_name && m.givers?.length === 1 && m.from_name === m.givers[0] ? m.collected_by_name : null;
 
 /** Every receipt says so, on paper and on WhatsApp: it is made by the system and carries no signature. */
-export const SYSTEM_NOTE = "This is a system-generated receipt and does not need a signature.";
+export const SYSTEM_NOTE = "This is a system generated receipt and requires no signature.";
 
 /** The name a receipt is saved under as a PDF: its number, which a file name can hold. */
 export const receiptFileName = (no: string) => `PSWS Receipt ${no.replace(/\//g, "-")}`;
