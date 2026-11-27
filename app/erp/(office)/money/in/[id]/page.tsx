@@ -1,18 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/erp/auth";
+import type { Metadata } from "next";
+import { currentUser, requireUser } from "@/lib/erp/auth";
 import { getMoneyIn } from "@/lib/erp/data";
 import { handlesMoney, showDate, showPhone, showWhen } from "@/lib/erp/labels";
 import { toId, waLink } from "@/lib/erp/form-state";
 import { AskBox } from "@/components/erp/cancel-box";
 import { PrintButton } from "@/components/erp/shell";
-import { Receipt, receiptText } from "@/components/erp/receipt";
+import { Receipt, receiptFileName, receiptText } from "@/components/erp/receipt";
 import { PageHead, Pending } from "@/components/erp/ui";
 import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
 import { askDelete } from "../../actions";
 
-export const metadata = { title: "Receipt" };
+/** Saved as a PDF, the file takes the page's title: the receipt number. */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const u = await currentUser();
+  const id = toId((await params).id);
+  const m = u && u.role !== "member" && id ? await getMoneyIn(id) : null;
+  return { title: { absolute: m ? receiptFileName(m.receipt_no) : "PSWS Receipt" } };
+}
 
 export default async function MoneyInPage({
   params,

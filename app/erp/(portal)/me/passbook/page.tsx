@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireMember } from "@/lib/erp/auth";
 import { collections, myPledges, passbook, pledgeAmount } from "@/lib/erp/portal";
 import { knownYears } from "@/lib/erp/data";
-import { fyOf, inr, oneGiver, showDate, todayIST } from "@/lib/erp/labels";
+import { HEADS, fyOf, inr, labelOf, oneGiver, showDate, todayIST } from "@/lib/erp/labels";
 import { H2, Passbook, PledgeStatus } from "@/components/erp/portal-ui";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
@@ -113,7 +113,7 @@ export default async function PassbookPage({ searchParams }: { searchParams: Pro
             {open.map((x) => (
               <li key={x.id}>
                 <span className={p.itemTitle}>
-                  {x.ask_title ?? "Gift"}
+                  {x.ask_title ?? labelOf(HEADS, x.head, x.head_other)}
                   {oneGiver(x) ? ` (for ${oneGiver(x)})` : x.collected ? " (collected)" : ""}
                   <PledgeStatus status={x.status} />
                 </span>

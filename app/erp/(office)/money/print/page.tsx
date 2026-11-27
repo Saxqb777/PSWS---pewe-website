@@ -9,7 +9,7 @@ import { DateInput } from "@/components/erp/date-input";
 import { PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 
-export const metadata = { title: "Print receipts" };
+export const metadata = { title: { absolute: "PSWS Receipts" } };
 
 type Search = { from?: string; to?: string; r?: string | string[] };
 

@@ -1427,7 +1427,6 @@ a.rowLink:hover {
   font-size: 13px;
   line-height: 1.4;
   color: var(--ink-3);
-  border-top: 1px solid var(--ink-2);
 }
 
 .receiptSign b {
@@ -1713,4 +1712,62 @@ a.rowLink:hover {
 
 .switchBar button {
   color: var(--ink);
+}
+
+/* the Society's seal at the head of every receipt, and the line saying it needs no signature */
+.receiptSeal {
+  display: block;
+  margin: 0 auto 6px;
+}
+
+.receiptSys {
+  margin: 16px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* several receipts printed together: a little tighter, so two always fit on one A4 with the seal */
+@media print {
+  .receiptSheet > article {
+    padding: 12px 16px 10px;
+  }
+  .receiptSheet .receiptSeal {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 2px;
+  }
+  .receiptSheet .receiptName {
+    font-size: 18px;
+  }
+  .receiptSheet .receiptMr {
+    font-size: 13px;
+  }
+  .receiptSheet .receiptAddr {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+  .receiptSheet .receiptLine {
+    margin-top: 8px;
+    padding-top: 6px;
+    font-size: 12.5px;
+  }
+  .receiptSheet .receiptField {
+    margin-top: 7px;
+    font-size: 13px;
+  }
+  .receiptSheet .receiptFill {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+  .receiptSheet .receiptFoot {
+    margin-top: 12px;
+  }
+  .receiptSheet .receiptSys {
+    margin-top: 8px;
+    padding-top: 5px;
+    font-size: 10.5px;
+  }
 }

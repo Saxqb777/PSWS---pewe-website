@@ -2,7 +2,7 @@ import Link from "next/link";
 import { isDemo, lookingAt, requireMember } from "@/lib/erp/auth";
 import { collections, feed, getMe, myPledges, passbook, publicAsks, pledgeAmount } from "@/lib/erp/portal";
 import { listMeetings } from "@/lib/erp/data";
-import { fyOf, inr, showDate, showDay, todayIST } from "@/lib/erp/labels";
+import { HEADS, fyOf, inr, labelOf, showDate, showDay, todayIST } from "@/lib/erp/labels";
 import { AskCard, Feed, H2, MemberCard } from "@/components/erp/portal-ui";
 import { AutoRefresh } from "@/components/erp/portal-client";
 import { InstallCard } from "@/components/erp/install";
@@ -70,7 +70,7 @@ export default async function MyHome({ searchParams }: { searchParams: Promise<{
             {waiting.map((x) => (
               <li key={x.id}>
                 <span className={p.itemTitle}>
-                  {x.ask_title ?? "Gift"}
+                  {x.ask_title ?? labelOf(HEADS, x.head, x.head_other)}
                   <span className={`${p.status} ${x.status === "waiting" ? p.stWait : p.stNo}`}>
                     {x.status === "waiting" ? "Being checked" : "Not found yet"}
                   </span>

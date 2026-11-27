@@ -1,6 +1,7 @@
 import { HEADS, foreign, howPaid, inr, labelOf, rupeesInWords, showDate } from "@/lib/erp/labels";
 import type { MoneyIn } from "@/lib/erp/data";
 import { SOCIETY } from "@/lib/site";
+import { Seal } from "@/components/seal";
 import styles from "./erp.module.css";
 
 /**
@@ -18,6 +19,12 @@ const sentAs = (m: MoneyIn) => (m.currency && m.currency !== "INR" ? foreign(m.s
 const paidInBy = (m: MoneyIn) =>
   m.collected_by_name && m.givers?.length === 1 && m.from_name === m.givers[0] ? m.collected_by_name : null;
 
+/** Every receipt says so, on paper and on WhatsApp: it is made by the system and carries no signature. */
+export const SYSTEM_NOTE = "This is a system-generated receipt and does not need a signature.";
+
+/** The name a receipt is saved under as a PDF: its number, which a file name can hold. */
+export const receiptFileName = (no: string) => `PSWS Receipt ${no.replace(/\//g, "-")}`;
+
 /** The receipt as a WhatsApp message. */
 export function receiptText(m: MoneyIn): string {
   const lives = livesIn(m);
@@ -31,6 +38,8 @@ export function receiptText(m: MoneyIn): string {
     ...(by ? ["", `Paid in by: ${by}`] : m.givers?.length ? ["", `Collected from: ${m.givers.join(", ")}`] : []),
     "",
     `Thank you. ${SOCIETY.shortName} office, Pewe`,
+    "",
+    SYSTEM_NOTE,
   ].join("\n");
 }
 
@@ -41,6 +50,7 @@ export function Receipt({ m }: { m: MoneyIn }) {
   return (
     <article className={styles.receipt} aria-label={`Receipt ${m.receipt_no}`}>
       <header className={styles.receiptHead}>
+        <Seal size={64} className={styles.receiptSeal} />
         <p className={styles.receiptName}>{SOCIETY.name}</p>
         <p className={styles.receiptMr}>{SOCIETY.nameMarathi}</p>
         <p className={styles.receiptAddr}>
@@ -107,6 +117,7 @@ export function Receipt({ m }: { m: MoneyIn }) {
           {m.created_by_name ?? "the office"}
         </span>
       </footer>
+      <p className={styles.receiptSys}>{SYSTEM_NOTE}</p>
       {m.cancelled_at && <span className={styles.stamp}>Deleted</span>}
     </article>
   );

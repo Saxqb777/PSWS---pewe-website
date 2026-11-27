@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireMember } from "@/lib/erp/auth";
+import type { Metadata } from "next";
+import { currentUser, requireMember } from "@/lib/erp/auth";
 import { myReceipt } from "@/lib/erp/portal";
 import { toId, waLink } from "@/lib/erp/form-state";
 import { PrintButton } from "@/components/erp/shell";
-import { Receipt, receiptText } from "@/components/erp/receipt";
+import { Receipt, receiptFileName, receiptText } from "@/components/erp/receipt";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 
-export const metadata = { title: "Receipt" };
+/** Saved as a PDF, the file takes the page's title: the receipt number, not "My PSWS". */
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const u = await currentUser();
+  const id = toId((await params).id);
+  const m = u && u.role === "member" && id ? await myReceipt(u.id, id) : null;
+  return { title: { absolute: m ? receiptFileName(m.receipt_no) : "PSWS Receipt" } };
+}
 
 /** A member's own receipt, as the office printed it: to keep, print, or send on. */
 export default async function MyReceipt({ params }: { params: Promise<{ id: string }> }) {
