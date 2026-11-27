@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { Seal } from "@/components/seal";
 import { requireMember } from "@/lib/erp/auth";
 import { collections, myPledges, passbook } from "@/lib/erp/portal";
 import { fyOf, fyRange, inr, showDate, todayIST } from "@/lib/erp/labels";
@@ -9,10 +11,30 @@ import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 import { DateInput } from "@/components/erp/date-input";
 
-export const metadata = { title: "My statement" };
-
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const real = (d: string | undefined) => (d && DAY.test(d) && !Number.isNaN(Date.parse(d)) ? d : null);
+
+/** 2026-04-01 → 01-04-2026, for a file name. */
+const dmy = (d: string) => d.split("-").reverse().join("-");
+
+/** Saved as a PDF, the file takes the page's title: whose statement, and for which dates. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}): Promise<Metadata> {
+  const u = await requireMember();
+  const sp = await searchParams;
+  let from = real(sp.from);
+  let to = real(sp.to);
+  if (from && to && from > to) [from, to] = [to, from];
+  return {
+    title: { absolute: from && to ? `PSWS Statement ${u.member_no} ${dmy(from)} to ${dmy(to)}` : "PSWS Statement" },
+  };
+}
+
+/** Said at the foot of every statement, as on every receipt. */
+const SYSTEM_NOTE = "This is a system generated statement and requires no signature.";
 
 /** A statement for any two dates the member picks: printed, or saved as a PDF to send on. */
 export default async function Statement({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
@@ -81,6 +103,7 @@ export default async function Statement({ searchParams }: { searchParams: Promis
           </div>
           <article className={p.stmt} aria-label="Statement">
             <header className={p.stmtHead}>
+              <Seal size={56} className={p.stmtSeal} />
               <p className={p.stmtSociety}>{SOCIETY.name}</p>
               <p className={p.stmtSmall}>
                 {SOCIETY.nameMarathi}
@@ -135,8 +158,10 @@ export default async function Statement({ searchParams }: { searchParams: Promis
 
             {gathered.length > 0 && (
               <>
-                <h3 className={p.stmtSub}>Collected from others and handed in: {inr(handedIn)}</h3>
-                <p className={p.stmtSmall}>This counts for the appeal it was for, not as your own gift.</p>
+                <h3 className={p.stmtSub}>Paid in for others: {inr(handedIn)}</h3>
+                <p className={p.stmtSmall}>
+                  Other people&apos;s gifts you collected or paid in. They count as their gifts, not your own.
+                </p>
                 <table className={p.pass}>
                   <tbody>
                     {gathered.map((c) => (
@@ -146,7 +171,11 @@ export default async function Statement({ searchParams }: { searchParams: Promis
                           {c.what}
                           <small>
                             {c.no}
-                            {c.people ? ` · from ${c.people} ${c.people === 1 ? "person" : "people"}` : ""}
+                            {c.for_name
+                              ? ` · for ${c.for_name}`
+                              : c.people
+                                ? ` · from ${c.people} ${c.people === 1 ? "person" : "people"}`
+                                : ""}
                           </small>
                         </td>
                         <td className={p.amt}>{inr(c.amount_paise).replace("₹", "")}</td>
@@ -162,7 +191,7 @@ export default async function Statement({ searchParams }: { searchParams: Promis
                 Made on {showDate(today)} from the {SOCIETY.shortName} books. Each gift here has its own receipt with the
                 same number.
               </span>
-              <b>For {SOCIETY.shortName}</b>
+              <span className={p.stmtSys}>{SYSTEM_NOTE}</span>
             </footer>
           </article>
         </>

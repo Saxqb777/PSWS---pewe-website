@@ -1164,9 +1164,10 @@
 
 .stmtFoot {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 16px;
+  gap: 10px 16px;
   margin-top: 24px;
   font-size: 12px;
   color: var(--ink-3);
@@ -1523,4 +1524,18 @@
 
 .bankFold + .payRule {
   margin-top: 8px;
+}
+
+/* the statement: the Society's seal at its head, and no signature at its foot */
+.stmtSeal {
+  display: block;
+  margin: 0 auto 6px;
+}
+
+.stmtFoot .stmtSys {
+  display: block;
+  flex-basis: 100%;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
 }
