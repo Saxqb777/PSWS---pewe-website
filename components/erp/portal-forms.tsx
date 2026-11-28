@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ASK_KINDS, HEADS, todayIST, type AskKind } from "@/lib/erp/labels";
+import { ASK_KINDS, HEADS, inr, showDate, todayIST, type AskKind } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
+import { readProof, type ProofRead } from "@/app/erp/(portal)/me/actions";
 import { AmountInput, ChoiceWithOther, Chips, ErpForm, Field, Submit, type Choice } from "./form";
 import { AmountBox, CountryField, GiversFields, HowBox, type RefLabels } from "./money-detail";
 import { PictureInput } from "./picture-input";
@@ -69,15 +70,23 @@ export function GiveForm({
   action,
   chooseFund,
   promises = [],
+  reads = false,
 }: {
   action: Action;
   chooseFund: boolean;
   /** open promises to this appeal: sending one turns it from promised into sent */
   promises?: OpenPromise[];
+  /** the screenshot reader is switched on: the form fills itself from the picture */
+  reads?: boolean;
 }) {
   const [from, setFrom] = useState<FromWho>("me");
   const [promise, setPromise] = useState("");
   const [giverName, setGiverName] = useState("");
+  const [read, setRead] = useState<ProofRead | null>(null);
+  const [reading, setReading] = useState(false);
+  // goes up each time the screenshot is read, so the boxes below take their new starting values
+  const [fill, setFill] = useState(0);
+  const seen = read?.ok ? read : null;
   const kept = promises.find((x) => String(x.id) === promise) ?? null;
   const pick = (v: string) => {
     setPromise(v);
@@ -87,8 +96,38 @@ export function GiveForm({
       setGiverName(pr.giver_name ?? "");
     }
   };
+  const picked = async (file: File | null) => {
+    setRead(null);
+    if (!file || !reads) return;
+    setReading(true);
+    const fd = new FormData();
+    fd.append("proof", file);
+    let r: ProofRead;
+    try {
+      r = await readProof(fd);
+    } catch {
+      r = { ok: false, why: "unreadable" };
+    }
+    setReading(false);
+    setRead(r);
+    if (r.ok) {
+      setFill((n) => n + 1);
+      if (r.other_person && r.payer_name) {
+        setFrom("someone");
+        setGiverName(r.payer_name);
+      }
+    }
+  };
   return (
     <ErpForm action={action}>
+      <PictureInput
+        name="proof"
+        label="Screenshot of the payment"
+        hint={reads ? "Add it first and the form fills itself. Only you and the Accountant see it" : "Optional · only you and the Accountant see it"}
+        add="Add the screenshot"
+        onPicked={picked}
+        note={<ReadNote read={read} reading={reading} />}
+      />
       {promises.length > 0 && (
         <Field label="Paying a commitment?" hint="Pick it, so it stops counting as committed" name="promise_id">
           <select name="promise_id" value={promise} onChange={(e) => pick(e.target.value)}>
@@ -137,10 +176,10 @@ export function GiveForm({
         </>
       )}
       <AmountBox
-        key={`a${promise}`}
+        key={`a${promise}-${fill}`}
         label={from === "many" ? "How much did you send in all?" : "How much did you send?"}
         hint="Kitna bheja"
-        defaultPaise={kept?.amount_paise}
+        defaultPaise={seen?.amount_paise ?? kept?.amount_paise}
         rupeesToo={false}
       />
       {chooseFund && (
@@ -153,7 +192,15 @@ export function GiveForm({
           otherLabel="What is it for?"
         />
       )}
-      <HowBox legend="How did you send it?" hint="Kaise bheja" options={PAID_BY} defaultMethod="upi" refs={REFS} />
+      <HowBox
+        key={`h${fill}`}
+        legend="How did you send it?"
+        hint="Kaise bheja"
+        options={PAID_BY}
+        defaultMethod={seen?.method ?? "upi"}
+        refs={REFS}
+        initial={{ reference: seen?.reference, bank_name: seen?.method === "bank" ? seen.payer_bank : null }}
+      />
       <div className={styles.grid}>
         {from !== "someone" && (
           <CountryField
@@ -164,15 +211,9 @@ export function GiveForm({
           />
         )}
         <Field label="When?" hint="Kab bheja" name="sent_on">
-          <DateInput name="sent_on" defaultValue={todayIST()} max={todayIST()} />
+          <DateInput key={`d${fill}`} name="sent_on" defaultValue={seen?.sent_on ?? todayIST()} max={todayIST()} />
         </Field>
       </div>
-      <PictureInput
-        name="proof"
-        label="Screenshot of the payment"
-        hint="Optional · only you and the Accountant see it"
-        add="Add a screenshot"
-      />
       <label className={styles.check}>
         <input type="checkbox" name="hide_name" />
         <span>
@@ -186,6 +227,52 @@ export function GiveForm({
         <Submit>I have sent it</Submit>
       </div>
     </ErpForm>
+  );
+}
+
+/** What the screenshot said, in one line, so the member checks it rather than types it. */
+function ReadNote({ read, reading }: { read: ProofRead | null; reading: boolean }) {
+  if (reading) return <span className={styles.hint}>Reading the screenshot…</span>;
+  if (!read || (!read.ok && read.why === "off")) return null;
+  if (!read.ok)
+    return (
+      <span className={styles.note}>
+        {read.why === "not_a_payment"
+          ? "This does not look like a payment screenshot. Type the details below."
+          : read.why === "bad_file"
+            ? "Choose a photo or a screenshot (JPG or PNG)."
+            : "Could not read the screenshot. Type the details below."}
+      </span>
+    );
+  const bits = [
+    read.amount_paise ? inr(read.amount_paise) : null,
+    read.sent_on ? showDate(read.sent_on) : null,
+    read.reference ? `UPI ID ${read.reference}` : null,
+    read.payer_name ? `from ${read.payer_name}${read.payer_bank ? ` (${read.payer_bank})` : ""}` : null,
+    read.app ? `on ${read.app}` : null,
+  ].filter(Boolean);
+  return (
+    <span className={styles.note} style={{ display: "block" }}>
+      <b>Read from the screenshot:</b> {bits.length ? bits.join(" · ") : "nothing clear"}.
+      {read.paid_to === "psws" && " Paid to PSWS ✓."}
+      {read.abroad && " Paid from an NRO / NRE account: if the giver lives abroad, pick their country."}
+      {" "}Check the form below and change anything that is wrong.
+      {read.paid_to === "other" && (
+        <span className={styles.err} style={{ display: "block" }}>
+          This does not look like a payment to PSWS. Check the screenshot.
+        </span>
+      )}
+      {read.status === "failed" && (
+        <span className={styles.err} style={{ display: "block" }}>
+          The screenshot shows a payment that failed.
+        </span>
+      )}
+      {read.status === "pending" && (
+        <span className={styles.err} style={{ display: "block" }}>
+          The screenshot shows a payment still pending.
+        </span>
+      )}
+    </span>
   );
 }
 

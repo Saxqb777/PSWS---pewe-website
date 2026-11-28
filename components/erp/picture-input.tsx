@@ -8,7 +8,23 @@ import styles from "./erp.module.css";
  * before it is sent, so it goes quickly on a slow connection and the office
  * keeps only what it needs.
  */
-export function PictureInput({ name, label, hint, add }: { name: string; label: string; hint: string; add: string }) {
+export function PictureInput({
+  name,
+  label,
+  hint,
+  add,
+  onPicked,
+  note,
+}: {
+  name: string;
+  label: string;
+  hint: string;
+  add: string;
+  /** the picture as it will be sent (already made small), or null when it is removed */
+  onPicked?: (file: File | null) => void;
+  /** shown under the picture: what was read from it, for instance */
+  note?: React.ReactNode;
+}) {
   const input = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -18,6 +34,7 @@ export function PictureInput({ name, label, hint, add }: { name: string; label: 
     if (input.current) input.current.value = "";
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
+    onPicked?.(null);
   };
 
   return (
@@ -59,11 +76,13 @@ export function PictureInput({ name, label, hint, add }: { name: string; label: 
             if (preview) URL.revokeObjectURL(preview);
             setPreview(URL.createObjectURL(small));
             setBusy(false);
+            onPicked?.(small);
           }}
         />
         <span>{busy ? "Getting it ready…" : preview ? "Choose another" : add}</span>
       </label>
       {problem && <span className={styles.err}>{problem}</span>}
+      {note}
     </div>
   );
 }

@@ -11,12 +11,15 @@ import { collectionStatus, myPromises } from "@/lib/erp/collection";
 import { GiveSwitch } from "@/components/erp/give-switch";
 import { AskPhotos } from "@/components/erp/ask-photos";
 import { askPhotos } from "@/lib/erp/files";
+import { readerOn } from "@/lib/erp/screenshot";
 import { PayTo } from "@/components/erp/pay-to";
 import styles from "@/components/erp/erp.module.css";
 import p from "@/components/erp/portal.module.css";
 import { addOwnPhoto, dropOwnPromise, promiseGift, removeOwnPhoto, sendPledge, takeBackAsk } from "../../actions";
 
 export const metadata = { title: "Donate" };
+/** reading a payment screenshot takes a few seconds */
+export const maxDuration = 30;
 
 export default async function AskPage({
   params,
@@ -222,7 +225,7 @@ export default async function AskPage({
             sent={
               <>
                 <PayTo />
-                <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} promises={openPromises} />
+                <GiveForm action={sendPledge.bind(null, a.id)} chooseFund={false} promises={openPromises} reads={readerOn()} />
               </>
             }
             commit={

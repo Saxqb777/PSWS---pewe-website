@@ -19,6 +19,17 @@ const TYPES: Record<string, (b: Buffer) => boolean> = {
 /** The phone shrinks a picture before sending it; this is the most the office keeps of one. */
 const MOST = 3 * 1024 * 1024;
 
+/** A picture from a form, checked: its bytes and what it is. Null when none was chosen. */
+export async function pictureBytes(file: FormDataEntryValue | null): Promise<{ bytes: Buffer; mime: string } | { error: string } | null> {
+  if (!file || typeof file === "string" || file.size === 0) return null;
+  if (file.size > MOST) return { error: "This picture is too big. A screenshot is enough." };
+  const bytes = Buffer.from(await file.arrayBuffer());
+  // what the file is, from its first bytes, not from its name
+  const mime = Object.keys(TYPES).find((t) => TYPES[t](bytes));
+  if (!mime) return { error: "Choose a photo or a screenshot (JPG or PNG)." };
+  return { bytes, mime };
+}
+
 /** A picture from a form, checked and kept. Null when none was chosen. */
 export async function savePicture(
   u: User,
@@ -26,12 +37,9 @@ export async function savePicture(
   kind: FileKind,
   { askId = null, caption = null }: { askId?: number | null; caption?: string | null } = {},
 ): Promise<{ id: number } | { error: string } | null> {
-  if (!file || typeof file === "string" || file.size === 0) return null;
-  if (file.size > MOST) return { error: "This picture is too big. A screenshot is enough." };
-  const bytes = Buffer.from(await file.arrayBuffer());
-  // what the file is, from its first bytes, not from its name
-  const mime = Object.keys(TYPES).find((t) => TYPES[t](bytes));
-  if (!mime) return { error: "Choose a photo or a screenshot (JPG or PNG)." };
+  const pic = await pictureBytes(file);
+  if (!pic || "error" in pic) return pic;
+  const { bytes, mime } = pic;
   const rows = await db()`
     INSERT INTO erp_file (kind, mime, bytes, caption, ask_id, uploaded_by)
     VALUES (${kind}, ${mime}, ${bytes}, ${caption}, ${askId}, ${u.id}) RETURNING id`;

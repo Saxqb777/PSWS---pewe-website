@@ -8,7 +8,61 @@ import { ASK_KINDS, HEADS, METHODS, clean, cleanLong, isCountry, isDate, isKey, 
 import { toId, type FormState } from "@/lib/erp/form-state";
 import { readDetail, readGivers } from "@/lib/erp/details";
 import { addPromise, dropPromise, keepPromise, openPromise } from "@/lib/erp/collection";
-import { askPhotos, removeAskPhoto, savePicture } from "@/lib/erp/files";
+import { askPhotos, pictureBytes, removeAskPhoto, savePicture } from "@/lib/erp/files";
+import { paidToPsws, readerOn, sameName, seePayment } from "@/lib/erp/screenshot";
+
+/** What the Give form learns from a payment screenshot, to fill itself in. */
+export type ProofRead =
+  | {
+      ok: true;
+      amount_paise: number | null;
+      sent_on: string | null;
+      reference: string | null;
+      method: "upi" | "bank";
+      payer_name: string | null;
+      payer_bank: string | null;
+      app: string | null;
+      status: "success" | "failed" | "pending" | "unknown";
+      paid_to: "psws" | "other" | "unknown";
+      /** the payer's name is not the member's: likely someone else's money */
+      other_person: boolean;
+      /** paid from an NRO or NRE account: the giver may live abroad */
+      abroad: boolean;
+    }
+  | { ok: false; why: "off" | "not_a_payment" | "unreadable" | "bad_file" };
+
+/** "FUZAIL KHAN", as a bank prints it, becomes "Fuzail Khan"; a name with small letters in it is left as it is. */
+const tidyName = (n: string | null) =>
+  n && n === n.toUpperCase() ? n.toLowerCase().replace(/(^|[\s.-])([a-z])/g, (m, a, b) => a + b.toUpperCase()) : n;
+
+/** The member chose a screenshot: read it, so the form fills itself. Never an error for the member, only "type it". */
+export async function readProof(data: FormData): Promise<ProofRead> {
+  const u = await actingMember();
+  if (!readerOn()) return { ok: false, why: "off" };
+  const pic = await pictureBytes(data.get("proof"));
+  if (!pic || "error" in pic) return { ok: false, why: "bad_file" };
+  const s = await seePayment(pic.bytes, pic.mime);
+  if (!s) return { ok: false, why: "unreadable" };
+  if (!s.is_payment) return { ok: false, why: "not_a_payment" };
+  const today = todayIST();
+  const date = s.date && isDate(s.date) && s.date <= today ? s.date : null;
+  const upi = s.upi_transaction_id?.replace(/\D/g, "") ?? "";
+  const rupees = s.amount_rupees && s.amount_rupees > 0 && s.amount_rupees < 1e8 ? s.amount_rupees : null;
+  return {
+    ok: true,
+    amount_paise: rupees ? Math.round(rupees * 100) : null,
+    sent_on: date,
+    reference: upi.length === 12 ? upi : clean(s.other_reference, 120),
+    method: s.method === "bank" ? "bank" : "upi",
+    payer_name: tidyName(clean(s.payer_name, 80)),
+    payer_bank: clean(s.payer_bank, 80),
+    app: clean(s.app, 40),
+    status: s.status,
+    paid_to: paidToPsws(s),
+    other_person: !!s.payer_name && !sameName(u.name, s.payer_name),
+    abroad: s.payer_account_type === "nro" || s.payer_account_type === "nre",
+  };
+}
 
 /** What a member does on their own portal. */
 
@@ -76,8 +130,11 @@ export async function sendPledge(askId: number | null, _: FormState, data: FormD
   const amount = detail.currency ? null : toPaise(data.get("amount"));
   if (!detail.currency && !amount) errors.amount = "Type the amount in numbers, e.g. 1000.";
   const reference = clean(data.get("reference"), 120);
-  if ((method === "upi" || method === "bank") && !reference)
-    errors.reference = "Type the UTR, the 12-digit number of the payment, so the Accountant can find it.";
+  // with a screenshot attached the Accountant can read the number from it, so it need not be typed
+  const proofFile = data.get("proof");
+  const hasProof = !!proofFile && typeof proofFile !== "string" && proofFile.size > 0;
+  if ((method === "upi" || method === "bank") && !reference && !hasProof)
+    errors.reference = "Type the UTR, the 12-digit number of the payment, or add the screenshot, so the Accountant can find it.";
   const sent_on = String(data.get("sent_on") ?? "");
   if (!isDate(sent_on) || sent_on > todayIST()) errors.sent_on = "Pick the day you sent it.";
   // whose money it is: the member's own; one other person's, in that person's name, the member only paid it
