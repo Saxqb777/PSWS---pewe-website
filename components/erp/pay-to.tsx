@@ -1,4 +1,5 @@
 import { isDemo } from "@/lib/erp/auth";
+import { readerOn } from "@/lib/erp/screenshot";
 import { BankBox, type BankDetails } from "./bank-box";
 import p from "./portal.module.css";
 
@@ -80,7 +81,11 @@ export async function PayTo() {
       </div>
       <ol className={p.steps}>
         <li>Pay PSWS: bank transfer, GPay or PhonePe, cash or cheque.</li>
-        <li>Then tell us below whose money it is, with the UTR (the 12-digit number of the payment) and a screenshot if you have one.</li>
+        {readerOn() ? (
+          <li>Add the payment screenshot below: the form fills itself. Then say whose money it is.</li>
+        ) : (
+          <li>Then tell us below whose money it is, with the UTR (the 12-digit number of the payment) and a screenshot if you have one.</li>
+        )}
         <li>The PSWS Accountant finds it in the bank and the receipt is made in the giver&apos;s name. Only then does it count.</li>
       </ol>
     </>
