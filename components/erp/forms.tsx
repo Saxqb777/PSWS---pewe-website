@@ -31,7 +31,7 @@ export function FamilyForm({ action, family, submit }: { action: Action; family?
   return (
     <ErpForm action={action}>
       <p className={`${styles.banner} ${styles.note}`}>
-        <b>Private.</b> Only the Accountant, the website owner and the Head of the Zakat Committee see the name, place, mobile
+        <b>Private.</b> Only the Accountant and the Head of the Zakat Committee see the name, place, mobile
         and notes. The rest of the office sees {family ? familyCode(family.id) : "a code, like Family Z-0012"}.
       </p>
       <div className={styles.grid}>

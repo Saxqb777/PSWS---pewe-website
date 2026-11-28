@@ -12,7 +12,7 @@ import { ZAKAT_HEAD, isZakatHeadPost } from "@/lib/erp/privacy";
 /** The Zakat head sees the names of the people helped, so only the website owner gives or takes that post. */
 const zakatHeadLocked = (by: { phone: string }, was: string | null, now: string | null) =>
   by.phone !== OWNER_PHONE && isZakatHeadPost(was) !== isZakatHeadPost(now);
-const ZAKAT_HEAD_ERROR = `Only the website owner gives or takes the post “${ZAKAT_HEAD}”: it sees the names of the people PSWS helps with Zakat.`;
+const ZAKAT_HEAD_ERROR = `The post “${ZAKAT_HEAD}” cannot be given or taken here: it sees the names of the people PSWS helps with Zakat. Ask PSWS admin.`;
 
 /** Giving people access: only admins. Each person gets a link to set their own password. */
 
@@ -88,7 +88,7 @@ export async function giveCommitteeAccessAction(_: FormState): Promise<FormState
 /** Who approves deletions and changes: set only by the website owner. */
 export async function setApproverAction(id: number, _: FormState, data: FormData): Promise<FormState> {
   const u = await requireUser();
-  if (u.phone !== OWNER_PHONE) return { error: "Only the website owner sets the approvers." };
+  if (u.phone !== OWNER_PHONE) return { error: "Who approves is set by PSWS admin. Ask them." };
   await setApprover(u, id, data.get("approver") === "on");
   revalidatePath("/erp", "layout");
   return { done: "Saved." };

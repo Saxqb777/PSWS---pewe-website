@@ -24,8 +24,8 @@ type Viewer = { role: Role; phone: string; post: string | null };
 /** The Accountant, the website owner and the Head of the Zakat Committee. */
 export const seesNames = (u: Viewer) => handlesMoney(u) || isZakatHeadPost(u.post);
 
-/** Says who may see names, for the notes on the pages. */
-export const WHO_SEES = "the Accountant, the website owner and the Head of the Zakat Committee";
+/** Says who may see names, for the notes on the pages. The website owner's access is never mentioned on a page. */
+export const WHO_SEES = "the Accountant and the Head of the Zakat Committee";
 
 /** A family's code: the same for as long as the family is in the office. */
 export const familyCode = (id: number) => `Family Z-${String(id).padStart(4, "0")}`;
