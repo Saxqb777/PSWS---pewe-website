@@ -7,6 +7,7 @@ import { fundBalances, getOpening } from "@/lib/erp/books";
 import { Empty, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
 import { runStipends } from "../families/actions";
+import { maskStipendLine, seesNames } from "@/lib/erp/privacy";
 
 export const metadata = { title: "Monthly Stipend" };
 
@@ -19,7 +20,10 @@ export default async function StipendsPage({ searchParams }: { searchParams: Pro
   const prevFy = `${Number(fy.slice(0, 4)) - 1}-${fy.slice(2, 4)}`;
   const months = [...fyMonths(prevFy), ...fyMonths(fy)].filter((m) => m <= now).reverse();
   const month = months.includes(String(sp.month)) ? String(sp.month) : now;
-  const [lines, opening] = await Promise.all([stipendLines(month), getOpening()]);
+  const sees = seesNames(u);
+  const [found, opening] = await Promise.all([stipendLines(month), getOpening()]);
+  // families on a stipend show by their code to anyone who may not see names
+  const lines = found.map((l) => maskStipendLine(l, sees));
   const funds = opening ? await fundBalances() : null;
   const paid = lines.filter((l) => l.paid_voucher);
   const due = lines.filter((l) => !l.paid_voucher);

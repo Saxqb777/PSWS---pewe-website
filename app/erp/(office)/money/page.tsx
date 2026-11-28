@@ -5,6 +5,7 @@ import { getOpening, listCorrections, listMonths, placeBalances } from "@/lib/er
 import { clean, fyMonths, fyOf, inr, showMonth, todayIST, handlesMoney } from "@/lib/erp/labels";
 import { Empty, MoneyList, PageHead } from "@/components/erp/ui";
 import styles from "@/components/erp/erp.module.css";
+import { maskMoneyRow, seesNames } from "@/lib/erp/privacy";
 
 export const metadata = { title: "Money" };
 
@@ -20,13 +21,16 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
   const month = months.includes(String(sp.month)) ? String(sp.month) : null;
   const dir = sp.dir === "in" || sp.dir === "out" ? sp.dir : "all";
   const q = clean(sp.q, 80);
-  const [rows, corrections, opening, places, monthRows] = await Promise.all([
-    listMoney({ fy, month, dir, q }),
+  const sees = seesNames(u);
+  const [found, corrections, opening, places, monthRows] = await Promise.all([
+    listMoney({ fy, month, dir, q, sees }),
     q ? Promise.resolve([]) : listCorrections(fy, month),
     getOpening(),
     placeBalances(),
     listMonths(),
   ]);
+  // help given to a family shows the family's code to anyone who may not see names
+  const rows = found.map((r) => maskMoneyRow(r, sees));
   const closedRow = month ? monthRows.get(month) : undefined;
   const live = rows.filter((r) => !r.cancelled);
   const totalIn = live.filter((r) => r.dir === "in").reduce((s, r) => s + r.amount_paise, 0);

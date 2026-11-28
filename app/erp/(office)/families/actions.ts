@@ -21,9 +21,12 @@ import {
   toPaise,
 } from "@/lib/erp/labels";
 import { toId, type FormState } from "@/lib/erp/form-state";
+import { WHO_SEES, familyCode, seesNames } from "@/lib/erp/privacy";
 
 export async function saveFamily(id: number | null, _: FormState, data: FormData): Promise<FormState> {
   const u = await requireUser("editor");
+  // only those who see the names of the people helped add or change them
+  if (!seesNames(u)) return { error: `Only ${WHO_SEES} add or change a family's details.` };
   const errors: Record<string, string> = {};
   const name = clean(data.get("name"), 120);
   if (!name) errors.name = "Type the name of the person the help goes to.";
@@ -200,13 +203,13 @@ async function askRemove(entity: "family" | "member" | "work", id: number, summa
 export async function askRemoveFamily(id: number, _: FormState, data: FormData): Promise<FormState> {
   const f = await getFamily(id);
   if (!f || !f.active) return { error: "This family is already removed." };
-  return askRemove("family", id, `family ${f.name}${f.place ? ", " + f.place : ""}`, data);
+  return askRemove("family", id, familyCode(f.id), data);
 }
 
 export async function bringBackFamily(id: number, _: FormState): Promise<FormState> {
   const u = await requireUser("editor");
-  const rows = await db()`UPDATE erp_family SET active = true, updated_at = now(), updated_by = ${u.id} WHERE id = ${id} AND NOT active RETURNING name`;
-  if (rows[0]) await logChange(u.id, "changed", "family", id, `Brought back family ${rows[0].name}`);
+  const rows = await db()`UPDATE erp_family SET active = true, updated_at = now(), updated_by = ${u.id} WHERE id = ${id} AND NOT active RETURNING id`;
+  if (rows[0]) await logChange(u.id, "changed", "family", id, `Brought back ${familyCode(id)}`);
   revalidatePath("/erp", "layout");
   redirect(`/erp/families/${id}?back=1`);
 }

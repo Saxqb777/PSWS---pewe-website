@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/erp/auth";
 import { getWork, paymentsFor } from "@/lib/erp/data";
+import { maskMoneyRow, seesNames } from "@/lib/erp/privacy";
 import { WORK_STATUSES, canDo, inr, showDate, handlesMoney } from "@/lib/erp/labels";
 import { toId } from "@/lib/erp/form-state";
 import { Empty, Facts, MoneyList, PageHead, Pending } from "@/components/erp/ui";
@@ -25,7 +26,8 @@ export default async function WorkPage({
   const w = id ? await getWork(id) : null;
   if (!w) notFound();
   const sp = await searchParams;
-  const payments = await paymentsFor({ workId: w.id });
+  const sees = seesNames(u);
+  const payments = (await paymentsFor({ workId: w.id })).map((p) => maskMoneyRow(p, sees));
   const editor = canDo(u.role, "editor");
   const money = handlesMoney(u);
   const left = w.budget_paise ? w.budget_paise - w.spent_paise : null;

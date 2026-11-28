@@ -7,6 +7,7 @@ import { ACTION_LABEL, approvalsForMe, fundBalances, getOpening, placeBalances }
 import { portalOn } from "@/lib/erp/flags";
 import { officeWaiting } from "@/lib/erp/portal";
 import styles from "@/components/erp/erp.module.css";
+import { maskMoneyRow, maskRequest, seesNames } from "@/lib/erp/privacy";
 
 export const metadata = { title: "Home" };
 
@@ -18,18 +19,22 @@ export default async function OfficeHome({ searchParams }: { searchParams: Promi
   const monthName = showMonth(month).split(" ")[0];
   const fy = fyOf(today);
   const year = fyRange(fy);
-  const [m, y, waiting, stipends, latest, opening, places, funds, forMe, portal] = await Promise.all([
+  const sees = seesNames(u);
+  const [m, y, waitingAll, stipends, latestAll, opening, places, funds, forMe, portal] = await Promise.all([
     totals(`${month}-01`, today),
     totals(year.from, year.to),
     listRequests({ open: true }),
     stipendLines(month),
-    listMoney({ fy, month: null, dir: "all", q: null }),
+    listMoney({ fy, month: null, dir: "all", q: null, sees }),
     getOpening(),
     placeBalances(),
     fundBalances(),
     approvalsForMe(u.id),
     portalOn() ? officeWaiting(u.id) : Promise.resolve(null),
   ]);
+  // the people helped show by their code to anyone who may not see names
+  const waiting = waitingAll.map((r) => maskRequest(r, sees));
+  const latest = latestAll.map((r) => maskMoneyRow(r, sees));
   const zakat = funds.find((f) => f.head === "zakat");
   const editor = canDo(u.role, "editor");
   const money = handlesMoney(u);

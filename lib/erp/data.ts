@@ -22,6 +22,7 @@ import {
   type Status,
   type WorkStatus,
 } from "./labels";
+import { ZAKAT_HEAD, aboutRecipient, codeInSearch, familyCode, maskFamily, maskRequest, payeeCode, privatePayee } from "./privacy";
 
 /**
  * Everything the office screens read and write. Dates come back as
@@ -185,6 +186,9 @@ export interface MoneyOut {
   family_id: number | null;
   family_name: string | null;
   request_id: number | null;
+  /** the help request it pays: a medical one names the hospital */
+  req_kind: string | null;
+  req_hospital: string | null;
   work_id: number | null;
   work_name: string | null;
   stipend_month: string | null;
@@ -215,8 +219,8 @@ export interface MoneyOutFields {
 
 const outSummary = (
   no: string,
+  payee: string,
   f: {
-    paid_to: string;
     amount_paise: number;
     purpose: Purpose;
     purpose_other?: string | null;
@@ -225,7 +229,14 @@ const outSummary = (
     bank_name?: string | null;
   },
 ) =>
-  `Payment ${no}: ${inr(f.amount_paise)} to ${f.paid_to}, ${labelOf(PURPOSES, f.purpose, f.purpose_other)}, ${howPaid(f.method, f.method_other, f.bank_name)}`;
+  `Payment ${no}: ${inr(f.amount_paise)} to ${payee}, ${labelOf(PURPOSES, f.purpose, f.purpose_other)}, ${howPaid(f.method, f.method_other, f.bank_name)}`;
+
+/** Who was paid, as the history and approval requests say it: a family's code, never the name of someone helped. */
+export async function payeeInWords(f: { paid_to: string; family_id: number | null; head: string; request_id: number | null }): Promise<string> {
+  if (!aboutRecipient(f)) return f.paid_to;
+  const q = f.request_id ? (await db()`SELECT kind, hospital FROM erp_request WHERE id = ${f.request_id}`)[0] : null;
+  return payeeCode({ ...f, req_kind: (q?.kind as string) ?? null, req_hospital: (q?.hospital as string) ?? null });
+}
 
 export async function addMoneyOut(u: User, f: MoneyOutFields): Promise<{ id: number; voucher_no: string }> {
   const fy = fyOf(f.on_date);
@@ -249,7 +260,7 @@ export async function addMoneyOut(u: User, f: MoneyOutFields): Promise<{ id: num
     await db()`UPDATE erp_request SET status = 'done', updated_at = now(), updated_by = ${u.id}
                WHERE id = ${f.request_id} AND status IN ('waiting', 'approved')`;
   }
-  await logChange(u.id, "added", "money_out", r.id, outSummary(r.voucher_no, f));
+  await logChange(u.id, "added", "money_out", r.id, outSummary(r.voucher_no, await payeeInWords(f), f));
   return r;
 }
 
@@ -262,28 +273,36 @@ export async function updateMoneyOut(u: User, id: number, f: MoneyOutFields) {
       updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id} AND cancelled_at IS NULL
     RETURNING voucher_no`;
-  if (rows[0]) await logChange(u.id, "changed", "money_out", id, outSummary(String(rows[0].voucher_no), f));
+  if (rows[0]) await logChange(u.id, "changed", "money_out", id, outSummary(String(rows[0].voucher_no), await payeeInWords(f), f));
 }
 
 export async function cancelMoneyOut(u: User, id: number, reason: string) {
   const rows = await db()`
     UPDATE erp_money_out SET cancelled_at = now(), cancelled_by = ${u.id}, cancel_reason = ${reason}
-    WHERE id = ${id} AND cancelled_at IS NULL RETURNING voucher_no, amount_paise, paid_to`;
-  if (rows[0])
-    await logChange(u.id, "cancelled", "money_out", id,
-      `Payment ${rows[0].voucher_no} (${inr(num(rows[0].amount_paise))} to ${rows[0].paid_to}) cancelled: ${reason}`);
+    WHERE id = ${id} AND cancelled_at IS NULL RETURNING voucher_no, amount_paise, paid_to, family_id, head, request_id`;
+  if (rows[0]) {
+    const r = rows[0];
+    const payee = await payeeInWords({
+      paid_to: String(r.paid_to),
+      family_id: r.family_id == null ? null : num(r.family_id),
+      head: String(r.head),
+      request_id: r.request_id == null ? null : num(r.request_id),
+    });
+    await logChange(u.id, "cancelled", "money_out", id, `Payment ${r.voucher_no} (${inr(num(r.amount_paise))} to ${payee}) cancelled: ${reason}`);
+  }
 }
 
 export async function getMoneyOut(id: number): Promise<MoneyOut | null> {
   const rows = await db()`
     SELECT m.id, m.voucher_no, m.fy, to_char(m.on_date, 'YYYY-MM-DD') AS on_date, m.paid_to, m.amount_paise, m.head,
            m.head_other, m.purpose, m.purpose_other, m.method, m.method_other, m.bank_name, m.reference, m.family_id,
-           f.name AS family_name, m.request_id, m.work_id,
+           f.name AS family_name, m.request_id, q.kind AS req_kind, q.hospital AS req_hospital, m.work_id,
            w.name AS work_name, m.stipend_month, m.note, m.cancelled_at, m.cancel_reason, m.created_at,
            CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS created_by_name
     FROM erp_money_out m
       LEFT JOIN erp_user u ON u.id = m.created_by
       LEFT JOIN erp_family f ON f.id = m.family_id
+      LEFT JOIN erp_request q ON q.id = m.request_id
       LEFT JOIN erp_work w ON w.id = m.work_id
     WHERE m.id = ${id}`;
   const r = rows[0];
@@ -317,6 +336,30 @@ export interface MoneyRow {
   /** for a payment towards a village work, the work's name */
   work_name: string | null;
   cancelled: boolean;
+  /** a payment's family, and whether who was paid is private (see privacy.ts) */
+  family_id: number | null;
+  private: boolean;
+}
+
+/** A line of money from the database: a payment's "who" is checked for privacy, then the request's details are dropped. */
+function asMoneyRow(r: Record<string, unknown>): MoneyRow {
+  const { req_kind, req_hospital, ...rest } = r;
+  const family_id = r.family_id == null ? null : num(r.family_id);
+  return {
+    ...rest,
+    id: num(r.id),
+    amount_paise: num(r.amount_paise),
+    family_id,
+    private:
+      r.dir === "out" &&
+      privatePayee({
+        paid_to: String(r.who),
+        family_id,
+        head: String(r.head),
+        req_kind: (req_kind as string) ?? null,
+        req_hospital: (req_hospital as string) ?? null,
+      }),
+  } as MoneyRow;
 }
 
 export interface MoneyFilter {
@@ -324,6 +367,8 @@ export interface MoneyFilter {
   month: string | null;
   dir: "all" | "in" | "out";
   q: string | null;
+  /** whether the viewer sees the names of people helped: if not, a search never matches them, only their code */
+  sees: boolean;
 }
 
 /** The receipts between two dates, newest first, for printing together. Deleted ones are left out. */
@@ -346,28 +391,31 @@ export async function receiptsBetween(
 
 export async function listMoney(f: MoneyFilter): Promise<MoneyRow[]> {
   const like = f.q ? `%${f.q}%` : null;
+  const code = codeInSearch(f.q);
   const rows = await db()`
     SELECT * FROM (
       SELECT 'in' AS dir, id, receipt_no AS no, to_char(on_date, 'YYYY-MM-DD') AS on_date, from_name AS who,
              amount_paise, head, method, NULL::text AS purpose, head_other, NULL::text AS purpose_other, NULL::text AS work_name,
-             cancelled_at IS NOT NULL AS cancelled
+             cancelled_at IS NOT NULL AS cancelled, NULL::bigint AS family_id, NULL::text AS req_kind, NULL::text AS req_hospital
       FROM erp_money_in
       WHERE fy = ${f.fy} AND ${f.dir} IN ('all', 'in')
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
         AND (${like}::text IS NULL OR from_name ILIKE ${like} OR receipt_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
              OR coalesce(note, '') ILIKE ${like})
       UNION ALL
-      SELECT 'out', o.id, voucher_no, to_char(on_date, 'YYYY-MM-DD'), paid_to, amount_paise, head, method, purpose,
-             o.head_other, o.purpose_other, w.name, cancelled_at IS NOT NULL
-      FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id
+      SELECT 'out', o.id, voucher_no, to_char(on_date, 'YYYY-MM-DD'), paid_to, amount_paise, o.head, method, purpose,
+             o.head_other, o.purpose_other, w.name, cancelled_at IS NOT NULL, o.family_id, q.kind, q.hospital
+      FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id LEFT JOIN erp_request q ON q.id = o.request_id
       WHERE fy = ${f.fy} AND ${f.dir} IN ('all', 'out')
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
-        AND (${like}::text IS NULL OR paid_to ILIKE ${like} OR voucher_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
-             OR coalesce(note, '') ILIKE ${like})
+        AND (${like}::text IS NULL OR voucher_no ILIKE ${like} OR coalesce(reference, '') ILIKE ${like}
+             OR ((${f.sees}::boolean OR (o.family_id IS NULL AND o.head <> 'zakat'))
+                 AND (paid_to ILIKE ${like} OR coalesce(note, '') ILIKE ${like}))
+             OR (${code}::bigint IS NOT NULL AND o.family_id = ${code}))
       UNION ALL
       SELECT 'transfer', id, transfer_no, to_char(on_date, 'YYYY-MM-DD'),
              CASE direction WHEN 'to_bank' THEN 'Cash deposited in bank' ELSE 'Cash taken from bank' END,
-             amount_paise, 'other', 'cash', NULL, NULL, NULL, NULL, cancelled_at IS NOT NULL
+             amount_paise, 'other', 'cash', NULL, NULL, NULL, NULL, cancelled_at IS NOT NULL, NULL, NULL, NULL
       FROM erp_transfer
       WHERE fy = ${f.fy} AND ${f.dir} = 'all'
         AND (${f.month}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${f.month})
@@ -375,7 +423,7 @@ export async function listMoney(f: MoneyFilter): Promise<MoneyRow[]> {
     ) x
     ORDER BY on_date DESC, no DESC
     LIMIT 500`;
-  return rows.map((r) => ({ ...r, id: num(r.id), amount_paise: num(r.amount_paise) }) as MoneyRow);
+  return rows.map(asMoneyRow);
 }
 
 /** The names already used, for the "who" box to suggest. */
@@ -431,8 +479,15 @@ const asFamily = (r: Record<string, unknown>) => ({
   stipend_paise: r.stipend_paise == null ? null : num(r.stipend_paise),
 });
 
-export async function listFamilies(fy: string, q: string | null, only: "all" | "stipend" | "waiting"): Promise<FamilyRow[]> {
+/** Someone who may not see the names finds a family only by its code. */
+export async function listFamilies(
+  fy: string,
+  q: string | null,
+  only: "all" | "stipend" | "waiting",
+  sees: boolean,
+): Promise<FamilyRow[]> {
   const like = q ? `%${q}%` : null;
+  const code = codeInSearch(q);
   const rows = await db()`
     SELECT f.id, f.name, f.place, f.phone, f.people, f.notes, f.stipend_paise, f.stipend_active, f.active,
       (SELECT count(*) FROM erp_request r WHERE r.family_id = f.id AND r.status IN ('waiting', 'approved')) AS waiting,
@@ -440,7 +495,8 @@ export async function listFamilies(fy: string, q: string | null, only: "all" | "
          WHERE m.family_id = f.id AND m.fy = ${fy} AND m.cancelled_at IS NULL) AS helped_this_year,
       (SELECT to_char(max(on_date), 'YYYY-MM-DD') FROM erp_money_out m WHERE m.family_id = f.id AND m.cancelled_at IS NULL) AS last_help
     FROM erp_family f
-    WHERE (${like}::text IS NULL OR f.name ILIKE ${like} OR coalesce(f.place, '') ILIKE ${like} OR coalesce(f.phone, '') ILIKE ${like})
+    WHERE (${like}::text IS NULL OR f.id = ${code}::bigint
+           OR (${sees}::boolean AND (f.name ILIKE ${like} OR coalesce(f.place, '') ILIKE ${like} OR coalesce(f.phone, '') ILIKE ${like})))
     ORDER BY f.active DESC, f.name
     LIMIT 1000`;
   return rows
@@ -454,8 +510,8 @@ export async function getFamily(id: number): Promise<Family | null> {
   return rows[0] ? (asFamily(rows[0]) as Family) : null;
 }
 
-const familySummary = (f: FamilyFields) =>
-  `Family ${f.name}${f.place ? ", " + f.place : ""}${f.stipend_active && f.stipend_paise ? `, monthly stipend ${inr(f.stipend_paise)}` : ""}`;
+const familySummary = (id: number, f: FamilyFields) =>
+  `${familyCode(id)}${f.stipend_active && f.stipend_paise ? `, monthly stipend ${inr(f.stipend_paise)}` : ""}${f.active ? "" : ", not helped now"}`;
 
 export async function addFamily(u: User, f: FamilyFields): Promise<number> {
   const rows = await db()`
@@ -463,7 +519,7 @@ export async function addFamily(u: User, f: FamilyFields): Promise<number> {
     VALUES (${f.name}, ${f.place}, ${f.phone}, ${f.people}, ${f.notes}, ${f.stipend_paise}, ${f.stipend_active}, true, ${u.id})
     RETURNING id`;
   const id = num(rows[0].id);
-  await logChange(u.id, "added", "family", id, familySummary(f));
+  await logChange(u.id, "added", "family", id, familySummary(id, f));
   return id;
 }
 
@@ -473,7 +529,7 @@ export async function updateFamily(u: User, id: number, f: FamilyFields) {
       stipend_paise = ${f.stipend_paise}, stipend_active = ${f.stipend_active}, active = ${f.active},
       updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id}`;
-  await logChange(u.id, "changed", "family", id, familySummary(f));
+  await logChange(u.id, "changed", "family", id, familySummary(id, f));
 }
 
 export async function familyNames(): Promise<{ id: number; name: string; place: string | null }[]> {
@@ -558,10 +614,10 @@ export async function addRequest(
     INSERT INTO erp_request (family_id, kind, kind_other, asked_on, asked_paise, details, hospital, admitted, bill_paise, created_by)
     VALUES (${f.family_id}, ${f.kind}, ${f.kind_other}, ${f.asked_on}, ${f.asked_paise}, ${f.details}, ${f.hospital ?? null},
             ${f.admitted ?? null}, ${f.bill_paise ?? null}, ${u.id})
-    RETURNING id, (SELECT name FROM erp_family WHERE id = ${f.family_id}) AS family_name`;
+    RETURNING id`;
   const id = num(rows[0].id);
   await logChange(u.id, "added", "request", id,
-    `Request from ${rows[0].family_name}: ${labelOf(KINDS, f.kind, f.kind_other)}${f.hospital ? ` at ${f.hospital}` : ""}` +
+    `Request from ${familyCode(f.family_id)}: ${labelOf(KINDS, f.kind, f.kind_other)}${f.hospital ? ` at ${f.hospital}` : ""}` +
       `${f.bill_paise ? `, bill ${inr(f.bill_paise)}` : ""}${f.asked_paise ? ", asked " + inr(f.asked_paise) : ""}`);
   return id;
 }
@@ -575,7 +631,7 @@ export async function decideRequest(
     UPDATE erp_request SET status = ${d.approve ? "approved" : "declined"}, approved_paise = ${d.approve ? d.approved_paise : null},
       decided_on = ${d.decided_on}, decision_note = ${d.note}, updated_at = now(), updated_by = ${u.id}
     WHERE id = ${id} AND status IN ('waiting', 'approved')
-    RETURNING kind, family_id, (SELECT name FROM erp_family WHERE id = erp_request.family_id) AS family_name`;
+    RETURNING kind, family_id`;
   if (!rows[0]) return;
   // a monthly stipend, once approved, is paid from then on by the stipend run
   if (d.approve && rows[0].kind === "stipend" && d.approved_paise) {
@@ -583,7 +639,7 @@ export async function decideRequest(
                updated_by = ${u.id} WHERE id = ${rows[0].family_id}`;
   }
   await logChange(u.id, "decided", "request", id,
-    `Request from ${rows[0].family_name} ${d.approve ? `approved${d.approved_paise ? " for " + inr(d.approved_paise) : ""}` : "not approved"}`);
+    `Request from ${familyCode(num(rows[0].family_id))} ${d.approve ? `approved${d.approved_paise ? " for " + inr(d.approved_paise) : ""}` : "not approved"}`);
 }
 
 /* ================================================================== the monthly stipend run */
@@ -745,11 +801,12 @@ export async function paymentsFor(where: { familyId?: number; workId?: number })
   const work = where.workId ?? null;
   const rows = await db()`
     SELECT 'out' AS dir, o.id, voucher_no AS no, to_char(on_date, 'YYYY-MM-DD') AS on_date, paid_to AS who, amount_paise,
-           head, method, purpose, o.head_other, o.purpose_other, w.name AS work_name, cancelled_at IS NOT NULL AS cancelled
-    FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id
+           o.head, method, purpose, o.head_other, o.purpose_other, w.name AS work_name, cancelled_at IS NOT NULL AS cancelled,
+           o.family_id, q.kind AS req_kind, q.hospital AS req_hospital
+    FROM erp_money_out o LEFT JOIN erp_work w ON w.id = o.work_id LEFT JOIN erp_request q ON q.id = o.request_id
     WHERE (${fam}::bigint IS NOT NULL AND o.family_id = ${fam}) OR (${work}::bigint IS NOT NULL AND o.work_id = ${work})
     ORDER BY on_date DESC, voucher_no DESC LIMIT 500`;
-  return rows.map((r) => ({ ...r, id: num(r.id), amount_paise: num(r.amount_paise) }) as MoneyRow);
+  return rows.map(asMoneyRow);
 }
 
 /* ================================================================== members */
@@ -1051,7 +1108,7 @@ const csvPhone = (d: unknown) => {
 };
 
 /** Every row of one kind, for a CSV that opens in Excel. Money for a financial year (and month). */
-export async function sheet(kind: string, fy: string, month: string | null): Promise<Sheet | null> {
+export async function sheet(kind: string, fy: string, month: string | null, sees: boolean): Promise<Sheet | null> {
   const m = month;
   switch (kind) {
     case "money-in": {
@@ -1076,30 +1133,43 @@ export async function sheet(kind: string, fy: string, month: string | null): Pro
       const rows = await db()`
         SELECT voucher_no, to_char(on_date, 'YYYY-MM-DD') AS d, paid_to, amount_paise, purpose, o.purpose_other, head, o.head_other, method,
                o.method_other, o.bank_name, reference,
-               f.name AS family, w.name AS work, stipend_month, note,
+               o.family_id, f.name AS family, w.name AS work, stipend_month, note, q.kind AS req_kind, q.hospital AS req_hospital,
                CASE WHEN u.phone = 'owner' THEN 'Office' ELSE u.name END AS entered_by,
                o.cancelled_at IS NOT NULL AS cancelled, cancel_reason
         FROM erp_money_out o LEFT JOIN erp_user u ON u.id = o.created_by LEFT JOIN erp_family f ON f.id = o.family_id
-          LEFT JOIN erp_work w ON w.id = o.work_id
+          LEFT JOIN erp_work w ON w.id = o.work_id LEFT JOIN erp_request q ON q.id = o.request_id
         WHERE fy = ${fy} AND (${m}::text IS NULL OR to_char(on_date, 'YYYY-MM') = ${m}) ORDER BY on_date, voucher_no`;
       return {
         columns: ["Payment no", "Date", "Paid to", "Amount (Rs)", "For", "Out of", "How", "Number", "Family", "Work", "Monthly stipend for", "Note", "Entered by", "Cancelled", "Why cancelled"],
-        rows: rows.map((r) => [r.voucher_no, r.d, r.paid_to, rupees(r.amount_paise), labelOf(PURPOSES, r.purpose as string, r.purpose_other as string | null),
-          labelOf(HEADS, r.head as string, r.head_other as string | null),
-          howPaid(r.method as Method, r.method_other as string | null, r.bank_name as string | null), r.reference, r.family, r.work,
-          r.stipend_month, r.note, r.entered_by, r.cancelled ? "Yes" : "", r.cancel_reason]),
+        rows: rows.map((r) => {
+          // for anyone else, the people helped show by their code, and notes about them stay out
+          const p = {
+            paid_to: String(r.paid_to),
+            family_id: r.family_id == null ? null : num(r.family_id),
+            head: String(r.head),
+            req_kind: (r.req_kind as string) ?? null,
+            req_hospital: (r.req_hospital as string) ?? null,
+          };
+          const hide = !sees && aboutRecipient(p);
+          return [r.voucher_no, r.d, sees ? r.paid_to : payeeCode(p), rupees(r.amount_paise),
+            labelOf(PURPOSES, r.purpose as string, r.purpose_other as string | null),
+            labelOf(HEADS, r.head as string, r.head_other as string | null),
+            howPaid(r.method as Method, r.method_other as string | null, r.bank_name as string | null), r.reference,
+            p.family_id == null ? null : sees ? r.family : familyCode(p.family_id), r.work,
+            r.stipend_month, hide ? null : r.note, r.entered_by, r.cancelled ? "Yes" : "", r.cancel_reason];
+        }),
       };
     }
     case "families": {
-      const rows = await listFamilies(fy, null, "all");
+      const rows = (await listFamilies(fy, null, "all", sees)).map((r) => maskFamily(r, sees));
       return {
-        columns: ["Name", "Place", "Mobile", "People", "Monthly stipend", "Monthly stipend (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
+        columns: [sees ? "Name" : "Code", "Place", "Mobile", "People", "Monthly stipend", "Monthly stipend (Rs)", `Received in ${fy} (Rs)`, "Last helped", "Requests open", "Still helped", "Notes"],
         rows: rows.map((r) => [r.name, r.place, csvPhone(r.phone), r.people, r.stipend_active ? "Yes" : "", rupees(r.stipend_paise),
           rupees(r.helped_this_year), r.last_help, r.waiting, r.active ? "Yes" : "No", r.notes]),
       };
     }
     case "requests": {
-      const rows = await listRequests({});
+      const rows = (await listRequests({})).map((r) => maskRequest(r, sees));
       return {
         columns: ["Family", "Need", "Asked on", "Asked (Rs)", "Decision", "Decided on", "Approved (Rs)", "Paid (Rs)", "Details", "Note"],
         rows: rows.map((r) => [r.family_name, labelOf(KINDS, r.kind, r.kind_other), r.asked_on, rupees(r.asked_paise), r.status, r.decided_on,
@@ -1164,7 +1234,11 @@ export async function giveCommitteeAccess(u: User): Promise<number> {
   // everyone on the committee has full access
   const rows = await db()`
     INSERT INTO erp_user (name, phone, role, post, first_email, created_by)
-    SELECT k.member_name, k.phone_cc || k.phone, 'admin', coalesce(ob.post, 'Committee member'), lower(trim(k.gmail)), ${u.id}
+    SELECT k.member_name, k.phone_cc || k.phone, 'admin',
+           -- the Zakat head sees the names of the people helped: never a second one by a name typed in a form
+           CASE WHEN ob.post = ${ZAKAT_HEAD} AND EXISTS (SELECT 1 FROM erp_user e WHERE lower(btrim(e.post)) = lower(${ZAKAT_HEAD}))
+                THEN 'Committee member' ELSE coalesce(ob.post, 'Committee member') END,
+           lower(trim(k.gmail)), ${u.id}
     FROM kyc_submission k
       LEFT JOIN unnest(${names}::text[], ${posts}::text[]) AS ob(name, post) ON ob.name = k.member_name
     WHERE (k.phone_cc || k.phone) ~ '^[0-9]{10,15}$'

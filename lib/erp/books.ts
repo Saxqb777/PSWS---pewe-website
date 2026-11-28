@@ -5,11 +5,11 @@ import {
   addFamily,
   cancelMoneyIn,
   cancelMoneyOut,
-  getFamily,
   getMember,
   getMoneyIn,
   getMoneyOut,
   getWork,
+  payeeInWords,
   updateMoneyIn,
   updateMoneyOut,
   type MoneyIn,
@@ -17,6 +17,7 @@ import {
   type MoneyOut,
   type MoneyOutFields,
 } from "./data";
+import { aboutRecipient, familyCode, payeeCode } from "./privacy";
 import {
   HEADS,
   PURPOSES,
@@ -670,8 +671,9 @@ async function carryOut(by: User, a: Approval & { changes: unknown }) {
 export const inSummaryLine = (m: MoneyIn) =>
   `receipt ${m.receipt_no}: ${inr(m.amount_paise)} from ${m.from_name}, ${labelOf(HEADS, m.head, m.head_other)}, ${showDate(m.on_date)}`;
 
+/** Approvers read this: someone helped shows by their code. */
 export const outSummaryLine = (m: MoneyOut) =>
-  `payment ${m.voucher_no}: ${inr(m.amount_paise)} to ${m.paid_to}, ${labelOf(PURPOSES, m.purpose, m.purpose_other)}, ${showDate(m.on_date)}`;
+  `payment ${m.voucher_no}: ${inr(m.amount_paise)} to ${payeeCode(m)}, ${labelOf(PURPOSES, m.purpose, m.purpose_other)}, ${showDate(m.on_date)}`;
 
 export const transferSummaryLine = (t: Transfer) =>
   `${t.transfer_no}: ${TRANSFER_LABEL[t.direction].toLowerCase()}, ${inr(t.amount_paise)}, ${showDate(t.on_date)}`;
@@ -701,19 +703,21 @@ export async function moneyOutChanges(
   f: MoneyOutFields,
   newFamily: { name: string } | null,
 ): Promise<string | null> {
-  const famName = newFamily ? `${newFamily.name} (new)` : f.family_id ? ((await getFamily(f.family_id))?.name ?? "") : "";
+  // approvers read these lines: the people helped show by their code, and notes about them are not quoted
   const workName = f.work_id ? ((await getWork(f.work_id))?.name ?? "") : "";
+  const hideNote = aboutRecipient(m) || aboutRecipient(f);
+  const noteOf = (n: string | null, other: string | null) => (!hideNote ? (n ?? "") : !n ? "" : n === other ? "a note" : "a new note");
   return lines([
     ["Date", showDate(m.on_date), showDate(f.on_date)],
-    ["Paid to", m.paid_to, f.paid_to],
+    ["Paid to", payeeCode(m), newFamily ? "a new family" : await payeeInWords(f)],
     ["Amount", inr(m.amount_paise), inr(f.amount_paise)],
     ["For", labelOf(PURPOSES, m.purpose, m.purpose_other), labelOf(PURPOSES, f.purpose, f.purpose_other)],
     ["From which money", labelOf(HEADS, m.head, m.head_other), labelOf(HEADS, f.head, f.head_other)],
     ["How", howPaid(m.method, m.method_other, m.bank_name), howPaid(f.method, f.method_other, f.bank_name)],
     ["Number", m.reference ?? "", f.reference ?? ""],
-    ["Family", m.family_name ?? "", famName],
+    ["Family", m.family_id != null ? familyCode(m.family_id) : "", newFamily ? "a new family" : f.family_id != null ? familyCode(f.family_id) : ""],
     ["Work", m.work_name ?? "", workName],
-    ["Note", m.note ?? "", f.note ?? ""],
+    ["Note", noteOf(m.note, m.note), noteOf(f.note, m.note)],
   ]);
 }
 

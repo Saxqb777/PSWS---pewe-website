@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/erp/auth";
 import { listFamilies } from "@/lib/erp/data";
 import { canDo, clean, fyOf, inr, showDate, todayIST } from "@/lib/erp/labels";
 import { Empty, PageHead } from "@/components/erp/ui";
+import { WHO_SEES, maskFamily, seesNames } from "@/lib/erp/privacy";
 import styles from "@/components/erp/erp.module.css";
 
 export const metadata = { title: "Families" };
@@ -15,8 +16,10 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
   const q = clean(sp.q, 80);
   const only = sp.only === "stipend" || sp.only === "waiting" ? sp.only : "all";
   const fy = fyOf(todayIST());
-  const rows = await listFamilies(fy, q, only);
-  const editor = canDo(u.role, "editor");
+  const sees = seesNames(u);
+  const rows = (await listFamilies(fy, q, only, sees)).map((f) => maskFamily(f, sees));
+  // adding a family means typing a name, so only those who see names do it
+  const editor = canDo(u.role, "editor") && sees;
   const tab = (o: string) => `/erp/families?${new URLSearchParams({ only: o, ...(q ? { q } : {}) })}`;
 
   return (
@@ -28,6 +31,12 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
           </Link>
         )}
       </PageHead>
+
+      {!sees && (
+        <p className={`${styles.banner} ${styles.note}`}>
+          The people PSWS helps are shown by a code, like Family Z-0012. Only {WHO_SEES} see their names.
+        </p>
+      )}
 
       <nav className={styles.tabs} aria-label="Show">
         {(
@@ -47,7 +56,7 @@ export default async function FamiliesPage({ searchParams }: { searchParams: Pro
         <input type="hidden" name="only" value={only} />
         <label className={styles.field}>
           <span className={styles.srOnly}>Search</span>
-          <input name="q" type="search" placeholder="Name, place or mobile" defaultValue={q ?? ""} />
+          <input name="q" type="search" placeholder={sees ? "Name, place, mobile or code" : "Code, e.g. Z-0012"} defaultValue={q ?? ""} />
         </label>
         <button type="submit" className={styles.btnQuiet}>
           Search

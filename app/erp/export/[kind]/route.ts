@@ -1,6 +1,7 @@
 import { currentUser } from "@/lib/erp/auth";
 import { sheet } from "@/lib/erp/data";
 import { fyOf, todayIST } from "@/lib/erp/labels";
+import { seesNames } from "@/lib/erp/privacy";
 
 /**
  * Downloads for Excel. A CSV with a byte-order mark, so Excel reads ₹ and
@@ -16,14 +17,17 @@ const cell = (v: string | number | null) => {
 };
 
 export async function GET(req: Request, ctx: { params: Promise<{ kind: string }> }) {
-  if (!(await currentUser())) return new Response("Sign in to the office first.", { status: 401 });
+  const u = await currentUser();
+  if (!u) return new Response("Sign in to the office first.", { status: 401 });
+  // the office's files are for the office: a member's portal login does not open them
+  if (u.role === "member") return new Response("This is for the PSWS office only.", { status: 403 });
   const { kind } = await ctx.params;
   const url = new URL(req.url);
   const fyRaw = url.searchParams.get("fy") ?? "";
   const fy = /^\d{4}-\d{2}$/.test(fyRaw) ? fyRaw : fyOf(todayIST());
   const monthRaw = url.searchParams.get("month") ?? "";
   const month = /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : null;
-  const s = await sheet(kind, fy, month);
+  const s = await sheet(kind, fy, month, seesNames(u));
   if (!s) return new Response("Not found", { status: 404 });
   const body = "﻿" + [s.columns, ...s.rows].map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
   const name = `psws-${kind}${["money-in", "money-out", "families"].includes(kind) ? `-${month ?? fy}` : ""}.csv`;

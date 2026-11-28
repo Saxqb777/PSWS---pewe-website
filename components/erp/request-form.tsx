@@ -93,7 +93,7 @@ export function RequestForm({ action }: { action: Action }) {
         <Field label="Asked on" hint="Kab maanga" name="asked_on">
           <DateInput name="asked_on" defaultValue={todayIST()} />
         </Field>
-        <Field label="Details" hint={medical ? "Patient, illness, ward, anything the approvers should know" : "Hospital, school, kya hua"} name="details" wide>
+        <Field label="Details" hint={medical ? "Illness, ward, anything the approvers should know. Not the name: the committee reads this" : "Hospital, school, kya hua. Not the name: the committee reads this"} name="details" wide>
           <textarea name="details" />
         </Field>
       </div>

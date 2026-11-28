@@ -7,6 +7,12 @@ import { addPerson, adminCount, getPerson, giveCommitteeAccess, setApprover, upd
 import { logChange } from "@/lib/erp/db";
 import { clean, normalPhone } from "@/lib/erp/labels";
 import type { FormState } from "@/lib/erp/form-state";
+import { ZAKAT_HEAD, isZakatHeadPost } from "@/lib/erp/privacy";
+
+/** The Zakat head sees the names of the people helped, so only the website owner gives or takes that post. */
+const zakatHeadLocked = (by: { phone: string }, was: string | null, now: string | null) =>
+  by.phone !== OWNER_PHONE && isZakatHeadPost(was) !== isZakatHeadPost(now);
+const ZAKAT_HEAD_ERROR = `Only the website owner gives or takes the post “${ZAKAT_HEAD}”: it sees the names of the people PSWS helps with Zakat.`;
 
 /** Giving people access: only admins. Each person gets a link to set their own password. */
 
@@ -27,9 +33,11 @@ export async function addPersonAction(_: FormState, data: FormData): Promise<For
   const emailRaw = clean(data.get("email"), 120);
   const first_email = emailRaw ? emailRaw.toLowerCase() : null;
   if (first_email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(first_email)) errors.email = "This does not look like a Gmail address.";
+  const post = clean(data.get("post"), 80);
+  if (zakatHeadLocked(u, null, post)) errors.post = ZAKAT_HEAD_ERROR;
   if (Object.keys(errors).length) return { errors };
   // everyone in the office has full access
-  const id = await addPerson(u, { name: name!, phone: phone!, role: "admin", post: clean(data.get("post"), 80), first_email });
+  const id = await addPerson(u, { name: name!, phone: phone!, role: "admin", post, first_email });
   if (!id) return { errors: { phone: "Someone with this mobile number already has access. Find them in the list below." } };
   revalidatePath("/erp/people");
   return {
@@ -48,11 +56,13 @@ export async function updatePersonAction(id: number, _: FormState, data: FormDat
   const active = data.get("inactive") !== "on";
   const errors: Record<string, string> = {};
   if (!name) errors.name = "Type their name.";
+  const post = clean(data.get("post"), 80);
+  if (zakatHeadLocked(u, p.post, post)) errors.post = ZAKAT_HEAD_ERROR;
   if (Object.keys(errors).length) return { errors };
   // the office must always keep someone who can give access
   if (p.active && !active && (await adminCount()) <= 1)
     return { error: "This is the last person with access. Give someone else access first." };
-  await updatePerson(u, id, { name: name!, role: "admin", post: clean(data.get("post"), 80), active });
+  await updatePerson(u, id, { name: name!, role: "admin", post, active });
   revalidatePath("/erp", "layout");
   return { done: active ? "Saved." : `${name} no longer has access, and has been signed out.` };
 }

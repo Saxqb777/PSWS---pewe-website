@@ -1,5 +1,6 @@
 import { PLACES, WORK_STATUSES, inr, todayIST, type Role } from "@/lib/erp/labels";
 import { zakatMedical } from "@/lib/erp/zakat";
+import { familyCode } from "@/lib/erp/privacy";
 import type { Family, Meeting, Member, Request, Work } from "@/lib/erp/data";
 import type { FormState } from "@/lib/erp/form-state";
 import { AmountInput, Chips, ErpForm, Field, Submit, type Choice } from "./form";
@@ -29,6 +30,10 @@ export function Places() {
 export function FamilyForm({ action, family, submit }: { action: Action; family?: Family; submit: string }) {
   return (
     <ErpForm action={action}>
+      <p className={`${styles.banner} ${styles.note}`}>
+        <b>Private.</b> Only the Accountant, the website owner and the Head of the Zakat Committee see the name, place, mobile
+        and notes. The rest of the office sees {family ? familyCode(family.id) : "a code, like Family Z-0012"}.
+      </p>
       <div className={styles.grid}>
         <Field label="Name of the person helped" hint="Ghar ke bade ka naam" name="name" wide>
           <input name="name" autoComplete="off" defaultValue={family?.name ?? ""} />

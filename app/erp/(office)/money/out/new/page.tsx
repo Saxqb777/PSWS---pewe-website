@@ -6,6 +6,7 @@ import { MoneyOutForm, type MoneyOutInitial } from "@/components/erp/money-forms
 import { fundBalances, getOpening } from "@/lib/erp/books";
 import { PageHead } from "@/components/erp/ui";
 import { saveMoneyOut } from "../../actions";
+import { familyCode } from "@/lib/erp/privacy";
 
 export const metadata = { title: "Money paid" };
 
@@ -34,7 +35,7 @@ export default async function NewMoneyOut({ searchParams }: { searchParams: Prom
       purpose: req.kind,
       amount_paise: req.approved_paise ? Math.max(req.approved_paise - req.paid_paise, 0) || null : null,
       ...(hospital
-        ? { paid_to: hospital, head: "zakat" as const, note: `Zakat medical help for ${fam.name}, paid to the hospital as per the bill` }
+        ? { paid_to: hospital, head: "zakat" as const, note: `Zakat medical help for ${familyCode(fam.id)}, paid to the hospital as per the bill` }
         : {}),
     });
     request = {

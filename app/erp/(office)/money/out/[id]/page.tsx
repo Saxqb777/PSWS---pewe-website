@@ -10,6 +10,7 @@ import { Facts, PageHead, Pending } from "@/components/erp/ui";
 import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
 import { askDelete } from "../../actions";
+import { WHO_SEES, maskMoneyOut, seesNames } from "@/lib/erp/privacy";
 
 export const metadata = { title: "Payment" };
 
@@ -22,8 +23,10 @@ export default async function MoneyOutPage({
 }) {
   const u = await requireUser();
   const id = toId((await params).id);
-  const m = id ? await getMoneyOut(id) : null;
-  if (!m) notFound();
+  const found = id ? await getMoneyOut(id) : null;
+  if (!found) notFound();
+  // help given: anyone who may not see names sees the family's code, and not the note, which may name them
+  const m = maskMoneyOut(found, seesNames(u));
   const sp = await searchParams;
   const pending = m.cancelled_at ? null : await openApproval(`money_out:${m.id}`);
   const req = m.request_id ? await getRequest(m.request_id) : null;
@@ -81,7 +84,7 @@ export default async function MoneyOutPage({
             ["From which money", labelOf(HEADS, m.head, m.head_other)],
             ["Paid by", howPaid(m.method, m.method_other, m.bank_name)],
             ["Number", m.reference],
-            ["Note", m.note],
+            ["Note", m.noteHidden ? <span className={styles.muted}>Private: only {WHO_SEES} see it</span> : m.note],
             ["Entered by", `${m.created_by_name ?? "the office"}, ${showWhen(m.created_at)}`],
           ]}
         />

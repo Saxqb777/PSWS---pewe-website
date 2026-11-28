@@ -11,6 +11,7 @@ import { AskBox } from "@/components/erp/cancel-box";
 import { Removed } from "@/components/erp/bring-back";
 import { openApproval } from "@/lib/erp/books";
 import styles from "@/components/erp/erp.module.css";
+import { WHO_SEES, familyCode, maskFamily, maskMoneyRow, maskRequest, seesNames } from "@/lib/erp/privacy";
 import { addFamilyRequest, askRemoveFamily, bringBackFamily, decideFamilyRequest } from "../actions";
 
 export const metadata = { title: "Family" };
@@ -24,10 +25,16 @@ export default async function FamilyPage({
 }) {
   const u = await requireUser();
   const id = toId((await params).id);
-  const f = id ? await getFamily(id) : null;
-  if (!f) notFound();
+  const found = id ? await getFamily(id) : null;
+  if (!found) notFound();
+  // anyone but the Accountant, the owner and the Zakat head sees the family's code and what is needed, never who they are
+  const sees = seesNames(u);
+  const f = maskFamily(found, sees);
   const sp = await searchParams;
-  const [requests, payments] = await Promise.all([listRequests({ familyId: f.id }), paymentsFor({ familyId: f.id })]);
+  const [requests, payments] = await Promise.all([
+    listRequests({ familyId: f.id }).then((rs) => rs.map((r) => maskRequest(r, sees))),
+    paymentsFor({ familyId: f.id }).then((ps) => ps.map((p) => maskMoneyRow(p, sees))),
+  ]);
   const pending = f.active ? await openApproval(`family:${f.id}`) : null;
   const editor = canDo(u.role, "editor");
   const money = handlesMoney(u);
@@ -35,13 +42,17 @@ export default async function FamilyPage({
 
   return (
     <>
-      <PageHead title={f.name} sub={[f.place, f.active ? null : "Removed"].filter(Boolean).join(" · ") || "Family"} back={{ href: "/erp/families", label: "Families" }}>
+      <PageHead
+        title={f.name}
+        sub={[sees ? familyCode(f.id) : null, f.place, f.active ? null : "Removed"].filter(Boolean).join(" · ") || "Family"}
+        back={{ href: "/erp/families", label: "Families" }}
+      >
         {money && f.active && (
           <Link href={`/erp/money/out/new?family=${f.id}`} className={styles.btn}>
             Record help given
           </Link>
         )}
-        {editor && (
+        {editor && sees && (
           <Link href={`/erp/families/${f.id}/edit`} className={styles.btnQuiet}>
             Change details
           </Link>
@@ -51,6 +62,12 @@ export default async function FamilyPage({
       {sp.new && <p className={styles.formDone}>Family saved. Add what they asked for below, or record help already given.</p>}
       {sp.saved && <p className={styles.formDone}>Change saved.</p>}
       {sp.back && f.active && <p className={styles.formDone}>Brought back.</p>}
+
+      {!sees && (
+        <p className={`${styles.banner} ${styles.note}`}>
+          Who this family is stays private: only {WHO_SEES} see the name, place and mobile.
+        </p>
+      )}
 
       <div className={styles.card}>
         <Facts
